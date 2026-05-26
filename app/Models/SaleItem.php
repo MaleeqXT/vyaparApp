@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class SaleItem extends Model
+{
+    protected $fillable = [
+        'sale_id',
+        'item_id',
+        'item_name',
+        'item_category',
+        'item_code',
+        'item_description',
+        'tafseel',
+        'quantity',
+        'gross_w',
+        'net_w',
+        'unit',
+        'unit_price',
+        'discount',
+        'extra_fields',
+        'amount',
+    ];
+
+    protected $casts = [
+        'gross_w'    => 'decimal:2',
+        'net_w'      => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'discount'   => 'decimal:2',
+        'amount'     => 'decimal:2',
+        'extra_fields' => 'array',
+    ];
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
+
+    // ← THIS WAS MISSING
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
+    }
+}

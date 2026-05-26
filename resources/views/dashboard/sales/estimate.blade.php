@@ -1,0 +1,664 @@
+@extends('layouts.app')
+
+@section('title', 'Vyapar — Estimate / Quotation')
+@section('description', 'Create professional estimates and quotations for your customers in Vyapar.')
+@section('page', 'sale-estimate')
+
+@section('content')
+<style>
+  .custom-table thead th {
+    font-size: 13px; color: #6c757d; font-weight: 500;
+    border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 5;
+    background-color: #fafafa; white-space: nowrap; position: relative;
+  }
+  .custom-table tbody td {
+    font-size: 14px; padding: 14px 10px;
+    border-bottom: 1px solid #f1f1f1; white-space: nowrap;
+  }
+  .custom-table tbody tr:hover { background-color: #fafafa; }
+  .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
+  .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
+  .table-wrapper {
+    overflow-x: auto; overflow-y: auto;
+    max-height: 68vh; border: 1px solid #eef2f7; border-radius: 12px;
+  }
+  @media (max-width: 991px) {
+    .table-wrapper { max-height: none; border-radius: 8px; }
+    .custom-table thead th { font-size: 11px; padding: 8px 6px; }
+    .custom-table tbody td { font-size: 12px; padding: 10px 6px; }
+  }
+  @media (max-width: 575px) {
+    .custom-table thead th { font-size: 10px; padding: 6px 4px; }
+    .custom-table tbody td { font-size: 11px; padding: 8px 4px; }
+  }
+</style>
+    <div class="container-fluid col-12">
+      @if(session('error'))
+        <div class="alert alert-danger mb-3">{{ session('error') }}</div>
+      @endif
+
+      <div class="d-flex justify-content-between align-items-center bg-light mb-2 p-4">
+        <div>
+         <div class="dropdown">
+          <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="h4"> Estimates / Quotations</span>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ route('sale.index') }}">Sale Invoice</a></li>
+            <li><a class="dropdown-item" href="{{ route('sale.estimate') }}">Estimate / Quotation</a></li>
+            <li><a class="dropdown-item" href="{{ route('sale-return') }}">Sale Return / Cr. Note</a></li>
+            <li><a class="dropdown-item" href="{{ route('payment-in') }}">Payment In</a></li>
+            <li><a class="dropdown-item" href="{{ route('payment-out') }}">Payment out</a></li>
+            <li><a class="dropdown-item" href="{{ route('purchase-expenses') }}">Purchase Bill</a></li>
+            <li><a class="dropdown-item" href="{{ route('purchase-return') }}">Purchase Return / Dr. Note</a></li>
+            <li><a class="dropdown-item" href="{{ route('expense') }}">Expenses</a></li>
+
+          </ul>
+        </div>
+        </div>
+        <button class="btn rounded-pill" style="background-color: #D4112E;" onclick="window.location='{{ route('estimates.create') }}'"><span class="text-light">+ Add
+            Estimate</span></button>
+      </div>
+      <div class="d-flex justify-content-between align-items-center bg-light mb-2 px-3 py-2 rounded">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="small fw-semibold">Filter By:</span>
+
+          <div class="d-flex rounded-pill filter-pill">
+            <div class="filter-left">
+              <select id="estimatePeriodSelect" class="filter-select">
+                <option value="all">All Estimates</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="filter-right">
+              <div id="estimateDateRangeDisplay" class="small text-nowrap"></div>
+              <div id="estimateCustomDateRange" class="d-flex align-items-center gap-1" style="display:none;">
+                <input id="estimateCustomFrom" type="date" class="date-input" />
+                <span>to</span>
+                <input id="estimateCustomTo" type="date" class="date-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-pill small-pill">
+            <select id="estimateFirmSelect" class="filter-select text-center">
+              <option value="">All Firms</option>
+              @foreach((($allEstimates ?? $estimates)->map(fn($estimate) => $estimate->party?->name)->filter()->unique()->values()) as $firm)
+                <option value="{{ $firm }}">{{ $firm }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="bg-light mb-2 px-4 py-3 rounded">
+        <div class="border rounded p-1" style="width: 25rem; height: 8rem; background-color: #FCF8FF;">
+          <div class="w-100 d-flex">
+            <div class="w-50 mt-2">
+              <p class="ps-3 text-secondary m-0">Total Quotations</p>
+              <p class="ps-3 h4">Rs {{ number_format(($allEstimates ?? $estimates)->sum('grand_total'), 2) }}</p>
+            </div>
+            <div class="w-50 mt-2 d-flex align-items-end justify-content-center flex-column">
+              <div class="col-5 h-50 rounded-pill d-flex justify-content-center align-item-center me-4"
+                style="background-color: #DEF7EE;">
+                <p class="text-success pt-1">{{ ($allEstimates ?? $estimates)->count() > 0 ? round((($allEstimates ?? $estimates)->where('status', 'converted')->count() / ($allEstimates ?? $estimates)->count()) * 100) : 0 }}% <i class="bi bi-arrow-up-right "></i></p>
+              </div>
+              <span class="me-4 pe-1 mt-1 text-secondary" style="font-size: 10px;">conversion rate</span>
+            </div>
+          </div>
+          <div class="w-100 d-flex mt-3">
+            <p class="ps-3 pe-3 text-secondary" style="border-right:1px solid rgb(45, 44, 44);">Converted : <span
+                class="fw-bold text-dark">Rs {{ number_format(($allEstimates ?? $estimates)->where('status', 'converted')->sum('grand_total'), 2) }}</span></p>
+            <p class="ps-3 text-secondary">Open : <span class="fw-bold text-dark">Rs {{ number_format(($allEstimates ?? $estimates)->where('status', 'open')->sum('grand_total'), 2) }}</span></p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <p class="fw-bold mb-2">Transactions</p>
+            </div>
+            <div class="col-md-6">
+              <form method="GET" action="{{ route('sale.estimate') }}" class="d-flex gap-2">
+                <input type="text" class="form-control form-control-sm" placeholder="Search by Bill No. or Party Name..."
+                       name="search" value="{{ $search ?? '' }}" style="border-radius: 20px;">
+                <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius: 20px; white-space: nowrap;">
+                  <i class="fas fa-search"></i> Search
+                </button>
+                @if($search)
+                  <a href="{{ route('sale.estimate') }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; white-space: nowrap;">
+                    Clear
+                  </a>
+                @endif
+              </form>
+            </div>
+          </div>
+
+         <div class="table-wrapper">
+  <table class="table align-middle custom-table mb-0">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Reference No.</th>
+                  <th>Party Name</th>
+                  <th>Amount</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse($estimates ?? [] as $estimate)
+                <tr data-estimate-id="{{ $estimate->id }}">
+                  <td>{{ $estimate->invoice_date ? $estimate->invoice_date->format('d/m/Y') : '-' }}</td>
+                  <td>{{ $estimate->bill_number ?? '-' }}</td>
+                  <td>{{ $estimate->display_party_name }}</td>
+                  <td>Rs {{ number_format($estimate->items->sum('amount'), 2) }}</td>
+                  <td>Rs {{ number_format($estimate->balance ?? $estimate->grand_total ?? 0, 2) }}</td>
+                  <td>
+                    @php
+                      $isConverted = $estimate->status === 'converted';
+                      $convertedInvoiceNumber = $convertedInvoices[$estimate->id] ?? null;
+                      $statusLabel = $isConverted
+                          ? 'Converted' . ($convertedInvoiceNumber ? ' (Invoice #' . $convertedInvoiceNumber . ')' : '')
+                          : ucfirst($estimate->status);
+                    @endphp
+                    <span class="badge {{ $isConverted ? 'text-primary bg-primary-subtle border border-primary-subtle' : ($estimate->status === 'open' ? 'bg-success' : 'bg-warning text-dark') }}">
+                      {{ $statusLabel }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="dropdown d-inline me-2">
+                      <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="white-space: nowrap;" {{ $isConverted ? 'disabled' : '' }}>
+                        Convert
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li>
+                          <a class="dropdown-item {{ $isConverted ? 'disabled' : '' }}" href="{{ $isConverted ? '#' : route('estimates.convert-to-sale', $estimate->id) }}">
+                            <i class="fas fa-file-invoice me-2"></i>Estimate to Sale
+                          </a>
+                        </li>
+                        <li>
+                          <a class="dropdown-item {{ $isConverted ? 'disabled' : '' }}" href="{{ $isConverted ? '#' : route('estimates.convert-to-sale-order', $estimate->id) }}">
+                            <i class="fas fa-clipboard-list me-2"></i>Estimate to Sale Order
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="dropdown d-inline estimate-action-menu"
+                         data-estimate-id="{{ $estimate->id }}"
+                         data-invoice-url="{{ route('invoice', ['sale_id' => $estimate->id]) }}">
+                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="return transactionPasscodeNavigate('{{ route('estimates.edit', $estimate->id) }}');"><i class="fas fa-edit me-2"></i>View/Edit</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="printEstimate(this); return false;"><i class="fas fa-print me-2"></i>Print</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="previewEstimate(this); return false;"><i class="fas fa-file-alt me-2"></i>Preview</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openPdf(this); return false;"><i class="fas fa-file-pdf me-2"></i>Open PDF</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="return transactionPasscodeExecute('deleteEstimate','{{ route('estimates.destroy', $estimate->id) }}');"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+                @empty
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">
+                    No estimates yet. Click "New Estimate" to create one.
+                  </td>
+                </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  @include('dashboard.partials.transaction-passcode-guard')
+
+@endsection
+
+@push('scripts')
+<style>
+.filter-pill {
+  background-color: #e4f2ff;
+  border-radius: 999px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-left {
+  border-right: 1px solid #ccc;
+  padding: 0 10px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-right {
+  padding: 0 12px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  padding: 0;
+  margin: 0;
+}
+
+.small-pill {
+  padding: 0 12px;
+  min-width: 130px;
+}
+
+.date-input {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  width: 120px;
+  outline: none;
+}
+</style>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  function parseDateDMY(value) {
+    const parts = (value || '').split('/');
+    if (parts.length !== 3) return null;
+
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+    return new Date(year, month, day);
+  }
+
+  function getPeriodRange(period) {
+    const now = new Date();
+    let start = null;
+    let end = null;
+
+    if (period === 'this_month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (period === 'last_month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (period === 'this_quarter') {
+      const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+      start = new Date(now.getFullYear(), quarterStartMonth, 1);
+      end = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
+    } else if (period === 'this_year') {
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
+    }
+
+    return { start, end };
+  }
+
+  function formatDisplayDate(date) {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  function updateEstimateRangeDisplay(from, to) {
+    const display = $('#estimateDateRangeDisplay');
+    if (!display.length) return;
+
+    if (!from || !to) {
+      display.text('');
+      return;
+    }
+
+    display.text(`${formatDisplayDate(from)} To ${formatDisplayDate(to)}`);
+  }
+
+  let estimatePeriodFilter = $('#estimatePeriodSelect').val() || 'all';
+  let estimateFirmFilter = $('#estimateFirmSelect').val() || '';
+  let estimateCustomFrom = $('#estimateCustomFrom').val() || null;
+  let estimateCustomTo = $('#estimateCustomTo').val() || null;
+
+  $.fn.dataTable.ext.search.push(function(settings, data) {
+    if (settings.nTable.id !== 'estimatesTable') {
+      return true;
+    }
+
+    const rowDate = parseDateDMY(data[0] || '');
+    const partyName = (data[2] || '').trim().toLowerCase();
+
+    if (estimateFirmFilter && partyName !== estimateFirmFilter.toLowerCase()) {
+      return false;
+    }
+
+    if (!estimatePeriodFilter || estimatePeriodFilter === 'all') {
+      return true;
+    }
+
+    if (!rowDate) {
+      return false;
+    }
+
+    let rangeStart = null;
+    let rangeEnd = null;
+
+    if (estimatePeriodFilter === 'custom') {
+      rangeStart = estimateCustomFrom ? new Date(estimateCustomFrom) : null;
+      rangeEnd = estimateCustomTo ? new Date(estimateCustomTo) : null;
+    } else {
+      const range = getPeriodRange(estimatePeriodFilter);
+      rangeStart = range.start;
+      rangeEnd = range.end;
+    }
+
+    if (!rangeStart || !rangeEnd) {
+      return true;
+    }
+
+    rangeStart.setHours(0, 0, 0, 0);
+    rangeEnd.setHours(23, 59, 59, 999);
+    rowDate.setHours(12, 0, 0, 0);
+
+    return rowDate >= rangeStart && rowDate <= rangeEnd;
+  });
+
+
+  function syncEstimateFilterUi() {
+    if (estimatePeriodFilter === 'custom') {
+      $('#estimateDateRangeDisplay').hide();
+      $('#estimateCustomDateRange').show();
+    } else {
+      $('#estimateCustomDateRange').hide();
+      $('#estimateDateRangeDisplay').show();
+      const range = getPeriodRange(estimatePeriodFilter);
+      updateEstimateRangeDisplay(range.start, range.end);
+    }
+
+    if (estimatePeriodFilter === 'all') {
+      $('#estimateDateRangeDisplay').text('');
+    }
+  }
+
+  syncEstimateFilterUi();
+
+  $('#estimatePeriodSelect').on('change', function() {
+    estimatePeriodFilter = $(this).val() || 'all';
+
+    if (estimatePeriodFilter === 'custom') {
+      const today = new Date();
+      const iso = today.toISOString().split('T')[0];
+
+      if (!$('#estimateCustomFrom').val()) {
+        $('#estimateCustomFrom').val(iso);
+      }
+
+      if (!$('#estimateCustomTo').val()) {
+        $('#estimateCustomTo').val(iso);
+      }
+
+      estimateCustomFrom = $('#estimateCustomFrom').val();
+      estimateCustomTo = $('#estimateCustomTo').val();
+    }
+
+    syncEstimateFilterUi();
+    table.draw();
+  });
+
+  $('#estimateFirmSelect').on('change', function() {
+    estimateFirmFilter = $(this).val() || '';
+    table.draw();
+  });
+
+  $('#estimateCustomFrom').on('change', function() {
+    estimateCustomFrom = $(this).val() || null;
+    if (estimatePeriodFilter === 'custom') {
+      table.draw();
+    }
+  });
+
+  $('#estimateCustomTo').on('change', function() {
+    estimateCustomTo = $(this).val() || null;
+    if (estimatePeriodFilter === 'custom') {
+      table.draw();
+    }
+  });
+
+  // Create individual filter rows for each column
+  var headers = $('#estimatesTable thead tr:first th');
+  headers.each(function(i) {
+    if (i < 6) { // Don't add filter to Actions column
+      var filterRow = $('<tr class="filter-row" data-column="' + i + '" style="display: none;"></tr>');
+
+      // Add empty cells for all columns
+      for (var j = 0; j < headers.length; j++) {
+        if (j === i) {
+          var title = $(headers[j]).text();
+          filterRow.append('<th><input type="text" placeholder="Search ' + title + '..." class="form-control form-control-sm column-filter"></th>');
+        } else {
+          filterRow.append('<th></th>');
+        }
+      }
+
+      $('#estimatesTable thead').append(filterRow);
+    }
+  });
+
+  // Toggle filter for clicked column header
+  $('#estimatesTable thead tr:first th').each(function(i) {
+    if (i < 6) {
+      $(this).css({
+        'cursor': 'pointer',
+        'position': 'relative'
+      });
+
+      $(this).on('click', function(e) {
+        var currentRow = $('#estimatesTable thead .filter-row[data-column="' + i + '"]');
+        var otherRows = $('#estimatesTable thead .filter-row[data-column!="' + i + '"]');
+
+        // Hide all filter rows
+        otherRows.slideUp(150);
+
+        // Toggle current filter row
+        if (currentRow.is(':visible')) {
+          currentRow.slideUp(150);
+        } else {
+          currentRow.slideDown(150);
+        }
+
+        e.stopPropagation();
+      });
+
+      // Add filter icon hint
+      $(this).append(' <i class="fas fa-filter ms-1" style="opacity: 0.5; font-size: 12px;"></i>');
+    }
+  });
+
+  // Apply column search on input
+  table.columns().every(function(i) {
+    $('.filter-row[data-column="' + i + '"] .column-filter').on('keyup change', function() {
+      if (table.column(i).search() !== this.value) {
+        table.column(i).search(this.value).draw();
+      }
+    });
+  });
+});
+
+function getEstimateThemeState(estimateId) {
+  if (!estimateId) return null;
+
+  try {
+    const raw = window.localStorage.getItem(`saleInvoiceTheme:${estimateId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function buildEstimateInvoiceUrl(baseUrl, estimateId, extraParams = {}) {
+  if (!baseUrl) return '';
+
+  const url = new URL(baseUrl, window.location.origin);
+  const savedTheme = getEstimateThemeState(estimateId);
+
+  if (savedTheme) {
+    if (savedTheme.mode === 'thermal') {
+      url.searchParams.set('theme', `thermal${savedTheme.thermalThemeId || 1}`);
+    } else if (savedTheme.regularThemeId) {
+      const map = {
+        1: 'tally',
+        2: 'LandScapeTheme1',
+        3: 'LandScapeTheme2',
+        4: 'tax1',
+        5: 'tax2',
+        6: 'tax3',
+        7: 'tax4',
+        8: 'tax5',
+        9: 'tax6',
+        10: 'divine',
+        11: 'french',
+        12: 'theme1',
+        13: 'theme2',
+        14: 'theme3',
+        15: 'theme4',
+      };
+
+      url.searchParams.set('theme', map[savedTheme.regularThemeId] || 'tally');
+    }
+
+    if (savedTheme.accent) {
+      url.searchParams.set('accent', savedTheme.accent);
+    }
+  }
+
+  Object.entries(extraParams).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  return url.toString();
+}
+
+function resolveEstimateInvoiceUrl(trigger, extraParams = {}) {
+  const menu = trigger?.closest('.estimate-action-menu');
+  const estimateId = menu?.dataset?.estimateId;
+  const invoiceUrl = menu?.dataset?.invoiceUrl;
+
+  return buildEstimateInvoiceUrl(invoiceUrl, estimateId, extraParams);
+}
+
+function previewEstimate(trigger) {
+  const url = resolveEstimateInvoiceUrl(trigger);
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+function printEstimate(trigger) {
+  const url = resolveEstimateInvoiceUrl(trigger, { print: 1 });
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+function openPdf(trigger) {
+  const url = resolveEstimateInvoiceUrl(trigger);
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+function deleteEstimate(url) {
+  if (!confirm('Are you sure you want to delete this estimate?')) {
+    return;
+  }
+
+  fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+      'Accept': 'application/json',
+    },
+  })
+    .then(async (response) => {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Delete failed');
+      }
+
+      window.location.reload();
+    })
+    .catch((error) => {
+      alert(error.message || 'Unable to delete estimate.');
+    });
+}
+</script>
+<script>
+  (function () {
+    var isResizing = false, startX = 0, startW = 0, thEl = null;
+    function init() {
+      document.querySelectorAll('.custom-table thead th').forEach(function (th) {
+        if (th.querySelector('.col-rh')) return;
+        th.style.position = 'relative';
+        var h = document.createElement('div');
+        h.className = 'col-rh';
+        h.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:10;';
+        th.appendChild(h);
+      });
+    }
+    document.addEventListener('mousedown', function (e) {
+      if (!e.target.classList.contains('col-rh')) return;
+      e.preventDefault();
+      thEl = e.target.closest('th'); isResizing = true;
+      startX = e.clientX; startW = thEl.getBoundingClientRect().width;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!isResizing || !thEl) return;
+      var w = Math.max(60, startW + (e.clientX - startX));
+      thEl.style.minWidth = w + 'px'; thEl.style.width = w + 'px';
+    });
+    document.addEventListener('mouseup', function () {
+      if (!isResizing) return;
+      isResizing = false; thEl = null;
+      document.body.style.cursor = ''; document.body.style.userSelect = '';
+    });
+    document.addEventListener('DOMContentLoaded', init);
+  })();
+</script>
+
+<script src="{{ asset('js/sale-estimate.js') }}"></script>
+@endpush

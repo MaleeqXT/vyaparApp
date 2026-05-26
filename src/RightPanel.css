@@ -1,0 +1,71 @@
+.right-panel {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #ffffff;
+  padding: 40px;
+}
+
+.invoice-meta-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
+}
+
+.invoice-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.invoice-meta-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invoice-meta-value {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+/* PDF Export Styles */
+:root.pdf-export-active .right-panel {
+  padding: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Override all invoice wrapper constraints during PDF export */
+:root.pdf-export-active .tally-wrapper,
+:root.pdf-export-active .t1-wrapper,
+:root.pdf-export-active .t4-wrapper,
+:root.pdf-export-active .t5-wrapper,
+:root.pdf-export-active .tax1-wrapper,
+:root.pdf-export-active .tax2-wrapper,
+:root.pdf-export-active .tax3-wrapper,
+:root.pdf-export-active .tax4-wrapper,
+:root.pdf-export-active .tt3-wrapper,
+:root.pdf-export-active .tt4-wrapper,
+:root.pdf-export-active .tt5-wrapper,
+:root.pdf-export-active .divine-wrapper,
+:root.pdf-export-active .fe-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 30px !important;
+  box-sizing: border-box !important;
+}
