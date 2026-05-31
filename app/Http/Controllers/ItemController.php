@@ -121,6 +121,32 @@ class ItemController extends Controller
         return $default;
     }
 
+    private function normalizeCustomFieldsFromRequest(array $data): array
+    {
+        $fields = [];
+
+        for ($i = 1; $i <= 6; $i++) {
+            $value = trim((string) ($data["custom_field_{$i}_value"] ?? ''));
+            $label = trim((string) ($data["custom_field_{$i}_name"] ?? 'Custom Field ' . $i));
+            $enabled = filter_var($data["custom_field_{$i}_enabled"] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $showInPrint = filter_var($data["custom_field_{$i}_print"] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if ($label === '' && $value === '' && !$enabled && !$showInPrint) {
+                continue;
+            }
+
+            $fields[] = [
+                'key' => 'custom_field_' . $i,
+                'enabled' => $enabled,
+                'label' => $label !== '' ? $label : 'Custom Field ' . $i,
+                'show_in_print' => $showInPrint,
+                'value' => $value,
+            ];
+        }
+
+        return $fields;
+    }
+
     private function storeItemImages(Request $request): array
     {
         $imagePaths = [];
@@ -238,6 +264,8 @@ class ItemController extends Controller
         $purchasePrice = $this->normalizeDecimal($data['purchase_price'] ?? $data['cost_price'] ?? 0);
         $openingQty = $this->normalizeDecimal($data['opening_qty'] ?? 0);
         $minStock = $this->normalizeDecimal($data['min_stock'] ?? 0);
+        $customFields = $this->normalizeCustomFieldsFromRequest($data);
+        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
         $itemStocksTableExists = Schema::hasTable('item_stocks');
         $itemStocksColumns = $itemStocksTableExists ? array_flip(Schema::getColumnListing('item_stocks')) : [];
 
@@ -278,6 +306,10 @@ class ItemController extends Controller
                 'min_stock'       => $minStock,
                 'is_active'       => array_key_exists('is_active', $data) ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) : true,
             ]);
+            if ($hasCustomFieldsColumn) {
+                $item->custom_fields = $customFields ?: null;
+                $item->save();
+            }
 
             if ($itemStocksTableExists) {
                 $stockData = [
@@ -339,6 +371,8 @@ class ItemController extends Controller
             $this->deleteStoredImages($existingImagePaths);
             $imagePaths = $this->storeItemImages($request);
         }
+        $customFields = $this->normalizeCustomFieldsFromRequest($data);
+        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
 
         $item->update([
             'name'            => $data['name']            ?? $item->name,
@@ -364,6 +398,11 @@ class ItemController extends Controller
             'min_stock'       => $this->normalizeDecimal($data['min_stock'] ?? $item->min_stock, (float) $item->min_stock),
             'is_active'       => array_key_exists('is_active', $data) ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) : $item->is_active,
         ]);
+
+        if ($hasCustomFieldsColumn) {
+            $item->custom_fields = $customFields ?: null;
+            $item->save();
+        }
 
         return response()->json(['success' => true, 'item' => $item]);
     }

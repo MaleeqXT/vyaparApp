@@ -1685,15 +1685,40 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
                 ->first();
         }
 
-        $items = $sale->items->map(function ($item) use ($sale) {
-            $taxPct = $this->formatPercentValue($sale->tax_pct);
-            $amount = (float) ($item->amount ?? 0);
-            $rate = (float) ($item->unit_price ?? 0);
-            $quantity = (float) ($item->quantity ?? 0);
+          $items = $sale->items->map(function ($item) use ($sale) {
+              $taxPct = $this->formatPercentValue($sale->tax_pct);
+              $amount = (float) ($item->amount ?? 0);
+              $rate = (float) ($item->unit_price ?? 0);
+              $quantity = (float) ($item->quantity ?? 0);
+              $customFields = collect($item->item?->custom_fields ?? [])
+                  ->map(function ($field) {
+                      if (is_array($field)) {
+                          return [
+                              'key' => (string) ($field['key'] ?? ''),
+                              'enabled' => (bool) ($field['enabled'] ?? true),
+                              'label' => trim((string) ($field['label'] ?? $field['name'] ?? '')),
+                              'show_in_print' => (bool) ($field['show_in_print'] ?? true),
+                              'value' => trim((string) ($field['value'] ?? $field['text'] ?? '')),
+                          ];
+                      }
 
-            if ($amount <= 0 && $quantity > 0 && $rate > 0) {
-                $amount = round($quantity * $rate, 2);
-            }
+                      return [
+                          'key' => '',
+                          'enabled' => true,
+                          'label' => '',
+                          'show_in_print' => true,
+                          'value' => trim((string) $field),
+                      ];
+                  })
+                  ->filter(function (array $field) {
+                      return $field['enabled'] && $field['show_in_print'] && ($field['label'] !== '' || $field['value'] !== '');
+                  })
+                  ->values()
+                  ->all();
+
+              if ($amount <= 0 && $quantity > 0 && $rate > 0) {
+                  $amount = round($quantity * $rate, 2);
+              }
 
             return [
                 'name' => $item->item_name ?: ($item->item?->name ?: 'Item'),
@@ -1704,12 +1729,13 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
                 'net_w' => (float) ($item->net_w ?? 0),
                 'unit' => (string) ($item->unit ?: ($item->item?->unit ?: '')),
                 'rate' => $rate,
-                'disc' => number_format((float) ($item->discount ?? 0), 2, '.', ''),
-                'gst' => $taxPct,
-                'amt' => $amount,
-                'amount' => $amount,
-            ];
-        })->values()->all();
+                  'disc' => number_format((float) ($item->discount ?? 0), 2, '.', ''),
+                  'gst' => $taxPct,
+                  'amt' => $amount,
+                  'customFields' => $customFields,
+                  'amount' => $amount,
+              ];
+          })->values()->all();
 
         if (empty($items)) {
             $items[] = [
@@ -1744,6 +1770,29 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
         $receivedFromBalance = $totalAmount > 0 ? max($totalAmount - $storedBalance, 0) : 0;
         $receivedAmount = max($receivedAmount, $paymentsReceived, $receivedFromBalance);
 
+        $partyExtraFields = [];
+        foreach ([
+            [AppSetting::getValue('party_additional_field_1_name', ''), AppSetting::getValue('party_additional_field_1_print', '0') === '1'],
+            [AppSetting::getValue('party_additional_field_2_name', ''), AppSetting::getValue('party_additional_field_2_print', '0') === '1'],
+        ] as [$label, $showInPrint]) {
+            $label = trim((string) $label);
+            if ($label !== '' && $showInPrint) {
+                $partyExtraFields[] = $label;
+            }
+        }
+
+        $partyCustomFields = collect($sale->party?->custom_fields ?? [])
+            ->map(function ($field) {
+                if (is_array($field)) {
+                    $field = $field['label'] ?? $field['value'] ?? $field['name'] ?? '';
+                }
+
+                return trim((string) $field);
+            })
+            ->filter()
+            ->values()
+            ->all();
+
         return [
             'title' => $sale->type === 'invoice' ? 'Invoice' : ucwords(str_replace('_', ' ', (string) $sale->type)),
             'businessName' => $businessName,
@@ -1767,6 +1816,8 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
             'bankName' => (string) ($bankAccount?->bank_name ?: $bankAccount?->display_name ?: ''),
             'bankAccountNumber' => (string) ($bankAccount?->account_number ?: ''),
             'bankAccountHolder' => (string) ($bankAccount?->account_holder_name ?: ''),
+            'partyExtraFields' => $partyExtraFields,
+            'partyCustomFields' => $partyCustomFields,
         ];
     }
 
@@ -1832,15 +1883,19 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
         ];
     }
 
-    public function pdfEstimate(Sale $sale)
+    public function pdfEstimate(Request $request, Sale $sale)
     {
         if ($sale->type !== 'estimate') {
             abort(404);
         }
 
         $sale->load(['items']);
+        $pdf = Pdf::loadView('dashboard.sales.estimate-preview', ['sale' => $sale, 'pdfMode' => true])
+            ->setPaper('a4', 'portrait');
 
-        return view('dashboard.sales.estimate-preview', ['sale' => $sale, 'pdfMode' => true]);
+        $fileName = 'estimate-' . ($sale->bill_number ?: $sale->id) . '.pdf';
+
+        return $pdf->download($fileName);
     }
 
     public function previewSaleOrder(Sale $sale)

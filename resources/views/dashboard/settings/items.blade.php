@@ -107,6 +107,7 @@
           <label class="check-row">
             <input type="checkbox" class="check-row__input" id="defaultUnitCheckbox" />
             <span class="check-row__label">Default Unit</span>
+            <button type="button" id="defaultUnitLink" class="btn btn-link p-0 ms-2 d-none" style="font-size: 12px; text-decoration: none;">Add Default Unit</button>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
           <label class="check-row">
@@ -121,7 +122,7 @@
           </label>
           <label class="check-row check-row--sm">
             <input type="checkbox" class="check-row__input" id="descriptionCheckbox" />
-            <span class="check-row__label">Description</span>
+            <span class="check-row__label" id="descriptionFieldLabel">Description</span>
             <span class="ps-4 text-muted" id="changeTextBtn" style="font-size: 12px; transition: color 0.2s;">Change
               text</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
@@ -142,6 +143,37 @@
                 <div class="modal-footer">
                   <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
                   <button type="button" class="btn btn-primary" id="saveDescriptionLabelBtn">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal fade" id="defaultUnitModal" tabindex="-1" aria-labelledby="defaultUnitModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header" style="background:#dbeafe;">
+                  <h1 class="modal-title fs-5" id="defaultUnitModalLabel">Select Default Unit</h1>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                      <label class="form-label fw-semibold">Default Base Unit</label>
+                      <select class="form-select" id="defaultUnitBaseSelect"></select>
+                    </div>
+                    <div class="col-md-5">
+                      <label class="form-label fw-semibold">Default Secondary Unit</label>
+                      <select class="form-select" id="defaultUnitSecondarySelect"></select>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Rate</label>
+                      <input type="number" class="form-control" id="defaultUnitRateInput" min="0" step="0.0001" value="0">
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="saveDefaultUnitBtn">Save</button>
                 </div>
               </div>
             </div>
@@ -554,6 +586,10 @@
         show_low_stock_dialog: false,
         items_unit_enabled: true,
         default_unit_enabled: false,
+        default_unit_label: 'Add Default Unit',
+        default_unit_base: '',
+        default_unit_secondary: '',
+        default_unit_rate: 0,
         item_category_enabled: false,
         party_wise_item_rate_enabled: false,
         description_enabled: false,
@@ -615,6 +651,7 @@
       };
 
       let itemSettings = normalizeItemSettings(window.itemSettings || {});
+      let defaultUnitsCache = [];
       const navItems = document.querySelectorAll('.sidebar__nav-item');
       // Auto-highlight active nav based on URL
       const currentPath = window.location.pathname.split('/').pop() || 'general.html';
@@ -838,6 +875,12 @@
         size_enabled: document.getElementById('sizeCheckbox'),
         size_label: document.getElementById('sizeLabelInput'),
         description_label: document.getElementById('changeTextInput'),
+        description_text: document.getElementById('descriptionFieldLabel'),
+        default_unit_label: document.getElementById('defaultUnitLink'),
+        default_unit_modal: document.getElementById('defaultUnitModal'),
+        default_unit_base: document.getElementById('defaultUnitBaseSelect'),
+        default_unit_secondary: document.getElementById('defaultUnitSecondarySelect'),
+        default_unit_rate: document.getElementById('defaultUnitRateInput'),
       };
 
       const normalizeBatchDateFormat = (value) => {
@@ -848,10 +891,60 @@
         return ['mm/yy', 'dd/mm/yyyy', 'yyyy/mm/dd'].includes(normalized) ? normalized : 'mm/yy';
       };
 
+      const normalizeUnitValue = (value) => String(value || '').trim();
+      const unitsModal = () => refs.default_unit_modal ? bootstrap.Modal.getOrCreateInstance(refs.default_unit_modal) : null;
+
+      const loadUnitsIntoDefaultModal = async () => {
+        if (defaultUnitsCache.length) return defaultUnitsCache;
+        try {
+          const response = await fetch('{{ route('items.units') }}?json=1', {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+          });
+          const data = await response.json();
+          defaultUnitsCache = Array.isArray(data?.units) ? data.units : [];
+        } catch (error) {
+          defaultUnitsCache = [];
+        }
+        return defaultUnitsCache;
+      };
+
+      const populateDefaultUnitSelects = async () => {
+        const units = await loadUnitsIntoDefaultModal();
+        if (!refs.default_unit_base || !refs.default_unit_secondary) return;
+        const options = units.map((unit) => {
+          const value = normalizeUnitValue(unit.short_name || unit.short || unit.name);
+          const label = `${String(unit.name || '').trim()} (${value})`;
+          return `<option value="${String(value).replace(/"/g, '&quot;')}">${label.replace(/"/g, '&quot;')}</option>`;
+        }).join('');
+
+        refs.default_unit_base.innerHTML = '<option value="">Select Base Unit</option>' + options;
+        refs.default_unit_secondary.innerHTML = '<option value="">Select Secondary Unit</option>' + options;
+        refs.default_unit_base.value = normalizeUnitValue(itemSettings.default_unit_base);
+        refs.default_unit_secondary.value = normalizeUnitValue(itemSettings.default_unit_secondary);
+        refs.default_unit_rate.value = itemSettings.default_unit_rate ?? 0;
+      };
+
+      const syncDefaultUnitLink = () => {
+        const enabled = !!itemSettings.default_unit_enabled;
+        if (!refs.default_unit_label) return;
+        refs.default_unit_label.classList.toggle('d-none', !enabled);
+        refs.default_unit_label.textContent = itemSettings.default_unit_label || 'Add Default Unit';
+      };
+
+      const openDefaultUnitModal = async () => {
+        if (!refs.default_unit_modal) return;
+        await populateDefaultUnitSelects();
+        unitsModal()?.show();
+      };
+
       const descriptionCheckbox = refs.description_enabled;
 
       if (descriptionCheckbox && changeTextBtn && changeTextModalEl) {
         toggleChangeText = () => {
+          if (refs.description_text) {
+            refs.description_text.textContent = itemSettings.description_label || 'Description';
+          }
           if (descriptionCheckbox.checked) {
             changeTextBtn.classList.remove('text-muted');
             changeTextBtn.classList.add('text-primary');
@@ -869,8 +962,41 @@
           if (!descriptionCheckbox.checked) return;
           e.preventDefault();
           e.stopPropagation();
+          if (refs.description_label) {
+            refs.description_label.value = itemSettings.description_label || 'Description';
+          }
           bootstrap.Modal.getOrCreateInstance(changeTextModalEl).show();
         });
+      }
+
+      if (refs.default_unit_label && refs.default_unit_modal) {
+        const defaultUnitCheckbox = refs.default_unit_enabled;
+        const defaultUnitModal = unitsModal();
+
+        const handleDefaultUnitState = () => {
+          syncDefaultUnitLink();
+          if (defaultUnitCheckbox?.checked) {
+            refs.default_unit_label.classList.remove('d-none');
+          }
+        };
+
+        defaultUnitCheckbox?.addEventListener('change', async () => {
+          handleDefaultUnitState();
+          if (defaultUnitCheckbox.checked) {
+            await openDefaultUnitModal();
+          }
+        });
+
+        refs.default_unit_label.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!defaultUnitCheckbox?.checked) return;
+          await openDefaultUnitModal();
+        });
+
+        refs.default_unit_modal.addEventListener('hidden.bs.modal', syncDefaultUnitLink);
+
+        syncDefaultUnitLink();
       }
 
       const applySettingsToUi = () => {
@@ -883,9 +1009,16 @@
         refs.show_low_stock_dialog.checked = !!itemSettings.show_low_stock_dialog;
         refs.items_unit_enabled.checked = !!itemSettings.items_unit_enabled;
         refs.default_unit_enabled.checked = !!itemSettings.default_unit_enabled;
+        refs.default_unit_label.textContent = itemSettings.default_unit_label || 'Add Default Unit';
+        refs.default_unit_base.value = itemSettings.default_unit_base || '';
+        refs.default_unit_secondary.value = itemSettings.default_unit_secondary || '';
+        refs.default_unit_rate.value = itemSettings.default_unit_rate ?? 0;
         refs.item_category_enabled.checked = !!itemSettings.item_category_enabled;
         refs.party_wise_item_rate_enabled.checked = !!itemSettings.party_wise_item_rate_enabled;
         refs.description_enabled.checked = !!itemSettings.description_enabled;
+        if (refs.description_text) {
+          refs.description_text.textContent = itemSettings.description_label || 'Description';
+        }
         refs.item_wise_tax_enabled.checked = !!itemSettings.item_wise_tax_enabled;
         refs.item_wise_discount_enabled.checked = !!itemSettings.item_wise_discount_enabled;
         refs.update_sale_price_from_transaction.checked = !!itemSettings.update_sale_price_from_transaction;
@@ -923,6 +1056,7 @@
         });
         invTriggers.forEach(checkbox => toggleRowState(checkbox));
         toggleChangeText();
+        syncDefaultUnitLink();
       };
 
       const collectSettingsFromUi = () => ({
@@ -935,6 +1069,10 @@
         show_low_stock_dialog: !!refs.show_low_stock_dialog.checked,
         items_unit_enabled: !!refs.items_unit_enabled.checked,
         default_unit_enabled: !!refs.default_unit_enabled.checked,
+        default_unit_label: String(refs.default_unit_label?.textContent || 'Add Default Unit').trim(),
+        default_unit_base: normalizeUnitValue(refs.default_unit_base?.value),
+        default_unit_secondary: normalizeUnitValue(refs.default_unit_secondary?.value),
+        default_unit_rate: Number(refs.default_unit_rate?.value || 0),
         item_category_enabled: !!refs.item_category_enabled.checked,
         party_wise_item_rate_enabled: !!refs.party_wise_item_rate_enabled.checked,
         description_enabled: !!refs.description_enabled.checked,
@@ -998,8 +1136,15 @@
 
       document.getElementById('saveDescriptionLabelBtn')?.addEventListener('click', async () => {
         try {
-          itemSettings.description_label = String(document.getElementById('changeTextInput').value || 'Description').trim();
+          const nextLabel = String(document.getElementById('changeTextInput').value || 'Description').trim();
+          itemSettings.description_label = nextLabel;
+          if (refs.description_label) {
+            refs.description_label.value = nextLabel;
+          }
           await saveItemSettings();
+          if (refs.description_text) {
+            refs.description_text.textContent = itemSettings.description_label || 'Description';
+          }
           bootstrap.Modal.getOrCreateInstance(document.getElementById('changeTextModal')).hide();
         } catch (error) {
           alert(error.message || 'Unable to save description label.');
@@ -1013,6 +1158,21 @@
           alert('Custom fields updated successfully.');
         } catch (error) {
           alert(error.message || 'Unable to save custom fields.');
+        }
+      });
+
+      document.getElementById('saveDefaultUnitBtn')?.addEventListener('click', async () => {
+        try {
+          itemSettings.default_unit_enabled = true;
+          itemSettings.default_unit_base = normalizeUnitValue(refs.default_unit_base?.value);
+          itemSettings.default_unit_secondary = normalizeUnitValue(refs.default_unit_secondary?.value);
+          itemSettings.default_unit_rate = Number(refs.default_unit_rate?.value || 0);
+          itemSettings.default_unit_label = 'Add Default Unit';
+          await saveItemSettings();
+          syncDefaultUnitLink();
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('defaultUnitModal')).hide();
+        } catch (error) {
+          alert(error.message || 'Unable to save default unit.');
         }
       });
 

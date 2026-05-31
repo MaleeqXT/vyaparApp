@@ -243,6 +243,7 @@ Route::get('/cheques/{cheque}/history',   [ChequeController::class, 'history']) 
     Route::get('settings/items', [SettingController::class, 'items'])->name('settings.items');
     Route::post('settings/items', [SettingController::class, 'updateItems'])->name('settings.items.update');
     Route::get('settings/parties', [SettingController::class, 'parties'])->name('settings.parties');
+    Route::get('settings/party-reminders', [SettingController::class, 'partyReminders'])->name('settings.party-reminders');
     Route::get('settings/transaction-messages', [SettingController::class, 'transactionMessages'])->name('settings.transaction-messages');
     Route::get('settings/print-layout', [SettingController::class, 'printLayout'])->name('settings.print-layout');
 

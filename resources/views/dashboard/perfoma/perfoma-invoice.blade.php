@@ -10,8 +10,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
+<link href="{{ asset('css/styles.css') }}" rel="stylesheet">
 <link href="{{ asset('css/sale.css') }}" rel="stylesheet">
+<link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <style>
   .custom-table thead th {
     font-size: 13px; color: #6c757d; font-weight: 500;
@@ -28,7 +29,23 @@
   .table-wrapper {
     overflow-x: auto; overflow-y: auto;
     max-height: 68vh; border: 1px solid #eef2f7; border-radius: 12px;
+    padding-bottom: 72px;
   }
+  .table-wrapper .dropdown-menu { z-index: 2000; max-height: 48vh; overflow-y: auto; }
+  .proforma-header-cell { min-width: 120px; position: relative; }
+  .proforma-header-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .proforma-filter-trigger {
+    border: 0; background: transparent; color: #adb5bd; padding: 0; line-height: 1; font-size: 12px; cursor: pointer;
+  }
+  .proforma-filter-trigger:hover,
+  .proforma-filter-trigger.active { color: #0d6efd; }
+  .proforma-filter-flyout {
+    position: fixed; z-index: 1060; width: 210px; padding: 8px; background: #fff;
+    border: 1px solid #dbe3ee; border-radius: 10px; box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+  }
+  .proforma-filter-flyout input { width: 100%; }
+  .proforma-filter-flyout .form-control { font-size: 13px; }
+  .proforma-filter-flyout .filter-clear { margin-top: 6px; }
  
 
 
@@ -135,27 +152,46 @@
               <p class="fw-bold mb-2">Transactions</p>
             </div>
             <div class="col-md-6">
-              <form method="GET" action="{{ route('proforma-invoice') }}" class="d-flex gap-2">
-                <input type="hidden" name="date_range" value="{{ $dateRange ?? 'all' }}">
-                <input type="hidden" name="party_id" value="{{ $partyId ?? 'all' }}">
-                <input type="text" class="form-control form-control-sm" placeholder="Search by Ref No. or Party Name..." name="search" value="{{ $search ?? '' }}" style="border-radius: 20px;">
-                <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius: 20px; white-space: nowrap;">
-                  <i class="fas fa-search"></i> Search
+              <div class="d-flex justify-content-end align-items-start gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle search-toggle-btn" id="proformaSearchToggle" title="Search">
+                  <i class="fas fa-search"></i>
                 </button>
-              </form>
+                <div class="{{ !empty($search) ? 'd-flex' : 'd-none' }} gap-2 align-items-center" id="proformaSearchForm">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    placeholder="Search by Ref No. or Party Name..."
+                    id="proformaSearchInput"
+                    value="{{ $search ?? '' }}"
+                    style="border-radius: 20px; min-width: 260px;"
+                  >
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="table-wrapper">
-  <table class="table align-middle custom-table mb-0">
+  <table id="proformaTable" class="table align-middle custom-table mb-0">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Reference no</th>
-                  <th>Party Name</th>
-                  <th>Amount</th>
-                  <th>Balance</th>
-                  <th>Status</th>
+                  <th class="proforma-header-cell">
+                    <div class="proforma-header-label"><span>Date</span><button type="button" class="proforma-filter-trigger" data-column="0" onclick="openProformaFilter(event, 0)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
+                  <th class="proforma-header-cell">
+                    <div class="proforma-header-label"><span>Reference no</span><button type="button" class="proforma-filter-trigger" data-column="1" onclick="openProformaFilter(event, 1)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
+                  <th class="proforma-header-cell">
+                    <div class="proforma-header-label"><span>Party Name</span><button type="button" class="proforma-filter-trigger" data-column="2" onclick="openProformaFilter(event, 2)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
+                  <th class="proforma-header-cell text-end">
+                    <div class="proforma-header-label"><span>Amount</span><button type="button" class="proforma-filter-trigger" data-column="3" onclick="openProformaFilter(event, 3)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
+                  <th class="proforma-header-cell text-end">
+                    <div class="proforma-header-label"><span>Balance</span><button type="button" class="proforma-filter-trigger" data-column="4" onclick="openProformaFilter(event, 4)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
+                  <th class="proforma-header-cell">
+                    <div class="proforma-header-label"><span>Status</span><button type="button" class="proforma-filter-trigger" data-column="5" onclick="openProformaFilter(event, 5)"><i class="fa-solid fa-filter"></i></button></div>
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -170,8 +206,8 @@
                     <td>{{ optional($proforma->invoice_date)->format('d/m/Y') ?? '-' }}</td>
                     <td>{{ $proforma->bill_number ?? '-' }}</td>
                     <td>{{ $proforma->display_party_name }}</td>
-                    <td>Rs {{ number_format($proforma->items->sum('amount'), 2) }}</td>
-                    <td>Rs {{ number_format($proforma->balance ?? $proforma->grand_total ?? 0, 2) }}</td>
+                    <td data-order="{{ number_format($proforma->items->sum('amount'), 2, '.', '') }}">Rs {{ number_format($proforma->items->sum('amount'), 2) }}</td>
+                    <td data-order="{{ number_format($proforma->balance ?? $proforma->grand_total ?? 0, 2, '.', '') }}">Rs {{ number_format($proforma->balance ?? $proforma->grand_total ?? 0, 2) }}</td>
                     <td>
                       <span class="badge {{ $isConverted ? 'text-primary bg-primary-subtle border border-primary-subtle' : 'bg-warning text-dark' }}">
                         @if($isConverted)
@@ -199,15 +235,20 @@
                           </li>
                         </ul>
                       </div>
-                      <div class="dropdown d-inline">
+                      <div class="dropdown d-inline proforma-action-menu"
+                           data-preview-url="{{ route('proforma-invoice.preview', $proforma->id) }}"
+                           data-pdf-url="{{ route('proforma-invoice.pdf', $proforma->id) }}"
+                           data-print-url="{{ route('proforma-invoice.print', $proforma->id) }}"
+                           data-duplicate-url="{{ route('proforma-invoice.duplicate', $proforma->id) }}">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                           <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="#" onclick="return transactionPasscodeNavigate('{{ route('proforma-invoice.edit', $proforma->id) }}');"><i class="fas fa-edit me-2"></i>View/Edit</a></li>
-                          <li><a class="dropdown-item" href="{{ route('proforma-invoice.react', $proforma->id) }}" target="_blank"><i class="fas fa-file-alt me-2"></i>Preview</a></li>
-                          <li><a class="dropdown-item" href="{{ route('proforma-invoice.print', $proforma->id) }}" target="_blank"><i class="fas fa-print me-2"></i>Print</a></li>
-                          <li><a class="dropdown-item" href="{{ route('proforma-invoice.duplicate', $proforma->id) }}"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                          <li><a class="dropdown-item" href="#" onclick="previewProforma(this); return false;"><i class="fas fa-file-alt me-2"></i>Preview</a></li>
+                          <li><a class="dropdown-item" href="#" onclick="openProformaPdf(this); return false;"><i class="fas fa-file-pdf me-2"></i>Open PDF</a></li>
+                          <li><a class="dropdown-item" href="#" onclick="printProforma(this); return false;"><i class="fas fa-print me-2"></i>Print</a></li>
+                          <li><a class="dropdown-item" href="#" onclick="duplicateProforma(this); return false;"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
                           <li><hr class="dropdown-divider"></li>
                           <li><a class="dropdown-item text-danger" href="#" onclick="return transactionPasscodeExecute('deleteProforma','{{ route('proforma-invoice.destroy', $proforma->id) }}');"><i class="fas fa-trash me-2"></i>Delete</a></li>
                         </ul>
@@ -216,7 +257,13 @@
                   </tr>
                 @empty
                   <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No proforma invoices yet.</td>
+                    <td class="text-center text-muted py-4">No proforma invoices yet.</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                   </tr>
                 @endforelse
               </tbody>
@@ -227,9 +274,30 @@
     </div>
   </main>
 
+  <div class="modal fade" id="proformaPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 1180px;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Preview</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0" style="min-height:72vh;">
+          <iframe id="proformaPreviewFrame" title="Proforma Preview" style="width:100%; min-height:72vh; border:0;"></iframe>
+        </div>
+        <div class="modal-footer justify-content-center gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="proformaPreviewOpenPdf">Open PDF</button>
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="proformaPreviewPrint">Print</button>
+          <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   @include('dashboard.partials.transaction-passcode-guard')
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
   <script src="{{ asset('js/components.js') }}"></script>
   <script src="{{ asset('js/common.js') }}"></script>
   <script>
@@ -256,6 +324,213 @@
           alert(error.message || 'Unable to delete proforma invoice.');
         });
     }
+  </script>
+  <script>
+    (function () {
+      let proformaState = {
+        table: null,
+        activeFilterColumn: null,
+      };
+      const proformaColumnFilters = {};
+      const proformaFilterFlyout = document.createElement('div');
+      proformaFilterFlyout.id = 'proformaFilterFlyout';
+      proformaFilterFlyout.className = 'proforma-filter-flyout d-none';
+      proformaFilterFlyout.setAttribute('aria-hidden', 'true');
+      proformaFilterFlyout.innerHTML = '<input id="proformaFilterInput" type="text" class="form-control form-control-sm" placeholder="Filter"><button type="button" class="btn btn-link btn-sm p-0 filter-clear" id="proformaFilterClear">Clear</button>';
+      document.body.appendChild(proformaFilterFlyout);
+
+      const proformaFilterInput = proformaFilterFlyout.querySelector('#proformaFilterInput');
+      const proformaFilterClear = proformaFilterFlyout.querySelector('#proformaFilterClear');
+      const proformaPreviewModalEl = document.getElementById('proformaPreviewModal');
+      const proformaPreviewModal = proformaPreviewModalEl ? bootstrap.Modal.getOrCreateInstance(proformaPreviewModalEl) : null;
+      const proformaPreviewFrame = document.getElementById('proformaPreviewFrame');
+      const proformaPreviewOpenPdf = document.getElementById('proformaPreviewOpenPdf');
+      const proformaPreviewPrint = document.getElementById('proformaPreviewPrint');
+      const proformaSearchToggle = document.getElementById('proformaSearchToggle');
+      const proformaSearchForm = document.getElementById('proformaSearchForm');
+      const proformaSearchInput = document.getElementById('proformaSearchInput');
+
+      function closeProformaFilters() {
+        document.querySelectorAll('.proforma-filter-trigger.active').forEach((btn) => btn.classList.remove('active'));
+        proformaState.activeFilterColumn = null;
+        proformaFilterFlyout.classList.add('d-none');
+        proformaFilterFlyout.setAttribute('aria-hidden', 'true');
+      }
+
+      window.openProformaFilter = function (event, columnIndex) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+        }
+        const trigger = event?.currentTarget || document.querySelector(`.proforma-filter-trigger[data-column="${columnIndex}"]`);
+        if (!trigger) return;
+        const rect = trigger.getBoundingClientRect();
+        closeProformaFilters();
+        trigger.classList.add('active');
+        proformaState.activeFilterColumn = Number(columnIndex);
+        proformaFilterInput.value = proformaColumnFilters[proformaState.activeFilterColumn] || '';
+        proformaFilterFlyout.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - 234))}px`;
+        proformaFilterFlyout.style.top = `${rect.bottom + 8}px`;
+        proformaFilterFlyout.classList.remove('d-none');
+        proformaFilterFlyout.setAttribute('aria-hidden', 'false');
+        proformaFilterInput.focus();
+        proformaFilterInput.select();
+      };
+
+      proformaFilterInput?.addEventListener('input', function () {
+        if (proformaState.activeFilterColumn === null || proformaState.activeFilterColumn === undefined) return;
+        proformaColumnFilters[proformaState.activeFilterColumn] = String(this.value || '');
+        proformaState.table?.draw();
+      });
+
+      proformaFilterClear?.addEventListener('click', function () {
+        if (proformaState.activeFilterColumn === null || proformaState.activeFilterColumn === undefined) return;
+        proformaColumnFilters[proformaState.activeFilterColumn] = '';
+        proformaFilterInput.value = '';
+        proformaState.table?.draw();
+      });
+
+      function resolveAction(trigger) {
+        const menu = trigger?.closest('.proforma-action-menu');
+        return {
+          previewUrl: menu?.dataset?.previewUrl || '',
+          pdfUrl: menu?.dataset?.pdfUrl || '',
+          printUrl: menu?.dataset?.printUrl || '',
+          duplicateUrl: menu?.dataset?.duplicateUrl || '',
+        };
+      }
+
+      window.previewProforma = function (trigger) {
+        const { previewUrl, pdfUrl, printUrl } = resolveAction(trigger);
+        if (!proformaPreviewModal || !proformaPreviewFrame) {
+          window.open(previewUrl || pdfUrl || printUrl, '_blank');
+          return;
+        }
+        proformaPreviewFrame.src = previewUrl || pdfUrl || printUrl;
+        proformaPreviewFrame.dataset.previewUrl = previewUrl || '';
+        proformaPreviewFrame.dataset.pdfUrl = pdfUrl || '';
+        proformaPreviewFrame.dataset.printUrl = printUrl || '';
+        proformaPreviewModal.show();
+      };
+
+      window.openProformaPdf = function (trigger) {
+        const { pdfUrl, previewUrl } = resolveAction(trigger);
+        window.open(pdfUrl || previewUrl, '_blank');
+      };
+
+      window.printProforma = function (trigger) {
+        const { printUrl, pdfUrl, previewUrl } = resolveAction(trigger);
+        window.open(printUrl || pdfUrl || previewUrl, '_blank');
+      };
+
+      window.duplicateProforma = function (trigger) {
+        const { duplicateUrl } = resolveAction(trigger);
+        if (duplicateUrl) {
+          window.location.href = duplicateUrl;
+        }
+      };
+
+      if (proformaPreviewOpenPdf) {
+        proformaPreviewOpenPdf.addEventListener('click', function () {
+          const url = proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.src || '';
+          if (url) window.open(url, '_blank');
+        });
+      }
+
+      if (proformaPreviewPrint) {
+        proformaPreviewPrint.addEventListener('click', function () {
+          const url = proformaPreviewFrame?.dataset?.printUrl || proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.src || '';
+          if (url) window.open(url, '_blank');
+        });
+      }
+
+      proformaSearchToggle?.addEventListener('click', function () {
+        if (!proformaSearchForm) return;
+        const isHidden = proformaSearchForm.classList.contains('d-none');
+        if (isHidden) {
+          proformaSearchForm.classList.remove('d-none');
+          proformaSearchInput?.focus();
+          proformaSearchInput?.select();
+        } else {
+          proformaSearchForm.classList.add('d-none');
+        }
+      });
+
+      proformaSearchInput?.addEventListener('input', function () {
+        proformaState.table?.search(this.value || '').draw();
+      });
+
+      $.fn.dataTable.ext.search.push(function (settings, data) {
+        if (!settings.nTable || settings.nTable.id !== 'proformaTable') {
+          return true;
+        }
+
+        const matchesColumns = Object.entries(proformaColumnFilters).every(([index, value]) => {
+          const normalized = String(value || '').trim().toLowerCase();
+          if (!normalized) return true;
+          return String(data[Number(index)] || '').trim().toLowerCase().includes(normalized);
+        });
+
+        return matchesColumns;
+      });
+
+      $(document).ready(function () {
+        proformaState.table = $('#proformaTable').DataTable({
+          pageLength: 10,
+          lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
+          order: [[0, 'desc']],
+          autoWidth: false,
+          scrollX: true,
+          responsive: false,
+          columnDefs: [{ orderable: false, searchable: false, targets: [6] }],
+          dom: '<"row mb-2 align-items-center"<"col-md-6"l><"col-md-6 text-end">>rt<"row mt-3 align-items-center"<"col-md-6"i><"col-md-6"p>>',
+          language: {
+            lengthMenu: 'Show _MENU_ proformas',
+            info: 'Showing _START_ to _END_ of _TOTAL_ proformas',
+            emptyTable: 'No proforma invoices found'
+          }
+        });
+
+        if (proformaSearchInput?.value) {
+          proformaState.table.search(proformaSearchInput.value).draw();
+        }
+
+        proformaState.table.draw();
+
+        document.querySelectorAll('.table-wrapper .dropdown').forEach(function (dropdown) {
+          dropdown.addEventListener('show.bs.dropdown', function () {
+            const wrapper = dropdown.closest('.table-wrapper');
+            const scrollBody = dropdown.closest('.dataTables_scrollBody');
+            if (wrapper) {
+              wrapper.dataset.prevOverflowY = wrapper.style.overflowY || '';
+              wrapper.style.overflowY = 'visible';
+            }
+            if (scrollBody) {
+              scrollBody.style.overflow = 'visible';
+            }
+          });
+
+          dropdown.addEventListener('hidden.bs.dropdown', function () {
+            const wrapper = dropdown.closest('.table-wrapper');
+            const scrollBody = dropdown.closest('.dataTables_scrollBody');
+            if (wrapper) {
+              wrapper.style.overflowY = wrapper.dataset.prevOverflowY || 'auto';
+              delete wrapper.dataset.prevOverflowY;
+            }
+            if (scrollBody) {
+              scrollBody.style.overflow = 'auto';
+            }
+          });
+        });
+
+        document.addEventListener('click', function (event) {
+          if (!event.target.closest('.proforma-filter-flyout') && !event.target.closest('.proforma-filter-trigger')) {
+            closeProformaFilters();
+          }
+        });
+      });
+    })();
   </script>
   <script>
   (function () {

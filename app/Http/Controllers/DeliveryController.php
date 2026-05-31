@@ -13,6 +13,7 @@ use App\Support\TransactionNumberPrefix;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Notifications\DeliveryChallanAssignedNotification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -200,12 +201,16 @@ class DeliveryController extends Controller
         return view('dashboard.delivery.challan-preview', ['sale' => $sale, 'autoPrint' => true]);
     }
 
-    public function pdf(Sale $sale)
+    public function pdf(Request $request, Sale $sale)
     {
         abort_unless($sale->type === 'delivery_challan', 404);
         $sale->load(['items', 'challanDetail']);
+        $pdf = Pdf::loadView('dashboard.delivery.challan-preview', ['sale' => $sale, 'pdfMode' => true])
+            ->setPaper('a4', 'portrait');
 
-        return view('dashboard.delivery.challan-preview', ['sale' => $sale, 'pdfMode' => true]);
+        $fileName = 'delivery-challan-' . ($sale->bill_number ?: $sale->id) . '.pdf';
+
+        return $pdf->download($fileName);
     }
 
     private function validateChallanRequest(Request $request): array

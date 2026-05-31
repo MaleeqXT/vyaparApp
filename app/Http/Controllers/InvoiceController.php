@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
+use App\Models\AppSetting;
 use App\Models\Broker;
 use App\Models\PaymentIn;
 use App\Models\Sale;
@@ -83,6 +84,7 @@ class InvoiceController extends Controller
         $sale->loadMissing(['items.item', 'party', 'payments.bankAccount']);
         $invoicePreviewData = $this->mapSaleToThemePreviewData($sale);
         $invoicePreviewData['title'] = 'Proforma Invoice';
+        $reactAssets = $this->resolveReactInvoiceAssets();
 
         return view('invoice.proforma', [
             'invoicePreviewData' => $invoicePreviewData,
@@ -94,6 +96,9 @@ class InvoiceController extends Controller
             'initialThermalThemeId' => (int) $request->query('theme_id', 1),
             'initialAccent' => (string) $request->query('accent', '#1f4e79'),
             'initialAccent2' => (string) $request->query('accent2', '#ff981f'),
+            'reactCss' => $reactAssets['css_url'],
+            'reactJs' => $reactAssets['js_url'],
+            'reactIsModule' => true,
         ]);
     }
 
@@ -262,7 +267,7 @@ class InvoiceController extends Controller
 
     private function mapSaleToThemePreviewData(Sale $sale): array
     {
-        $sale->loadMissing(['challanDetail', 'details', 'broker', 'party']);
+        $sale->loadMissing(['items.item', 'challanDetail', 'details', 'broker', 'party']);
         $bankAccount = $sale->payments
             ->pluck('bankAccount')
             ->filter()
@@ -280,6 +285,31 @@ class InvoiceController extends Controller
             $quantity = (float) ($item->quantity ?? 0);
             $rate = (float) ($item->unit_price ?? 0);
             $amount = (float) ($item->amount ?? 0);
+            $customFields = collect($item->item?->custom_fields ?? [])
+                ->map(function ($field) {
+                    if (is_array($field)) {
+                        return [
+                            'key' => (string) ($field['key'] ?? ''),
+                            'enabled' => (bool) ($field['enabled'] ?? true),
+                            'label' => trim((string) ($field['label'] ?? $field['name'] ?? '')),
+                            'show_in_print' => (bool) ($field['show_in_print'] ?? true),
+                            'value' => trim((string) ($field['value'] ?? $field['text'] ?? '')),
+                        ];
+                    }
+
+                    return [
+                        'key' => '',
+                        'enabled' => true,
+                        'label' => '',
+                        'show_in_print' => true,
+                        'value' => trim((string) $field),
+                    ];
+                })
+                ->filter(function (array $field) {
+                    return $field['enabled'] && $field['show_in_print'] && ($field['label'] !== '' || $field['value'] !== '');
+                })
+                ->values()
+                ->all();
 
             if ($amount <= 0 && $quantity > 0 && $rate > 0) {
                 $amount = round($quantity * $rate, 2);
@@ -297,6 +327,7 @@ class InvoiceController extends Controller
                 'disc' => number_format((float) ($item->discount ?? 0), 2, '.', ''),
                 'gst' => $taxPct,
                 'amt' => $amount,
+                'customFields' => $customFields,
                 'amount' => $amount,
             ];
         })->values()->all();
@@ -337,6 +368,29 @@ class InvoiceController extends Controller
         $receivedAmount = (float) ($sale->received_amount ?? 0);
         $receivedFromBalance = $totalAmount > 0 ? max($totalAmount - $storedBalance, 0) : 0;
         $receivedAmount = max($receivedAmount, $paymentsReceived, $receivedFromBalance);
+
+        $partyExtraFields = [];
+        foreach ([
+            [AppSetting::getValue('party_additional_field_1_name', ''), AppSetting::getValue('party_additional_field_1_print', '0') === '1'],
+            [AppSetting::getValue('party_additional_field_2_name', ''), AppSetting::getValue('party_additional_field_2_print', '0') === '1'],
+        ] as [$label, $showInPrint]) {
+            $label = trim((string) $label);
+            if ($label !== '' && $showInPrint) {
+                $partyExtraFields[] = $label;
+            }
+        }
+
+        $partyCustomFields = collect($sale->party?->custom_fields ?? [])
+            ->map(function ($field) {
+                if (is_array($field)) {
+                    $field = $field['label'] ?? $field['value'] ?? $field['name'] ?? '';
+                }
+
+                return trim((string) $field);
+            })
+            ->filter()
+            ->values()
+            ->all();
 
         $invoiceNumber = $sale->bill_number ?: $sale->id;
         if ($sale->type === 'delivery_challan' && $sale->challanDetail?->challan_number) {
@@ -391,6 +445,8 @@ class InvoiceController extends Controller
             'bankName' => (string) ($bankAccount?->bank_name ?: $bankAccount?->display_name ?: ''),
             'bankAccountNumber' => (string) ($bankAccount?->account_number ?: ''),
             'bankAccountHolder' => (string) ($bankAccount?->account_holder_name ?: ''),
+            'partyExtraFields' => $partyExtraFields,
+            'partyCustomFields' => $partyCustomFields,
             'brokerName' => (string) ($challanDetail?->broker_name ?: $transportBroker['name'] ?: $sale->broker?->name ?: ''),
             'brokerPhone' => (string) ($challanDetail?->broker_phone ?: $transportBroker['phone'] ?: $sale->broker?->phone ?: ''),
             'city' => $partyCity,

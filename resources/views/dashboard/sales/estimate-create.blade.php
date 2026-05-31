@@ -3154,12 +3154,16 @@ textarea.meta-control,
         window.editSaleData = @json($sale->load(['items', 'payments']));
 
     @elseif(isset($convertedSaleData))
-        // Convert from estimate / sale order / challan
+        // Convert from estimate / sale order / challan / proforma
         window.editSaleData = @json($convertedSaleData);
         window.sourceEstimateId = @json($convertedSaleData['source_estimate_id'] ?? null);
         window.sourceSaleOrderId = @json($convertedSaleData['source_sale_order_id'] ?? null);
         window.sourceChallanId = @json($convertedSaleData['source_challan_id'] ?? null);
         window.sourceProformaId = @json($convertedSaleData['source_proforma_id'] ?? null);
+    @elseif(isset($prefilledEstimateData))
+        // Duplicate estimate
+        window.editSaleData = @json($prefilledEstimateData);
+        window.sourceEstimateId = @json($prefilledEstimateData['source_estimate_id'] ?? null);
     @endif
 </script>
 

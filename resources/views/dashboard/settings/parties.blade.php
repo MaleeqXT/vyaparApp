@@ -54,7 +54,7 @@
           <div class="section__title">Party Settings</div>
 
           <label class="check-row">
-            <input type="checkbox" class="check-row__input" />
+            <input type="checkbox" class="check-row__input" id="partyGroupingSetting" data-setting-target="party_grouping" @checked($partySettings['party_grouping'] ?? true) />
             <span class="check-row__label">Party Grouping</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
@@ -64,70 +64,42 @@
 
 
           <label class="check-row">
-            <input type="checkbox" class="check-row__input" />
+            <input type="checkbox" class="check-row__input" id="shippingAddressSetting" data-setting-target="shipping_address" @checked($partySettings['shipping_address'] ?? true) />
             <span class="check-row__label">Shipping Address</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
 
           <label class="check-row">
-            <input type="checkbox" class="check-row__input" />
+            <input type="checkbox" class="check-row__input" id="printShippingAddressSetting" data-setting-target="print_shipping_address" @checked($partySettings['print_shipping_address'] ?? true) />
             <span class="check-row__label">Print Shipping Address</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
 
           <label class="check-row">
-            <input type="checkbox" class="check-row__input" />
+            <input type="checkbox" class="check-row__input" id="partyStatusSetting" data-setting-target="party_status" @checked($partySettings['party_status'] ?? true) />
             <span class="check-row__label">Manage Party Status</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
 
           <label class="check-row" style="cursor: pointer;">
-            <input type="checkbox" class="check-row__input" id="paymentReminderCheck" />
-            <span class="check-row__label">Enable Payment Remainder</span>
+            <input type="checkbox" class="check-row__input" id="paymentReminderCheck" data-setting-target="payment_reminder" @checked($partySettings['payment_reminder'] ?? true) />
+            <span class="check-row__label">Enable Payment Reminder</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
 
-          <div class="d-none ms-4" id="paymentReminderOptions">
+          <div class="{{ !empty($partySettings['payment_reminder']) ? 'd-flex' : 'd-none' }} ms-4" id="paymentReminderOptions">
             <div class="d-flex align-items-center">
               <p class="mb-0 text-secondary" style="font-size: 14px;">Remind me for payment due in <input type="number"
-                  value="1"
-                  style="width: 30px; border:none; border-bottom:1px solid black; background:transparent; text-align:center;">
+                  value="{{ $partySettings['payment_reminder_days'] ?? 2 }}"
+                  id="paymentReminderDays"
+                  style="width: 50px; border:none; border-bottom:1px solid black; background:transparent; text-align:center;">
                 days</p>
             </div>
           </div>
 
-          <!-- Button trigger modal -->
           <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#messageModal">
-            <span class="text-primary">Reminder messaga ></span>
+            <span class="text-primary">Reminder message ></span>
           </button>
-
-          <!-- Modal -->
-          <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h1 class="modal-title fs-5" id="messageModalLabel">Add/ Edit Remainder Message</h1>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <form action="" class="form-control">
-                    <p>Dear [Party Name],</p>
-                    <p>Your payment of [Amount] is pending with [Business Name]</p>
-                    <textarea name="" id="" class="form-contral" placeholder="Type Additional Message" cols="30"
-                      rows="10" style="width: 100%;"></textarea>
-                    <p>If you already have made the payment, kindly ignore this message</p>
-
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="reset" class="btn btn-primary">Reset Default</button>
-                  <button type="button" class="btn btn-primary">Save</button>
-                </div>
-                </form>
-              </div>
-            </div>
-          </div>
         </section>
 
 
@@ -174,14 +146,14 @@
           <!-- Row 1 -->
           <div class="additional-field-row" id="row-af-1">
             <div class="d-flex align-items-center mb-1">
-              <input class="form-check-input me-3 af-checkbox" type="checkbox" id="check-af-1" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-target="1">
+              <input class="form-check-input me-3 af-checkbox" type="checkbox" id="check-af-1" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-target="1" @checked($partySettings['additional_field_1'] ?? false)>
               <div class="input-wrapper w-100 disabled" id="wrapper-af-1">
-                <input type="text" class="form-control w-100" placeholder="Additional Field 1" id="input-af-1" disabled>
+                <input type="text" class="form-control w-100" placeholder="Additional Field 1" id="input-af-1" value="{{ $partySettings['additional_field_1_name'] ?? '' }}" disabled>
               </div>
             </div>
             <div class="toggle-wrapper disabled" id="toggle-wrapper-af-1">
               <div class="form-check form-switch mb-0 d-flex align-items-center">
-                <input class="form-check-input me-2 mt-0" type="checkbox" role="switch" id="toggle-af-1" disabled style="height: 18px; width: 36px; cursor:pointer;">
+                <input class="form-check-input me-2 mt-0" type="checkbox" role="switch" id="toggle-af-1" @checked($partySettings['additional_field_1_print'] ?? false) disabled style="height: 18px; width: 36px; cursor:pointer;">
                 <label class="form-check-label text-secondary mb-0" for="toggle-af-1" style="font-size: 14px; cursor: pointer;">Show In Print</label>
               </div>
             </div>
@@ -190,14 +162,14 @@
           <!-- Row 2 -->
           <div class="additional-field-row" id="row-af-2">
             <div class="d-flex align-items-center mb-1">
-              <input class="form-check-input me-3 af-checkbox" type="checkbox" id="check-af-2" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-target="2">
+              <input class="form-check-input me-3 af-checkbox" type="checkbox" id="check-af-2" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-target="2" @checked($partySettings['additional_field_2'] ?? false)>
               <div class="input-wrapper w-100 disabled" id="wrapper-af-2">
-                <input type="text" class="form-control w-100" placeholder="Additional Field 2" id="input-af-2" disabled>
+                <input type="text" class="form-control w-100" placeholder="Additional Field 2" id="input-af-2" value="{{ $partySettings['additional_field_2_name'] ?? '' }}" disabled>
               </div>
             </div>
             <div class="toggle-wrapper disabled" id="toggle-wrapper-af-2">
               <div class="form-check form-switch mb-0 d-flex align-items-center">
-                <input class="form-check-input me-2 mt-0" type="checkbox" role="switch" id="toggle-af-2" disabled style="height: 18px; width: 36px; cursor:pointer;">
+                <input class="form-check-input me-2 mt-0" type="checkbox" role="switch" id="toggle-af-2" @checked($partySettings['additional_field_2_print'] ?? false) disabled style="height: 18px; width: 36px; cursor:pointer;">
                 <label class="form-check-label text-secondary mb-0" for="toggle-af-2" style="font-size: 14px; cursor: pointer;">Show In Print</label>
               </div>
             </div>
@@ -237,8 +209,6 @@
             </div>
           </div>        </section>
 
-
-
         <!-- Column 3 (top): Backup & History -->
         <section class="section section--backup">
           <div class="section__title">Enable Loyalty Point</div>
@@ -254,6 +224,28 @@
 
       </div>
     </main>
+  </div>
+
+  <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="messageModalLabel">Add / Edit Reminder Message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="small text-muted mb-2">
+            Use placeholders: <code>[Party Name]</code>, <code>[Amount]</code>, <code>[Business Name]</code>, <code>[Due Days]</code>
+          </div>
+          <textarea id="paymentReminderMessageInput" class="form-control" rows="10" style="min-height: 260px; white-space: pre-wrap;">{{ $partySettings['payment_reminder_message'] ?? "Dear [Party Name],\n\nYour payment of [Amount] is pending with [Business Name].\n\n[Additional Message]\n\nIf you already have made the payment, kindly ignore this message." }}</textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-outline-primary" id="paymentReminderResetBtn">Reset Default</button>
+          <button type="button" class="btn btn-primary" id="paymentReminderSaveBtn" data-bs-dismiss="modal">Save</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal -->
@@ -454,11 +446,26 @@
       // Payment Reminder Logic
       const paymentReminderCheck = document.getElementById('paymentReminderCheck');
       const paymentReminderOptions = document.getElementById('paymentReminderOptions');
+      const paymentReminderMessageInput = document.getElementById('paymentReminderMessageInput');
+      const paymentReminderSaveBtn = document.getElementById('paymentReminderSaveBtn');
+      const paymentReminderResetBtn = document.getElementById('paymentReminderResetBtn');
+      const defaultPaymentReminderMessage = @json($partySettings['payment_reminder_message'] ?? "Dear [Party Name],\n\nYour payment of [Amount] is pending with [Business Name].\n\n[Additional Message]\n\nIf you already have made the payment, kindly ignore this message.");
       if (paymentReminderCheck && paymentReminderOptions) {
         paymentReminderCheck.addEventListener('change', (e) => {
           paymentReminderOptions.classList.toggle('d-none', !e.target.checked);
           if (e.target.checked) paymentReminderOptions.classList.add('d-flex');
           else paymentReminderOptions.classList.remove('d-flex');
+        });
+      }
+      if (paymentReminderSaveBtn && paymentReminderMessageInput) {
+        paymentReminderSaveBtn.addEventListener('click', () => {
+          savePartySettings();
+        });
+      }
+      if (paymentReminderResetBtn && paymentReminderMessageInput) {
+        paymentReminderResetBtn.addEventListener('click', () => {
+          paymentReminderMessageInput.value = defaultPaymentReminderMessage;
+          savePartySettings();
         });
       }
 
@@ -537,6 +544,47 @@
           }
         });
       });
+
+      const settingsPayload = () => ({
+        party_grouping: document.getElementById('partyGroupingSetting')?.checked || false,
+        shipping_address: document.getElementById('shippingAddressSetting')?.checked || false,
+        print_shipping_address: document.getElementById('printShippingAddressSetting')?.checked || false,
+        party_status: document.getElementById('partyStatusSetting')?.checked || false,
+        payment_reminder: document.getElementById('paymentReminderCheck')?.checked || false,
+        payment_reminder_days: Number(document.getElementById('paymentReminderDays')?.value || 2),
+        payment_reminder_message: document.getElementById('paymentReminderMessageInput')?.value || defaultPaymentReminderMessage,
+        additional_field_1: document.getElementById('check-af-1')?.checked || false,
+        additional_field_1_name: document.getElementById('input-af-1')?.value || '',
+        additional_field_1_print: document.getElementById('toggle-af-1')?.checked || false,
+        additional_field_2: document.getElementById('check-af-2')?.checked || false,
+        additional_field_2_name: document.getElementById('input-af-2')?.value || '',
+        additional_field_2_print: document.getElementById('toggle-af-2')?.checked || false,
+      });
+
+      let saveTimer = null;
+      const savePartySettings = () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          fetch('{{ route('parties.settings.update') }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(settingsPayload())
+          }).catch(() => {});
+        }, 200);
+      };
+
+      document.querySelectorAll('#partyGroupingSetting,#shippingAddressSetting,#printShippingAddressSetting,#partyStatusSetting,#paymentReminderCheck,#check-af-1,#check-af-2,#toggle-af-1,#toggle-af-2,#paymentReminderMessageInput').forEach((el) => {
+        el?.addEventListener('change', savePartySettings);
+      });
+      ['paymentReminderDays','input-af-1','input-af-2'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('input', savePartySettings);
+      });
+      paymentReminderMessageInput?.addEventListener('input', savePartySettings);
     })();
   </script>
 </body>

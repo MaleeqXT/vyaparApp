@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\Warehouse;
 use App\Models\AppSetting;
 use App\Support\TransactionNumberPrefix;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -215,8 +216,12 @@ class PerfomaController extends Controller
     {
         abort_unless($sale->type === 'proforma', 404);
         $sale->load(['items', 'party']);
+        $pdf = Pdf::loadView('dashboard.perfoma.proforma-preview', ['sale' => $sale, 'pdfMode' => true])
+            ->setPaper('a4', 'portrait');
 
-        return view('dashboard.perfoma.proforma-preview', ['sale' => $sale, 'pdfMode' => true]);
+        $fileName = 'proforma-' . ($sale->bill_number ?: $sale->id) . '.pdf';
+
+        return $pdf->download($fileName);
     }
 
     private function renderProformaForm(?Sale $proforma = null, ?Sale $duplicateProforma = null)

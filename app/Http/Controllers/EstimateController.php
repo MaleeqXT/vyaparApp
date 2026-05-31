@@ -79,6 +79,7 @@ class EstimateController extends Controller
                 ->where('type', 'estimate')
                 ->findOrFail($request->integer('duplicate_sale_id'));
             $prefilledEstimateData = $sourceEstimate->toArray();
+            $prefilledEstimateData['source_estimate_id'] = $sourceEstimate->id;
             $prefilledEstimateData['bill_number'] = $nextInvoiceNumber;
             $prefilledEstimateData['invoice_date'] = now()->toDateString();
             $prefilledEstimateData['due_date'] = $sourceEstimate->due_date?->format('Y-m-d') ?: now()->toDateString();

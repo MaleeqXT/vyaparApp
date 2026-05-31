@@ -551,6 +551,9 @@ function initializeForm(context) {
     let currentSaleAdditionalCharges = {};
     let currentTransportationDetails = {};
 
+    // Define isQuickEntryEnabled early so it's available for addRow()
+    const isQuickEntryEnabled = () => !!(saleFormSettings.quick_entry || saleFormSettings.more_transaction_features?.quick_entry);
+
     const getAdditionalChargeFieldKey = (key = '') => `charge_${String(key || '').trim().toLowerCase()}`;
 
     const parseTaxRateValue = (label = '') => {
@@ -2091,7 +2094,7 @@ if (!window.editSaleData) {
         if (brokerageType === 'full' || brokerageType === 'half') {
             $brokerageRate.val(rateValue);
         } else if (brokerageType === 'broker_rate' || brokerageType === 'per_kg' || brokerageType === 'custom_pct') {
-            if ($brokerageRate.val().trim() !== '' || rawRate > 0) {
+            if (String($brokerageRate.val() || '').trim() !== '' || rawRate > 0) {
                 $brokerageRate.val(rateValue);
             }
         } else if (brokerageType === 'fixed_rs') {
@@ -2330,11 +2333,22 @@ if (!window.editSaleData) {
         (sale.items || []).forEach(item => {
             addRow();
             const $row = $ctx.find('.item-rows tr').last();
-            const matchOption = $row.find('.item-name option').filter(function () {
+            let matchOption = $row.find('.item-name option').filter(function () {
                 return ($(this).data('label') || $(this).text().trim()) === (item.item_name || '');
             }).first();
+
+            if (!matchOption.length && item.item_id) {
+                matchOption = $row.find('.item-name option').filter(function () {
+                    return String($(this).val()) === String(item.item_id || '');
+                }).first();
+            }
+
             if (matchOption.length) {
                 matchOption.prop('selected', true);
+                $row.find('.item-name').val(matchOption.val()).trigger('change');
+            } else {
+                $row.attr('data-temp-item-name', item.item_name || '');
+                $row.attr('data-temp-item-id', item.item_id || '');
             }
 
             syncRowCategoryOptions($row, item.item_category || '');
@@ -2656,8 +2670,6 @@ if (!window.editSaleData) {
         refreshQuickEntryUi();
         calculateTotals();
     }
-
-    const isQuickEntryEnabled = () => !!(saleFormSettings.quick_entry || saleFormSettings.more_transaction_features?.quick_entry);
 
     function renumberItemRows() {
         $ctx.find('.item-row').each(function(index) {
@@ -3018,7 +3030,7 @@ if (!window.editSaleData) {
 
     $(document).on('click', '#assignItemCodeBtn', function(e) {
         e.preventDefault();
-        const itemName = $('#newItemName').val().trim();
+        const itemName = String($('#newItemName').val() || '').trim();
         const normalized = itemName.toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9-_]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').substring(0, 24);
         const suffix = String(Math.floor(1000 + Math.random() * 9000));
         const code = normalized ? `${normalized}-${suffix}`.substring(0, 50) : `ITEM-${suffix}`;
@@ -3179,7 +3191,7 @@ if (!window.editSaleData) {
     });
 
     $(document).off('click', '#saveQuickCategoryBtn').on('click', '#saveQuickCategoryBtn', function() {
-        const name = $('#quickCategoryName').val().trim();
+        const name = String($('#quickCategoryName').val() || '').trim();
         if (!name) {
             alert('Please enter a category name');
             return;
@@ -3216,8 +3228,8 @@ if (!window.editSaleData) {
     });
 
     $(document).off('click', '#saveQuickUnitBtn').on('click', '#saveQuickUnitBtn', function() {
-        const name = $('#quickUnitName').val().trim();
-        const shortName = $('#quickUnitShortName').val().trim().toUpperCase();
+        const name = String($('#quickUnitName').val() || '').trim();
+        const shortName = String($('#quickUnitShortName').val() || '').trim().toUpperCase();
 
         if (!name || !shortName) {
             alert('Please enter both unit name and short name');
@@ -3515,7 +3527,12 @@ if (!window.editSaleData) {
         });
 
         if (invalidItemRow || !saleData.items.length) {
-            showToast('Please select at least one item before saving.', true);
+            const itemsCount = $ctx.find('.item-row').length;
+            if (itemsCount > 0) {
+                showToast('Please select items or fill in item details before saving.', true);
+            } else {
+                showToast('Please select at least one item before saving.', true);
+            }
             return false;
         }
 
@@ -3587,9 +3604,11 @@ if (!window.editSaleData) {
     function gatherSaleData() {
         const items = Array.from($ctx.find('.item-row')).map(row => {
             const $row = $(row);
-           // REPLACE WITH:
-const $selectedOption = $row.find('.item-name option:selected');
-const itemName = String($selectedOption.data('label') || $selectedOption.text() || '').trim();
+            const $selectedOption = $row.find('.item-name option:selected');
+            let itemName = String($selectedOption.data('label') || $selectedOption.text() || '').trim();
+            if (!itemName) {
+                itemName = String($row.attr('data-temp-item-name') || '').trim();
+            }
             return {
                 item_name: itemName,
                 item_category: $row.find('.item-category').val() || '',
@@ -3623,7 +3642,11 @@ const itemName = String($selectedOption.data('label') || $selectedOption.text() 
                     custom_field_6: $row.find('.item-custom-field-6-input').val() || ''
                 }
             };
-        }).filter(item => item.item_name && String(item.item_name).trim() !== '');
+        }).filter(item => {
+            const hasName = item.item_name && String(item.item_name).trim() !== '';
+            const hasQtyOrRate = item.quantity > 0 || item.unit_price > 0 || item.amount > 0;
+            return hasName || hasQtyOrRate;
+        });
 
         const payments = [];
         const $marketRow = $ctx.find('.item-row').first();
@@ -3690,7 +3713,7 @@ const itemName = String($selectedOption.data('label') || $selectedOption.text() 
             brokerage_type: $ctx.find('.brokerage-type').val() || null,
             brokerage_rate: parseFloat($ctx.find('.brokerage-base-amount').val() || $ctx.find('.brokerage-rate').val() || 0) || 0,
             broker_amount: parseFloat($ctx.find('.brokerage-amount').val() || 0) || 0,
-           party_name: $ctx.find('.billing-name-input').val().trim() || getPartyDropdownDisplay() || $ctx.find('.party-select option:selected').text() || '',
+            party_name: String($ctx.find('.billing-name-input').val() || '').trim() || getPartyDropdownDisplay() || $ctx.find('.party-select option:selected').text() || '',
             phone: document.getElementById('pscPhone')?.value || $ctx.find('.phone-input').val() || '',
             warehouse_id: $ctx.find('.warehouse-select').val() || null,
             delivery_person: $ctx.find('.delivery-person-input').val() || '',

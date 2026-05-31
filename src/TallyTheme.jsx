@@ -20,6 +20,9 @@ const TallyTheme = ({ businessInfo, invoiceData, onCompanyClick, signature, onSi
   const amountInWords = view.amountInWords
   const isDeliveryChallan = String(view.documentType || view.title || '').toLowerCase().includes('delivery_challan')
     || String(view.title || '').toLowerCase().includes('delivery challan')
+  const partyCustomFields = Array.isArray(view.partyCustomFields) ? view.partyCustomFields.filter(Boolean) : []
+  const partyExtraFields = Array.isArray(view.partyExtraFields) ? view.partyExtraFields.filter(Boolean) : []
+  const partyAdditionalFields = Array.from(new Set([...partyCustomFields, ...partyExtraFields]))
   const formatCurrency = (value) => `Rs ${Number(value || 0).toFixed(2)}`
 
   return (
@@ -78,6 +81,17 @@ const TallyTheme = ({ businessInfo, invoiceData, onCompanyClick, signature, onSi
             <p>No: <strong>{invoiceNo}</strong></p>
             <p>Date: <strong>{invoiceDate}</strong></p>
             {invoiceData?.referenceNo ? <p>Ref: <strong>{invoiceData.referenceNo}</strong></p> : null}
+          </div>
+        </div>
+      )}
+
+      {partyAdditionalFields.length > 0 && (
+        <div className="tally-party-fields">
+          <div className="tally-party-field-group">
+            <p className="tally-label">Additional Fields</p>
+            {partyAdditionalFields.map((field, index) => (
+              <p key={`party-additional-${index}`} className="tally-party-field-item">{field}</p>
+            ))}
           </div>
         </div>
       )}
