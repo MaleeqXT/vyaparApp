@@ -1,5 +1,53 @@
 @php
 $invoice=$invoicePreviewData??[];$theme=$themeConfig??['mode'=>'regular','variant'=>'classicA','name'=>'Telly Theme'];$variant=$theme['variant']??'classicA';$accent=$accent??'#1f4e79';$accent2=$accent2??'#ff981f';$items=collect($invoice['items']??[])->values()->all();$subtotal=(float)($invoice['subtotal']??collect($items)->sum('amt'));$discount=(float)($invoice['discount']??0);$tax=(float)($invoice['taxAmount']??0);$total=(float)($invoice['total']??max($subtotal+$tax-$discount,0));$received=(float)($invoice['received']??0);$balance=(float)($invoice['balance']??max($total-$received,0));$totalQty=collect($items)->sum(fn($item)=>(float)($item['qty']??0));$title=$invoice['title']??'Invoice';$isThermal=($theme['mode']??'regular')==='thermal';$isDoubleDivine=$variant==='doubleDivine';$isFrenchElite=$variant==='frenchElite';$isPurple=in_array($variant,['purpleA','purpleB','purpleC','taxTheme6','theme2'],true);$isModern=in_array($variant,['modernPurple','theme3'],true);$isSaleClassic=in_array($variant,['classicSale','theme4'],true);
+$renderItemCell = function (array $item): string {
+    $name = e($item['name'] ?? '');
+    $summary = trim((string) ($item['customFieldSummary'] ?? ''));
+    $fields = is_array($item['customFields'] ?? null) ? ($item['customFields'] ?? []) : (is_array($item['custom_fields'] ?? null) ? ($item['custom_fields'] ?? []) : []);
+    $lines = [];
+
+    if ($summary !== '') {
+        foreach (explode('|', $summary) as $line) {
+            $clean = trim((string) $line);
+            if ($clean !== '') {
+                $lines[] = e($clean);
+            }
+        }
+    } else {
+        foreach ($fields as $field) {
+            if (!is_array($field)) {
+                $value = trim((string) $field);
+                if ($value !== '') {
+                    $lines[] = e($value);
+                }
+                continue;
+            }
+
+            $enabled = array_key_exists('enabled', $field) ? (bool) $field['enabled'] : true;
+            $showInPrint = array_key_exists('show_in_print', $field) ? (bool) $field['show_in_print'] : true;
+            if (! $enabled || ! $showInPrint) {
+                continue;
+            }
+
+            $label = trim((string) ($field['label'] ?? $field['name'] ?? ''));
+            $value = trim((string) ($field['value'] ?? $field['text'] ?? ''));
+            if ($label !== '' || $value !== '') {
+                $lines[] = e(trim($label . ($label !== '' && $value !== '' ? ': ' : '') . $value));
+            }
+        }
+    }
+
+    $output = '<strong>' . $name . '</strong>';
+    if (!empty($lines)) {
+        $output .= '<div style="margin-top:2px;font-size:9px;line-height:1.2;color:#4b5563;">';
+        foreach ($lines as $line) {
+            $output .= '<div>' . $line . '</div>';
+        }
+        $output .= '</div>';
+    }
+
+    return $output;
+};
 @endphp
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>{{ $invoice['invoiceNo'] ?? 'Invoice' }}</title>
 <style>
@@ -12,7 +60,7 @@ body{display:flex;justify-content:center;align-items:flex-start}
 </style></head><body><div class="doc-wrap">
 @if($isThermal)
 <div class="thermal"><div class="thermal-title">{{ $invoice['businessName'] ?? 'My Company' }}</div><div class="text-center">{{ $invoice['phone'] ?? '' }}</div><div class="thermal-line"></div><div><strong>{{ $title }}</strong></div><div>Invoice No: {{ $invoice['invoiceNo'] ?? '' }}</div><div>Date: {{ $invoice['date'] ?? '' }}</div><div>Party: {{ $invoice['billTo'] ?? '' }}</div><div class="thermal-line"></div><table class="thermal-table"><thead><tr><th>#</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">Amt</th></tr></thead><tbody>@foreach($items as $index=>$item)
-<tr><td>{{ $index+1 }}</td><td>{{ $item['name'] ?? '' }}</td><td class="text-right">{{ $item['qty'] ?? '' }}</td><td class="text-right">{{ number_format((float)($item['amt'] ?? 0),2) }}</td></tr>
+<tr><td>{{ $index+1 }}</td><td>{!! $renderItemCell($item) !!}</td><td class="text-right">{{ $item['qty'] ?? '' }}</td><td class="text-right">{{ number_format((float)($item['amt'] ?? 0),2) }}</td></tr>
 @endforeach</tbody></table><div class="thermal-line"></div><div class="text-right"><strong>Total: {{ number_format($total,2) }}</strong></div><div class="text-right">Received: {{ number_format($received,2) }}</div><div class="text-right">Balance: {{ number_format($balance,2) }}</div></div>
 @elseif($isDoubleDivine)
 <div class="doc"><table class="double-head mb-16"><tr><td class="double-left"><div class="double-logo">LOGO</div><div class="double-company">{{ $invoice['businessName'] ?? 'My Company' }}</div></td><td class="double-right">{{ $invoice['phone'] ?? '' }}</td></tr></table><table class="grid-2 mb-16"><tr><td><div class="box"><div class="section-head" style="color:{{ $accent2 }}">Bill To</div><div style="font-size:18px;font-weight:700">{{ $invoice['billTo'] ?? '' }}</div><div>{{ $invoice['billAddress'] ?? '' }}</div><div>Contact No: {{ $invoice['billPhone'] ?? '' }}</div></div></td><td><div class="box"><div class="double-title">Invoice</div><table class="double-meta-table"><tr><td><strong>Invoice No.</strong></td><td class="text-right">{{ $invoice['invoiceNo'] ?? '' }}</td></tr><tr><td><strong>Date</strong></td><td class="text-right">{{ $invoice['date'] ?? '' }}</td></tr></table></div></td></tr></table>
@@ -74,7 +122,7 @@ body{display:flex;justify-content:center;align-items:flex-start}
 </tr></thead><tbody>
 @foreach($items as $index=>$item)
 
-<tr><td>{{ $index+1 }}</td><td>{{ $item['name'] ?? '' }}</td>
+<tr><td>{{ $index+1 }}</td><td>{!! $renderItemCell($item) !!}</td>
 @if(!$isDoubleDivine && !$showClassicSimpleTable)<td>{{ $item['hsn'] ?? '' }}</td>@endif
 <td class="text-right">{{ $item['qty'] ?? '' }}</td>
 @if($showUnitColumn)<td>{{ $item['unit'] ?? '' }}</td>@endif
@@ -126,5 +174,11 @@ body{display:flex;justify-content:center;align-items:flex-start}
 @endif
 @if(!$isThermal)<div class="footer-note">This is a computer generated invoice.</div>@endif
 </div>
+@if(!empty($autoPrint))
+<script>
+window.addEventListener('load', function () {
+    window.print();
+});
+</script>
+@endif
 </body></html>
-

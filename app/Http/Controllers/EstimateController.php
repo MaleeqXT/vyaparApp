@@ -156,6 +156,7 @@ return view('dashboard.sales.estimate-create', compact(
                 'balance'         => $data['grand_total'] ?? 0,
                 'status'          => $data['status'] ?? 'open',
                 'description'     => $data['description'] ?? null,
+                'invoice_theme'   => $data['invoice_theme'] ?? $this->defaultInvoiceTheme(),
             ]);
 
             foreach ($data['items'] as $item) {
@@ -191,5 +192,16 @@ return view('dashboard.sales.estimate-create', compact(
         $sale->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    private function defaultInvoiceTheme(): array
+    {
+        return [
+            'mode' => 'regular',
+            'regularThemeId' => 1,
+            'thermalThemeId' => 1,
+            'accent' => '#1f4e79',
+            'accent2' => '#ff981f',
+        ];
     }
 }

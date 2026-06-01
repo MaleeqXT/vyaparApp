@@ -15,6 +15,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Font Awesome 6 -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
   <!-- Custom Styles -->
   <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
   <style>
@@ -33,6 +35,21 @@
   .table-wrapper {
     overflow-x: auto; overflow-y: auto;
     max-height: 68vh; border: 1px solid #eef2f7; border-radius: 12px;
+  }
+  .table-wrapper.dropdown-overflow-visible {
+    overflow: visible !important;
+  }
+  #paymentInTable_wrapper .dataTables_length,
+  #paymentInTable_wrapper .dataTables_filter {
+    display: none !important;
+  }
+  .payment-filter-dropdown {
+    min-width: 220px;
+    padding: 12px;
+  }
+  .payment-filter-dropdown .form-control,
+  .payment-filter-dropdown .form-select {
+    min-width: 180px;
   }
   @media (max-width: 991px) {
     .table-wrapper { max-height: none; border-radius: 8px; }
@@ -599,7 +616,7 @@
         </div>
       </div>
       <div class="modal-footer border-0 pt-0">
-        <button type="button" class="btn text-white px-4 rounded-pill" style="background:#f43f5e;" id="confirmPaymentInPrint">Get Print</button>
+        <button type="button" class="btn text-white px-4 rounded-pill" style="background:#f43f5e;" id="confirmPaymentInPrint" onclick="window.confirmPaymentInReport && window.confirmPaymentInReport(); return false;">Get Print</button>
       </div>
     </div>
   </div>
@@ -683,10 +700,10 @@
               </span>
             </div>
             <div class="mt-1 pt-1 ms-3 d-flex align-items-center">
-              <button type="button" id="exportPaymentInExcel" class="btn p-0 mx-3 fs-4 text-secondary border-0 bg-transparent" title="Export Excel">
+              <button type="button" id="exportPaymentInExcel" class="btn p-0 mx-3 fs-4 text-secondary border-0 bg-transparent" title="Export Excel" onclick="window.openPaymentInExportModal && window.openPaymentInExportModal('excel')">
                 <i class="fas fa-file-excel"></i>
               </button>
-              <button type="button" id="printPaymentInTable" class="btn p-0 mx-3 fs-4 text-secondary border-0 bg-transparent" title="Print Table">
+              <button type="button" id="printPaymentInTable" class="btn p-0 mx-3 fs-4 text-secondary border-0 bg-transparent" title="Print Table" onclick="window.openPaymentInExportModal && window.openPaymentInExportModal('print')">
                 <i class="fas fa-print"></i>
               </button>
             </div>
@@ -696,7 +713,7 @@
         </div>
 
         <div class="table-responsive" id="paymentInTableWrap">
-          <table class="table table-hover mb-0 align-middle" id="paymentInTable">
+          <table class="table table-hover mb-0 align-middle custom-table" id="paymentInTable">
             <thead class="table-light">
               <tr>
                 <th style="width: 12%;">
@@ -706,9 +723,9 @@
                       <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-filter"></i>
                       </button>
-                      <ul class="dropdown-menu">
+                      <ul class="dropdown-menu payment-filter-dropdown">
                         <li class="dropdown-item">
-                          <input type="date" class="form-control form-control-sm" style="outline:none;">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="0" placeholder="Search date...">
                         </li>
                       </ul>
                     </div>
@@ -721,9 +738,9 @@
                       <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-filter"></i>
                       </button>
-                      <ul class="dropdown-menu">
+                      <ul class="dropdown-menu payment-filter-dropdown">
                         <li class="dropdown-item">
-                          <input type="text" class="form-control form-control-sm" placeholder="Search...">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="1" placeholder="Search reference...">
                         </li>
                       </ul>
                     </div>
@@ -736,9 +753,9 @@
                       <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-filter"></i>
                       </button>
-                      <ul class="dropdown-menu">
+                      <ul class="dropdown-menu payment-filter-dropdown">
                         <li class="dropdown-item">
-                          <input type="text" class="form-control form-control-sm" placeholder="Search...">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="2" placeholder="Search party...">
                         </li>
                       </ul>
                     </div>
@@ -751,17 +768,42 @@
                       <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-filter"></i>
                       </button>
+                      <ul class="dropdown-menu payment-filter-dropdown">
+                        <li class="dropdown-item">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="3" placeholder="Search amount...">
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </th>
                 <th style="width: 14%;">
                   <div class="d-flex align-items-center justify-content-between">
                     <span>Bank Account</span>
+                    <div class="dropdown">
+                      <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-filter"></i>
+                      </button>
+                      <ul class="dropdown-menu payment-filter-dropdown">
+                        <li class="dropdown-item">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="4" placeholder="Search bank...">
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </th>
                 <th style="width: 14%;">
                   <div class="d-flex align-items-center justify-content-between">
                     <span>Payment Type</span>
+                    <div class="dropdown">
+                      <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-filter"></i>
+                      </button>
+                      <ul class="dropdown-menu payment-filter-dropdown">
+                        <li class="dropdown-item">
+                          <input type="text" class="form-control form-control-sm payment-column-filter" data-column="5" placeholder="Search type...">
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </th>
                 <th style="width: 14%; text-align: center;">Actions</th>
@@ -769,7 +811,7 @@
             </thead>
             <tbody>
               @forelse($paymentIns as $paymentIn)
-                <tr class="payment-in-row">
+                <tr class="payment-in-row" data-edit-url="{{ route('payments-in.edit', $paymentIn) }}">
                   <td>{{ $paymentIn->date ? \Carbon\Carbon::parse($paymentIn->date)->format('d-m-Y') : '-' }}</td>
                   <td><span class="badge bg-light text-dark">{{ $paymentIn->reference_no ?: '-' }}</span></td>
                   <td><strong>{{ $paymentIn->party?->name ?: '-' }}</strong></td>
@@ -784,8 +826,9 @@
                       <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{{ route('invoice', ['payment_in' => $paymentIn->id]) }}"><i class="fa-solid fa-eye me-2"></i>Open</a></li>
                         <li><a class="dropdown-item" href="{{ route('payments-in.edit', $paymentIn) }}"><i class="fa-solid fa-pen-to-square me-2"></i>Edit</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="openPaymentInPdf('{{ route('invoice.payment-in', ['payment_in' => $paymentIn->id]) }}'); return false;"><i class="fa-solid fa-file-pdf me-2"></i>Open PDF</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="openPaymentInPdf('{{ route('invoice.payment-in', ['payment_in' => $paymentIn->id]) }}'); return false;"><i class="fa-solid fa-print me-2"></i>Print</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payments-in.duplicate', $paymentIn) }}"><i class="fa-solid fa-copy me-2"></i>Duplicate</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openPaymentInPdf('{{ route('payments-in.pdf', $paymentIn) }}'); return false;"><i class="fa-solid fa-file-pdf me-2"></i>Open PDF</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payments-in.print', $paymentIn) }}" target="_blank"><i class="fa-solid fa-print me-2"></i>Print</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="viewPaymentHistory({{ $paymentIn->id }})"><i class="fa-solid fa-history me-2"></i>View History</a></li>
                         <li>
@@ -800,12 +843,6 @@
                   </td>
                 </tr>
               @empty
-                <tr>
-                  <td colspan="7" class="text-center text-muted py-4">
-                    <i class="fa-solid fa-inbox fa-2x mb-3 d-block opacity-50"></i>
-                    <strong>No payment in records yet.</strong> Click "Add Payment-in" to create one.
-                  </td>
-                </tr>
               @endforelse
             </tbody>
           </table>
@@ -1108,6 +1145,9 @@
      ═══════════════════════════════════════════ -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
   <script>
     window.bankAccounts = @json($bankAccounts ?? []);
     window.bankAccountRoutes = {
@@ -1204,69 +1244,108 @@
         $customDateRange.toggleClass("d-none", !isCustom).toggleClass("d-flex", isCustom);
       }
 
-      function applyPaymentInFilters() {
-        $("#paymentInTable tbody tr.payment-in-row").each(function () {
-          const $row = $(this);
-          const rowText = $row.text().toLowerCase().replace(/\s+/g, " ").trim();
-          const partyName = $row.find("td").eq(2).text().trim().toLowerCase();
-          const rowDateText = $row.find("td").eq(0).text().trim();
-          const rowDate = parseRowDate(rowDateText);
+      function rowMatchesPaymentInFilters(rowNode) {
+        if (!rowNode) return true;
 
-          let visible = true;
+        const $row = $(rowNode);
+        const rowText = $row.text().toLowerCase().replace(/\s+/g, " ").trim();
+        const partyName = $row.find("td").eq(2).text().trim().toLowerCase();
+        const rowDateText = $row.find("td").eq(0).text().trim();
+        const rowDate = parseRowDate(rowDateText);
 
-          if (globalSearch && !rowText.includes(globalSearch)) {
-            visible = false;
+        let visible = true;
+
+        if (paymentInFilterState.globalSearch && !rowText.includes(paymentInFilterState.globalSearch)) {
+          visible = false;
+        }
+
+        if (visible && paymentInFilterState.firmFilter && partyName !== paymentInFilterState.firmFilter.toLowerCase()) {
+          visible = false;
+        }
+
+        if (visible && paymentInFilterState.periodFilter !== "all") {
+          let rangeStart = null;
+          let rangeEnd = null;
+
+          if (paymentInFilterState.periodFilter === "custom") {
+            rangeStart = paymentInFilterState.customFrom ? new Date(paymentInFilterState.customFrom) : null;
+            rangeEnd = paymentInFilterState.customTo ? new Date(paymentInFilterState.customTo) : null;
+          } else {
+            const range = getPeriodRange(paymentInFilterState.periodFilter);
+            rangeStart = range.start;
+            rangeEnd = range.end;
           }
 
-          if (visible && firmFilter && partyName !== firmFilter.toLowerCase()) {
+          if (!rowDate || !rangeStart || !rangeEnd) {
             visible = false;
-          }
+          } else {
+            rangeStart.setHours(0, 0, 0, 0);
+            rangeEnd.setHours(23, 59, 59, 999);
+            rowDate.setHours(12, 0, 0, 0);
 
-          if (visible && periodFilter !== "all") {
-            let rangeStart = null;
-            let rangeEnd = null;
-
-            if (periodFilter === "custom") {
-              rangeStart = customFrom ? new Date(customFrom) : null;
-              rangeEnd = customTo ? new Date(customTo) : null;
-            } else {
-              const range = getPeriodRange(periodFilter);
-              rangeStart = range.start;
-              rangeEnd = range.end;
-            }
-
-            if (!rowDate || !rangeStart || !rangeEnd) {
+            if (rowDate < rangeStart || rowDate > rangeEnd) {
               visible = false;
-            } else {
-              rangeStart.setHours(0, 0, 0, 0);
-              rangeEnd.setHours(23, 59, 59, 999);
-              rowDate.setHours(12, 0, 0, 0);
-
-              if (rowDate < rangeStart || rowDate > rangeEnd) {
-                visible = false;
-              }
             }
           }
+        }
 
-          $row.toggle(visible);
+        return visible;
+      }
+
+      if ($.fn.dataTable && $.fn.dataTable.ext) {
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+          if (!paymentInTable || settings.nTable.id !== "paymentInTable") {
+            return true;
+          }
+
+          const rowNode = paymentInTable.row(dataIndex).node();
+          return rowMatchesPaymentInFilters(rowNode);
         });
       }
 
+      function applyPaymentInFilters() {
+        if (paymentInTable) {
+          paymentInTable.draw();
+        }
+      }
+
       function initializePeriodFilter() {
-        if (periodFilter === "custom") {
+        if (paymentInFilterState.periodFilter === "custom") {
           const today = new Date();
           const todayIso = formatIsoDate(today);
           $customFrom.val(todayIso);
           $customTo.val(todayIso);
-          customFrom = todayIso;
-          customTo = todayIso;
+          paymentInFilterState.customFrom = todayIso;
+          paymentInFilterState.customTo = todayIso;
           setCustomMode(true);
           return;
         }
 
-        const range = getPeriodRange(periodFilter);
+        const range = getPeriodRange(paymentInFilterState.periodFilter);
         setCustomMode(false);
         updateRangeDisplay(range.start, range.end);
+      }
+
+      function initializePaymentInTable() {
+        if (!$.fn.DataTable || paymentInTable || !$("#paymentInTable").length) {
+          return;
+        }
+
+        paymentInTable = $("#paymentInTable").DataTable({
+          paging: true,
+          pageLength: 10,
+          lengthChange: false,
+          searching: true,
+          ordering: true,
+          autoWidth: false,
+          order: [[0, "desc"]],
+          columnDefs: [
+            { targets: 6, orderable: false, searchable: false },
+          ],
+          language: {
+            emptyTable: 'No payment in records yet. Click "Add Payment-in" to create one.',
+          },
+        });
       }
 
       $(".search-btn").click(function () {
@@ -1275,26 +1354,45 @@
       });
 
       initializePeriodFilter();
+      initializePaymentInTable();
+      $(document).on("dblclick", "#paymentInTable tbody tr.payment-in-row", function (event) {
+        if ($(event.target).closest(".dropdown, a, button, input, select, textarea, label").length) {
+          return;
+        }
+
+        const editUrl = this.dataset.editUrl;
+        if (editUrl) {
+          window.location.href = editUrl;
+        }
+      });
+      document.querySelectorAll("#paymentInTable .dropdown").forEach(function(dropdown) {
+        dropdown.addEventListener("show.bs.dropdown", function() {
+          document.getElementById("paymentInTableWrap")?.classList.add("dropdown-overflow-visible");
+        });
+        dropdown.addEventListener("hide.bs.dropdown", function() {
+          document.getElementById("paymentInTableWrap")?.classList.remove("dropdown-overflow-visible");
+        });
+      });
       applyPaymentInFilters();
 
       $searchInput.on("input", function () {
-        globalSearch = $(this).val().toLowerCase().trim();
+        paymentInFilterState.globalSearch = $(this).val().toLowerCase().trim();
         applyPaymentInFilters();
       });
 
       $periodSelect.on("change", function () {
-        periodFilter = $(this).val() || "all";
+        paymentInFilterState.periodFilter = $(this).val() || "all";
 
-        if (periodFilter === "custom") {
+        if (paymentInFilterState.periodFilter === "custom") {
           const today = new Date();
           const todayIso = formatIsoDate(today);
           $customFrom.val(todayIso);
           $customTo.val(todayIso);
-          customFrom = todayIso;
-          customTo = todayIso;
+          paymentInFilterState.customFrom = todayIso;
+          paymentInFilterState.customTo = todayIso;
           setCustomMode(true);
         } else {
-          const range = getPeriodRange(periodFilter);
+          const range = getPeriodRange(paymentInFilterState.periodFilter);
           setCustomMode(false);
           updateRangeDisplay(range.start, range.end);
         }
@@ -1303,41 +1401,47 @@
       });
 
       $firmSelect.on("change", function () {
-        firmFilter = $(this).val() || "";
+        paymentInFilterState.firmFilter = $(this).val() || "";
         applyPaymentInFilters();
       });
 
       $customFrom.on("change", function () {
-        customFrom = $(this).val() || "";
+        paymentInFilterState.customFrom = $(this).val() || "";
         applyPaymentInFilters();
       });
 
       $customTo.on("change", function () {
-        customTo = $(this).val() || "";
+        paymentInFilterState.customTo = $(this).val() || "";
         applyPaymentInFilters();
       });
 
-      $("#exportPaymentInExcel").on("click", function () {
+      $(document).on("input", ".payment-column-filter", function() {
+        if (!paymentInTable) return;
+        const columnIndex = parseInt(this.dataset.column || "0", 10);
+        paymentInTable.column(columnIndex).search(this.value || "").draw();
+      });
+
+      function downloadPaymentInExcel(selectedColumns) {
+        const visibleRows = Array.from(document.querySelectorAll("#paymentInTable tbody tr.payment-in-row"))
+          .filter((row) => $(row).is(":visible"));
+
         let excelHtml = `
           <table border="1">
             <tr>
-              <th>Date</th>
-              <th>Reference No.</th>
-              <th>Party Name</th>
-              <th>Total Amount</th>
-              <th>Bank Account</th>
-              <th>Payment Type</th>
+              ${selectedColumns.map((key) => `<th>${paymentPrintColumns[key].label}</th>`).join("")}
             </tr>
         `;
 
-        $("#paymentInTable tbody tr.payment-in-row:visible").each(function () {
-          const cells = $(this).find("td");
-          excelHtml += "<tr>";
-          for (let i = 0; i < 6; i++) {
-            const cellText = $(cells[i]).text().replace(/\s+/g, " ").trim();
-            excelHtml += `<td>${cellText}</td>`;
-          }
-          excelHtml += "</tr>";
+        visibleRows.forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          const rowHtml = selectedColumns.map((key) => {
+            const config = paymentPrintColumns[key];
+            const value = typeof config.getValue === "function"
+              ? config.getValue(row, cells)
+              : (cells[config.index]?.textContent.trim() || "-");
+            return `<td>${value}</td>`;
+          }).join("");
+          excelHtml += `<tr>${rowHtml}</tr>`;
         });
 
         excelHtml += "</table>";
@@ -1355,7 +1459,7 @@
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      });
+      }
 
       const paymentPrintModalEl = document.getElementById("paymentInPrintOptionsModal");
       const paymentPrintModal = paymentPrintModalEl ? new bootstrap.Modal(paymentPrintModalEl) : null;
@@ -1376,19 +1480,17 @@
           .filter((key) => paymentPrintColumns[key]);
       }
 
-      $("#printPaymentInTable").on("click", function () {
-        const visibleRows = Array.from(document.querySelectorAll("#paymentInTable tbody tr.payment-in-row"))
-          .filter((row) => $(row).is(":visible"));
-
-        if (!visibleRows.length) {
-          alert("No visible records found to print.");
-          return;
-        }
-
+      function openPaymentInExportModal(mode) {
+        paymentInExportMode = mode === "excel" ? "excel" : "print";
+        const title = paymentInExportMode === "excel" ? "Select Excel Options" : "Select Print Options";
+        $("#paymentInPrintOptionsLabel").text(title);
+        $("#confirmPaymentInPrint").text(paymentInExportMode === "excel" ? "Get Excel" : "Get Print");
         paymentPrintModal?.show();
-      });
+      }
 
-      $("#confirmPaymentInPrint").on("click", function () {
+      window.openPaymentInExportModal = openPaymentInExportModal;
+
+      function confirmPaymentInReport() {
         const visibleRows = Array.from(document.querySelectorAll("#paymentInTable tbody tr.payment-in-row"))
           .filter((row) => $(row).is(":visible"));
 
@@ -1404,6 +1506,11 @@
         }
 
         paymentPrintModal?.hide();
+
+        if (paymentInExportMode === "excel") {
+          downloadPaymentInExcel(selectedColumns);
+          return;
+        }
 
         const partyName = $("#paymentInFirmSelect").val() || "All Parties";
         const rangeDisplay = ($("#paymentInDateRangeDisplay").text() || "All Time").trim();
@@ -1612,11 +1719,89 @@
                   <div class="total-row">Total: Rs ${totalAmount.toFixed(2)}</div>
                 </div>
 
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+                <script>
+                  function buildPaymentInPdfBlob() {
+                    const element = document.getElementById('paymentInPrintableArea');
+                    if (!window.html2pdf || !element) return Promise.resolve(null);
+
+                    return window.html2pdf()
+                      .set({
+                        margin: 0.2,
+                        filename: 'payment-in-report-${Date.now()}.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                      })
+                      .from(element)
+                      .outputPdf('blob');
+                  }
+
+                  function openPaymentInPreviewPdf() {
+                    const element = document.getElementById('paymentInPrintableArea');
+                    if (!window.html2pdf || !element) {
+                      window.print();
+                      return;
+                    }
+
+                    buildPaymentInPdfBlob()
+                      .then(function(blob) {
+                        if (!blob) {
+                          window.print();
+                          return;
+                        }
+
+                        const url = URL.createObjectURL(blob);
+                        const popup = window.open(url, '_blank');
+                        if (!popup) {
+                          window.print();
+                          return;
+                        }
+
+                        setTimeout(function() {
+                          URL.revokeObjectURL(url);
+                        }, 60000);
+                      })
+                      .catch(function() {
+                        window.print();
+                      });
+                  }
+
+                  function savePaymentInPreviewPdf() {
+                    const element = document.getElementById('paymentInPrintableArea');
+                    if (!window.html2pdf || !element) {
+                      window.print();
+                      return;
+                    }
+
+                    window.html2pdf().set({
+                      margin: 0.2,
+                      filename: 'payment-in-report-${Date.now()}.pdf',
+                      image: { type: 'jpeg', quality: 0.98 },
+                      html2canvas: { scale: 2, useCORS: true },
+                      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                    }).from(element).save();
+                  }
+
+                  function emailPaymentInPreview() {
+                    const subject = encodeURIComponent('Payment-In Report');
+                    const body = encodeURIComponent(
+                      'Please find the Payment-In report attached after saving it as PDF from preview.'
+                    );
+                    const mailUrl = 'mailto:?subject=' + subject + '&body=' + body;
+                    const opener = window.opener && !window.opener.closed ? window.opener : window;
+                    try {
+                      opener.location.href = mailUrl;
+                    } catch (e) {
+                      window.location.href = mailUrl;
+                    }
+                  }
+                <\/script>
                 <div class="preview-actions">
-                  <button type="button" onclick="window.print()">Open PDF</button>
+                  <button type="button" onclick="openPaymentInPreviewPdf()">Open PDF</button>
                   <button type="button" onclick="window.print()">Print</button>
-                  <button type="button" onclick="window.print()">Save PDF</button>
-                  <a href="mailto:?subject=Payment-In Report&amp;body=Please find the Payment-In report attached after saving it as PDF from preview.">Email PDF</a>
+                  <button type="button" onclick="savePaymentInPreviewPdf()">Save PDF</button>
+                  <button type="button" onclick="emailPaymentInPreview()">Email PDF</button>
                   <button type="button" class="primary-close" onclick="window.close()">Close</button>
                 </div>
               </div>
@@ -1633,7 +1818,9 @@
         printWindow.document.open();
         printWindow.document.write(previewHtml);
         printWindow.document.close();
-      });
+      }
+
+      window.confirmPaymentInReport = confirmPaymentInReport;
     });
   </script>
 
@@ -2005,17 +2192,24 @@ document.getElementById('paymentImageInput')?.addEventListener('change', functio
     }
 });
 
-function printPaymentInInvoice(url) {
-    window.open(url, '_blank');
-}
-
 function openPaymentInPdf(url) {
     window.open(url, '_blank');
 }
 
 const editPaymentIn = @json($editPaymentIn ?? null);
+const duplicatePaymentIn = @json($duplicatePaymentIn ?? null);
+const paymentInDefaultReceiptNo = @json($nextReceiptNo > 0 ? $nextReceiptNo : 1);
 let linkPaymentRows = [];
 let appliedLinkPaymentRows = [];
+let paymentInTable = null;
+let paymentInExportMode = 'print';
+const paymentInFilterState = {
+    globalSearch: '',
+    firmFilter: '',
+    periodFilter: 'all',
+    customFrom: '',
+    customTo: '',
+};
 
 function resetLinkPaymentState() {
     linkPaymentRows = [];
@@ -2240,8 +2434,21 @@ function populateEditPaymentIn(paymentIn) {
     modal?.show();
 }
 
+function populateDuplicatePaymentIn(paymentIn) {
+    if (!paymentIn) return;
+
+    populateEditPaymentIn(paymentIn);
+    $('#paymentInId').val('');
+    $('#receiptNo').val(paymentInDefaultReceiptNo);
+    $('#addPaymentInModalLabel').text('Duplicate Payment-in');
+}
+
 if (editPaymentIn) {
     populateEditPaymentIn(editPaymentIn);
+}
+
+if (duplicatePaymentIn) {
+    populateDuplicatePaymentIn(duplicatePaymentIn);
 }
 
 document.getElementById('openLinkPaymentBtn')?.addEventListener('click', openLinkPaymentModal);

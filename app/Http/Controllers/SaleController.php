@@ -89,6 +89,32 @@ class SaleController extends Controller
         ]);
     }
 
+    public function storeInvoiceTheme(Request $request, Sale $sale)
+    {
+        $data = $request->validate([
+            'mode' => 'required|in:regular,thermal',
+            'regularThemeId' => 'required|integer|min:1',
+            'thermalThemeId' => 'required|integer|min:1',
+            'accent' => 'nullable|string|max:30',
+            'accent2' => 'nullable|string|max:30',
+        ]);
+
+        $sale->forceFill([
+            'invoice_theme' => [
+                'mode' => $data['mode'],
+                'regularThemeId' => (int) $data['regularThemeId'],
+                'thermalThemeId' => (int) $data['thermalThemeId'],
+                'accent' => $data['accent'] ?? '#1f4e79',
+                'accent2' => $data['accent2'] ?? '#ff981f',
+            ],
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'invoice_theme' => $sale->invoice_theme,
+        ]);
+    }
+
     public function create(Request $request, string $type = 'invoice')
     {
         $bankAccounts = BankAccount::active()->orderBy('display_name')->get();
@@ -343,18 +369,8 @@ class SaleController extends Controller
                 ]);
 
                 foreach ($draft['items'] as $item) {
-                    SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'item_name' => $item['item_name'] ?? '',
-                        'item_category' => $item['item_category'] ?? '',
-                        'item_code' => $item['item_code'] ?? '',
-                        'item_description' => $item['item_description'] ?? '',
-                        'quantity' => $item['quantity'] ?? 0,
-                        'unit' => $item['unit'] ?? '',
-                        'unit_price' => $item['unit_price'] ?? 0,
-                        'discount' => $item['discount'] ?? 0,
-                        'amount' => $item['amount'] ?? 0,
-                    ]);
+                    $itemRecord = $this->resolveSaleItemRecord($item);
+                    SaleItem::create($this->buildSaleItemPayload($sale->id, $item, $itemRecord));
                 }
 
                 $saleOrder->update(['status' => 'completed']);
@@ -851,35 +867,9 @@ private function posData(): array
         // Replace items (keep payment history intact for edit mode)
         $sale->items()->delete();
         foreach ($data['items'] as $item) {
-    $itemRecord = null;
-    if (!empty($item['item_name'])) {
-        $itemRecord = Item::whereRaw('LOWER(TRIM(name)) = ?', [
-            strtolower(trim($item['item_name']))
-        ])->first();
-    }
+    $itemRecord = $this->resolveSaleItemRecord($item);
 
-
-
-    $sale->items()->create([
-                'item_id'          => $itemRecord?->id,
-                'item_name'        => $item['item_name']        ?? null,
-                'item_category'    => $item['item_category']    ?? null,
-                'item_code'        => $item['item_code']        ?? null,
-                'item_description' => $item['item_description'] ?? null,
-                'tafseel'          => $item['tafseel']          ?? null,
-                'quantity'         => $item['quantity']         ?? 0,
-                'gross_w'          => $item['gross_w']          ?? 0,
-                'net_w'            => $item['net_w']            ?? 0,
-                'unit'             => $item['unit']             ?? null,
-                'unit_price'       => $item['unit_price']       ?? 0,
-                'discount'         => $item['discount']         ?? 0,
-                'extra_fields'     => $item['extra_fields']     ?? [
-                    'tax_pct' => $item['tax_pct'] ?? 0,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'free_qty' => $item['free_qty'] ?? 0,
-                ],
-                'amount'           => $item['amount']           ?? 0,
-            ]);
+    $sale->items()->create($this->buildSaleItemPayload($sale->id, $item, $itemRecord, true));
         }
 
         // Append new payments (maintain payment history; edit mode treats payments as additional amounts)
@@ -1188,32 +1178,8 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
         }
 
         foreach ($data['items'] as $item) {
-            $itemRecord = null;
-            if (!empty($item['item_name'])) {
-                $itemRecord = Item::whereRaw('LOWER(TRIM(name)) = ?', [
-                    strtolower(trim($item['item_name']))
-                ])->first();
-            }
-            $sale->items()->create([
-                'item_id'          => $itemRecord?->id,
-                'item_name'        => $item['item_name']        ?? null,
-                'item_category'    => $item['item_category']    ?? null,
-                'item_code'        => $item['item_code']        ?? null,
-                'item_description' => $item['item_description'] ?? null,
-                'tafseel'          => $item['tafseel']          ?? null,
-                'quantity'         => $item['quantity']         ?? 0,
-                'gross_w'          => $item['gross_w']          ?? 0,
-                'net_w'            => $item['net_w']            ?? 0,
-                'unit'             => $item['unit']             ?? null,
-                'unit_price'       => $item['unit_price']       ?? 0,
-                'discount'         => $item['discount']         ?? 0,
-                'extra_fields'     => $item['extra_fields']     ?? [
-                    'tax_pct' => $item['tax_pct'] ?? 0,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'free_qty' => $item['free_qty'] ?? 0,
-                ],
-                'amount'           => $item['amount']           ?? 0,
-            ]);
+            $itemRecord = $this->resolveSaleItemRecord($item);
+            $sale->items()->create($this->buildSaleItemPayload($sale->id, $item, $itemRecord, true));
         }
 
         if (!empty($data['payments']) && is_array($data['payments'])) {
@@ -1351,39 +1317,56 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
         ]);
     }
 
-    public function invoicePreview(Sale $sale)
+    public function invoicePreview(Request $request, Sale $sale)
     {
         $sale->loadMissing(['items.item', 'party', 'payments.bankAccount']);
+        $invoiceSource = $sale;
 
-        return view('themes.sales_invoice', [
-            'sale' => $sale,
-            'invoicePreviewData' => $this->mapSaleToThemePreviewData($sale),
-            'pageTitle' => 'Preview',
-            'browserTabLabel' => $sale->display_party_name !== '-' ? $sale->display_party_name : ('Invoice #' . ($sale->bill_number ?: $sale->id)),
-            'saveCloseUrl' => route('sale.index'),
-            'initialMode' => $sale->type === 'invoice' ? request()->query('mode', 'regular') : 'regular',
-            'initialRegularThemeId' => (int) request()->query('theme_id', 1),
-            'initialThermalThemeId' => (int) request()->query('theme_id', 1),
-            'initialAccent' => (string) request()->query('accent', '#1f4e79'),
-            'initialAccent2' => (string) request()->query('accent2', '#ff981f'),
+        if ($request->query('doc') === 'delivery_challan') {
+            if ($sale->type === 'delivery_challan') {
+                $invoiceSource = $sale;
+            } elseif ($sale->reference_id) {
+                $sourceChallan = Sale::with(['items.item', 'party', 'broker', 'challanDetail', 'details', 'payments.bankAccount'])
+                    ->whereKey($sale->reference_id)
+                    ->where('type', 'delivery_challan')
+                    ->first();
+                if ($sourceChallan) {
+                    $invoiceSource = $sourceChallan;
+                }
+            }
+        }
+
+        $themeDefaults = $this->resolveStoredInvoiceThemeConfig($invoiceSource, $request);
+        $themeConfig = $this->resolveInvoiceThemeConfig(
+            $themeDefaults['mode'],
+            $themeDefaults[$themeDefaults['mode'] === 'thermal' ? 'thermalThemeId' : 'regularThemeId']
+        );
+
+        return view('themes.sales_invoice_pdf_document', [
+            'invoicePreviewData' => $this->mapSaleToThemePreviewData($invoiceSource),
+            'themeConfig' => $themeConfig,
+            'accent' => $themeDefaults['accent'],
+            'accent2' => $themeDefaults['accent2'],
+            'autoPrint' => $request->boolean('print'),
         ]);
     }
 
     public function invoicePdf(Request $request, Sale $sale)
     {
         $sale->loadMissing(['items.item', 'party', 'payments.bankAccount']);
+        $themeDefaults = $this->resolveStoredInvoiceThemeConfig($sale, $request);
 
         $themeConfig = $this->resolveInvoiceThemeConfig(
-            (string) $request->query('mode', 'regular'),
-            (int) $request->query('theme_id', 1)
+            $themeDefaults['mode'],
+            $themeDefaults[$themeDefaults['mode'] === 'thermal' ? 'thermalThemeId' : 'regularThemeId']
         );
 
         if ($request->boolean('download')) {
             $pdf = Pdf::loadView('themes.sales_invoice_pdf_document', [
                 'invoicePreviewData' => $this->mapSaleToThemePreviewData($sale),
                 'themeConfig' => $themeConfig,
-                'accent' => (string) $request->query('accent', '#1f4e79'),
-                'accent2' => (string) $request->query('accent2', '#ff981f'),
+                'accent' => $themeDefaults['accent'],
+                'accent2' => $themeDefaults['accent2'],
             ]);
 
             if (($themeConfig['mode'] ?? 'regular') === 'thermal') {
@@ -1395,20 +1378,12 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
             return $pdf->download('invoice-' . ($sale->bill_number ?: $sale->id) . '.pdf');
         }
 
-        return view('themes.sales_invoice_pdf', [
-            'sale' => $sale,
+        return view('themes.sales_invoice_pdf_document', [
             'invoicePreviewData' => $this->mapSaleToThemePreviewData($sale),
-            'pageTitle' => 'Invoice PDF',
-            'browserTabLabel' => 'Invoice #' . ($sale->bill_number ?: $sale->id),
-            'saveCloseUrl' => route('sale.invoice-preview', $sale),
-            'pdfMode' => true,
-            'autoDownload' => $request->boolean('download'),
             'themeConfig' => $themeConfig,
-            'initialMode' => $request->query('mode', 'regular'),
-            'initialRegularThemeId' => (int) $request->query('theme_id', 1),
-            'initialThermalThemeId' => (int) $request->query('theme_id', 1),
-            'initialAccent' => (string) $request->query('accent', '#1f4e79'),
-            'initialAccent2' => (string) $request->query('accent2', '#ff981f'),
+            'accent' => $themeDefaults['accent'],
+            'accent2' => $themeDefaults['accent2'],
+            'autoPrint' => $request->boolean('print'),
         ]);
     }
 
@@ -1488,6 +1463,38 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
             'success' => true,
             'message' => 'Passcode verified.',
         ]);
+    }
+
+    private function resolveStoredInvoiceThemeConfig(?Sale $sale, Request $request): array
+    {
+        $stored = $sale?->invoice_theme;
+
+        if (is_string($stored)) {
+            $stored = json_decode($stored, true);
+        }
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $mode = (string) ($request->query('mode', $stored['mode'] ?? 'regular'));
+        $mode = $mode === 'thermal' ? 'thermal' : 'regular';
+
+        $regularThemeId = (int) $request->query(
+            'theme_id',
+            (int) ($stored['regularThemeId'] ?? ($stored['theme_id'] ?? 1))
+        );
+        $thermalThemeId = (int) ($stored['thermalThemeId'] ?? ($stored['theme_id'] ?? 1));
+        $accent = (string) $request->query('accent', (string) ($stored['accent'] ?? '#1f4e79'));
+        $accent2 = (string) $request->query('accent2', (string) ($stored['accent2'] ?? '#ff981f'));
+
+        return [
+            'mode' => $mode,
+            'regularThemeId' => $regularThemeId > 0 ? $regularThemeId : 1,
+            'thermalThemeId' => $thermalThemeId > 0 ? $thermalThemeId : 1,
+            'accent' => $accent !== '' ? $accent : '#1f4e79',
+            'accent2' => $accent2 !== '' ? $accent2 : '#ff981f',
+        ];
     }
 
     public function bankHistory(Sale $sale)
@@ -1690,22 +1697,54 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
               $amount = (float) ($item->amount ?? 0);
               $rate = (float) ($item->unit_price ?? 0);
               $quantity = (float) ($item->quantity ?? 0);
-              $customFields = collect($item->item?->custom_fields ?? [])
-                  ->map(function ($field) {
+              $itemDefinitions = collect($item->item?->custom_fields ?? []);
+              $customFieldsSource = $item->custom_fields ?? [];
+              if (empty($customFieldsSource)) {
+                  $extraFields = is_array($item->extra_fields ?? null) ? $item->extra_fields : [];
+                  $customFieldsSource = collect(range(1, 6))
+                      ->map(function ($index) use ($extraFields) {
+                          $value = trim((string) ($extraFields['custom_field_' . $index] ?? ''));
+                          if ($value === '') {
+                              return null;
+                          }
+
+                          return [
+                              'key' => 'custom_field_' . $index,
+                              'enabled' => true,
+                              'label' => 'Custom Field ' . $index,
+                              'show_in_print' => true,
+                              'value' => $value,
+                          ];
+                      })
+                      ->filter()
+                      ->values()
+                      ->all();
+              }
+
+              $customFields = collect($customFieldsSource ?: $itemDefinitions->all())
+                  ->values()
+                  ->map(function ($field, $index) use ($itemDefinitions) {
+                      $definition = $itemDefinitions->get($index, []);
                       if (is_array($field)) {
+                          $label = trim((string) ($field['label'] ?? $field['name'] ?? ''));
+                          $definitionLabel = is_array($definition) ? trim((string) ($definition['label'] ?? $definition['name'] ?? '')) : '';
+                          if ($label === '' || preg_match('/^Custom Field\s*\d+$/i', $label)) {
+                              $label = $definitionLabel;
+                          }
                           return [
                               'key' => (string) ($field['key'] ?? ''),
                               'enabled' => (bool) ($field['enabled'] ?? true),
-                              'label' => trim((string) ($field['label'] ?? $field['name'] ?? '')),
+                              'label' => $label,
                               'show_in_print' => (bool) ($field['show_in_print'] ?? true),
                               'value' => trim((string) ($field['value'] ?? $field['text'] ?? '')),
                           ];
                       }
 
+                      $definitionLabel = is_array($definition) ? trim((string) ($definition['label'] ?? $definition['name'] ?? '')) : '';
                       return [
                           'key' => '',
                           'enabled' => true,
-                          'label' => '',
+                          'label' => $definitionLabel,
                           'show_in_print' => true,
                           'value' => trim((string) $field),
                       ];
@@ -1733,6 +1772,22 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
                   'gst' => $taxPct,
                   'amt' => $amount,
                   'customFields' => $customFields,
+                  'customFieldSummary' => collect($customFields)
+                      ->map(function ($field) {
+                          if (!is_array($field)) {
+                              return trim((string) $field);
+                          }
+
+                          $label = trim((string) ($field['label'] ?? ''));
+                          $value = trim((string) ($field['value'] ?? ''));
+                          if ($label === '' && $value === '') {
+                              return '';
+                          }
+
+                          return $value !== '' ? ($label !== '' ? $label . ': ' . $value : $value) : $label;
+                      })
+                      ->filter()
+                      ->implode(' | '),
                   'amount' => $amount,
               ];
           })->values()->all();
@@ -1819,6 +1874,115 @@ $bank = $isCash ? $cashAccount : BankAccount::find($bankId);
             'partyExtraFields' => $partyExtraFields,
             'partyCustomFields' => $partyCustomFields,
         ];
+    }
+
+    private function resolveItemCustomFieldsSnapshot(?Item $itemRecord, array $item = []): array
+    {
+        $definitions = collect($itemRecord?->custom_fields ?? []);
+        $extraFields = is_array($item['extra_fields'] ?? null) ? $item['extra_fields'] : [];
+
+        $fields = collect(range(1, 6))->map(function ($index) use ($definitions, $extraFields) {
+            $definition = $definitions->get($index - 1, []);
+            $value = trim((string) ($extraFields['custom_field_' . $index] ?? ''));
+
+            if (is_array($definition)) {
+                return [
+                    'key' => (string) ($definition['key'] ?? 'custom_field_' . $index),
+                    'enabled' => (bool) ($definition['enabled'] ?? true),
+                    'label' => trim((string) ($definition['label'] ?? $definition['name'] ?? 'Custom Field ' . $index)),
+                    'show_in_print' => (bool) ($definition['show_in_print'] ?? true),
+                    'value' => $value !== '' ? $value : trim((string) ($definition['value'] ?? $definition['text'] ?? '')),
+                ];
+            }
+
+            return [
+                'key' => 'custom_field_' . $index,
+                'enabled' => $value !== '',
+                'label' => 'Custom Field ' . $index,
+                'show_in_print' => true,
+                'value' => $value,
+            ];
+        });
+
+        return $fields
+            ->map(function ($field) {
+                if (is_array($field)) {
+                    return [
+                        'key' => (string) ($field['key'] ?? ''),
+                        'enabled' => (bool) ($field['enabled'] ?? true),
+                        'label' => trim((string) ($field['label'] ?? $field['name'] ?? '')),
+                        'show_in_print' => (bool) ($field['show_in_print'] ?? true),
+                        'value' => trim((string) ($field['value'] ?? $field['text'] ?? '')),
+                    ];
+                }
+
+                return [
+                    'key' => '',
+                    'enabled' => true,
+                    'label' => '',
+                    'show_in_print' => true,
+                    'value' => trim((string) $field),
+                ];
+            })
+            ->filter(function (array $field) {
+                return ($field['label'] !== '' || $field['value'] !== '');
+            })
+            ->values()
+            ->all();
+    }
+
+    private function resolveSaleItemRecord(array $item): ?Item
+    {
+        if (!empty($item['item_id'])) {
+            $resolved = Item::find($item['item_id']);
+            if ($resolved) {
+                return $resolved;
+            }
+        }
+
+        if (!empty($item['item_name'])) {
+            return Item::whereRaw('LOWER(TRIM(name)) = ?', [
+                strtolower(trim((string) $item['item_name']))
+            ])->first();
+        }
+
+        return null;
+    }
+
+    private function buildSaleItemPayload(int $saleId, array $item, ?Item $itemRecord = null, bool $omitSaleId = false): array
+    {
+        $itemId = $itemRecord?->id ?? ($item['item_id'] ?? null);
+        $itemName = trim((string) ($item['item_name'] ?? $itemRecord?->name ?? '')) ?: null;
+        $itemCategory = $item['item_category'] ?? ($itemRecord?->category?->name ?? null);
+        $itemCode = $item['item_code'] ?? ($itemRecord?->item_code ?? null);
+        $itemDescription = $item['item_description'] ?? ($itemRecord?->description ?? null);
+
+        $payload = [
+            'item_id' => $itemId,
+            'item_name' => $itemName,
+            'item_category' => $itemCategory,
+            'item_code' => $itemCode,
+            'item_description' => $itemDescription,
+            'tafseel' => $item['tafseel'] ?? null,
+            'quantity' => isset($item['quantity']) ? (int) $item['quantity'] : 0,
+            'gross_w' => isset($item['gross_w']) ? (float) $item['gross_w'] : 0,
+            'net_w' => isset($item['net_w']) ? (float) $item['net_w'] : 0,
+            'unit' => $item['unit'] ?? $itemRecord?->unit ?? null,
+            'unit_price' => isset($item['unit_price']) ? (float) $item['unit_price'] : 0,
+            'discount' => isset($item['discount']) ? (float) $item['discount'] : 0,
+            'extra_fields' => $item['extra_fields'] ?? null,
+            'amount' => isset($item['amount']) ? (float) $item['amount'] : 0,
+        ];
+
+        if (Schema::hasColumn('sale_items', 'custom_fields')) {
+            $payload['custom_fields'] = $this->resolveItemCustomFieldsSnapshot($itemRecord, $item);
+        }
+
+        if (!$omitSaleId) {
+            $payload['sale_id'] = $saleId;
+        }
+
+        return $payload;
     }
 
     private function formatPreviewDate($value): string

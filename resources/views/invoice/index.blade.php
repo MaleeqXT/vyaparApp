@@ -13,6 +13,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
   @endunless
 
+  @php
+    $withAssetVersion = function ($url) {
+      if (empty($url)) {
+        return null;
+      }
+      $path = parse_url($url, PHP_URL_PATH) ?: '';
+      $absolute = public_path(ltrim($path, '/'));
+      if (is_file($absolute)) {
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'v=' . filemtime($absolute);
+      }
+      return $url;
+    };
+    $reactCss = $withAssetVersion($reactCss ?? null);
+    $reactJs = $withAssetVersion($reactJs ?? null);
+  @endphp
+
   @if (!empty($pdfDirectDownload) && !empty($reactCssInline))
     <style>{!! $reactCssInline !!}</style>
   @elseif (!empty($reactCss))
@@ -137,6 +153,7 @@
         initialColor2: @json($initialAccent2 ?? '#ff981f'),
         browserTabLabel: @json($browserTabLabel ?? 'Invoice Preview'),
         saveCloseUrl: @json($saveCloseUrl ?? '/dashboard/sales'),
+        themeSaveUrl: @json($themeSaveUrl ?? null),
         initialRegularThemeId: @json($initialRegularThemeId ?? 1),
         initialThermalThemeId: @json($initialThermalThemeId ?? 1),
         debugInfo: @json($debugInfo ?? null),

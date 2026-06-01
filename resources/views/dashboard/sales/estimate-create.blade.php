@@ -2275,7 +2275,7 @@ textarea.meta-control,
                                 </div>
                                 <div class="input-group date-wrapper final-due-date-group">
                                     <span>Due Date</span>
-                                    <input type="date" class="input-control underline-input due-date" readonly>
+                                    <input type="text" class="input-control underline-input due-date" placeholder="dd/mm/yyyy" readonly>
                                 </div>
 
                             </div>
@@ -4535,7 +4535,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const yyyy = dueDate.getFullYear();
     const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
     const dd = String(dueDate.getDate()).padStart(2, '0');
-    dueDateInput.value = `${yyyy}-${mm}-${dd}`;
+    dueDateInput.value = `${dd}/${mm}/${yyyy}`;
    }
 
    function saveParty(closeAfterSave = true) {
@@ -5146,8 +5146,87 @@ document.addEventListener("DOMContentLoaded", function() {
         const yyyy = dueDate.getFullYear();
         const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
         const dd = String(dueDate.getDate()).padStart(2, '0');
+        dueDateInput.value = `${dd}/${mm}/${yyyy}`;
+    };
+
+    const updateEstimateDueDate = () => {
+        const dealDaysSelect = document.querySelector(".due-days-select");
+        const dealDaysCustomInput = document.querySelector(".due-days-custom");
+        const dueDateInput = document.querySelector(".due-date");
+        const invoiceDateInput = document.querySelector(".invoice-date");
+        if (!dealDaysSelect || !dueDateInput || !invoiceDateInput) return;
+
+        const selectedValue = String(dealDaysSelect.value || '0').trim();
+        const dueDays = selectedValue === 'custom'
+            ? Number(dealDaysCustomInput?.value || 0)
+            : Number(selectedValue || 0);
+
+        if (!invoiceDateInput.value) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            invoiceDateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        if (selectedValue === 'custom' && dealDaysCustomInput) {
+            dealDaysCustomInput.classList.remove('d-none');
+        } else if (dealDaysCustomInput) {
+            dealDaysCustomInput.classList.add('d-none');
+        }
+
+        const baseDateValue = invoiceDateInput.value;
+        if (!baseDateValue) {
+            dueDateInput.value = '';
+            return;
+        }
+
+        const dueDate = new Date(baseDateValue);
+        if (Number.isNaN(dueDate.getTime())) {
+            dueDateInput.value = '';
+            return;
+        }
+
+        dueDate.setDate(dueDate.getDate() + dueDays);
+        const yyyy = dueDate.getFullYear();
+        const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(dueDate.getDate()).padStart(2, '0');
         dueDateInput.value = `${yyyy}-${mm}-${dd}`;
     };
+
+    const bindEstimateDueDateHandlers = () => {
+        const handleEstimateDueDate = (event) => {
+            if (
+                !event ||
+                !event.target ||
+                !event.target.closest('.deal-days-group, .invoice-date-group, .final-due-date-group')
+            ) {
+                return;
+            }
+            if (
+                event.target.matches('.due-days-select') ||
+                event.target.matches('.due-days-custom') ||
+                event.target.matches('.invoice-date')
+            ) {
+                updateEstimateDueDate();
+            }
+        };
+
+        document.removeEventListener('change', handleEstimateDueDate, true);
+        document.removeEventListener('input', handleEstimateDueDate, true);
+        document.addEventListener('change', handleEstimateDueDate, true);
+        document.addEventListener('input', handleEstimateDueDate, true);
+
+        const dueDaysSelect = document.querySelector('.due-days-select');
+        const dueDaysCustomInput = document.querySelector('.due-days-custom');
+        const invoiceDateInput = document.querySelector('.invoice-date');
+        dueDaysSelect?.addEventListener('change', updateEstimateDueDate);
+        dueDaysCustomInput?.addEventListener('input', updateEstimateDueDate);
+        invoiceDateInput?.addEventListener('change', updateEstimateDueDate);
+    };
+
+    bindEstimateDueDateHandlers();
+    updateEstimateDueDate();
 
     const renderPartyCard = (partyRecord = {}) => {
         const wrapper = document.querySelector('.party-dropdown-wrapper');

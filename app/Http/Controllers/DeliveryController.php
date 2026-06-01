@@ -141,7 +141,7 @@ class DeliveryController extends Controller
 
             [$imagePaths, $primaryImagePath] = $this->storeChallanImages($request, $data['existing_image_paths'] ?? [], $existingImagePaths);
 
-            $sale->update($this->buildSalePayload($data, $primaryImagePath, $imagePaths));
+            $sale->update($this->buildSalePayload($data, $primaryImagePath, $imagePaths, $sale));
             $sale->items()->delete();
 
             foreach ($data['items'] as $item) {
@@ -295,7 +295,7 @@ class DeliveryController extends Controller
         ]);
     }
 
-    private function buildSalePayload(array $data, ?string $primaryImagePath = null, array $imagePaths = []): array
+    private function buildSalePayload(array $data, ?string $primaryImagePath = null, array $imagePaths = [], ?Sale $existingSale = null): array
     {
         return [
             'type' => 'delivery_challan',
@@ -332,6 +332,18 @@ class DeliveryController extends Controller
             'image_path' => $primaryImagePath ?? $data['image_path'] ?? null,
             'image_paths' => !empty($imagePaths) ? array_values($imagePaths) : null,
             'document_path' => $data['document_path'] ?? null,
+            'invoice_theme' => $data['invoice_theme'] ?? ($existingSale?->invoice_theme ?? $this->defaultInvoiceTheme()),
+        ];
+    }
+
+    private function defaultInvoiceTheme(): array
+    {
+        return [
+            'mode' => 'regular',
+            'regularThemeId' => 1,
+            'thermalThemeId' => 1,
+            'accent' => '#1f4e79',
+            'accent2' => '#ff981f',
         ];
     }
 

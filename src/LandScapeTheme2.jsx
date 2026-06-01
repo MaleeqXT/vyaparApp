@@ -1,6 +1,7 @@
 import './LandScapeTheme2.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const LandScapeTheme2 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, onSignatureClick, selectedColor, terms, onTermsClick, invoiceData }) => {
   const view = getInvoiceViewModel(invoiceData)
@@ -65,7 +66,7 @@ const LandScapeTheme2 = ({ businessInfo, onCompanyClick, onLogoClick, logo, sign
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="tax4-td-left">{index + 1}</td>
-              <td className="tax4-td-left"><strong>{item.name}</strong></td>
+              <td className="tax4-td-left"><ItemDisplayName item={item} /></td>
               <td className="tax4-td-right">{item.qty}</td>
               <td className="tax4-td-right">{formatCurrency(item.rate)}</td>
               <td className="tax4-td-right">{formatCurrency(item.amount ?? item.amt)}</td>

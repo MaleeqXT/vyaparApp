@@ -1200,14 +1200,14 @@ private function buildLedgerSourceKey(string $type, string $number): string
     return strtolower(trim($type)) . '|' . strtolower(trim($number));
 }
 
-private function saleActionUrls(Sale $sale): array
-{
-    $modalPreviewUrl = route('invoice.modal-preview', ['sale_id' => $sale->id]);
-    $modalPdfUrl = route('invoice.download-pdf', ['sale_id' => $sale->id]);
-    $modalPrintUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'print' => 1]);
-    $modalDeliveryPreviewUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'doc' => 'delivery_challan']);
-    $modalDeliveryPdfUrl = route('invoice.download-pdf', ['sale_id' => $sale->id, 'doc' => 'delivery_challan']);
-    $modalDeliveryPrintUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'doc' => 'delivery_challan', 'print' => 1]);
+    private function saleActionUrls(Sale $sale): array
+    {
+    $modalPreviewUrl = route('sale.invoice-preview', $sale);
+    $modalPdfUrl = route('sale.invoice-pdf', $sale);
+    $modalPrintUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'print' => 1]);
+    $modalDeliveryPreviewUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'doc' => 'delivery_challan']);
+    $modalDeliveryPdfUrl = route('sale.invoice-pdf', ['sale' => $sale->id, 'doc' => 'delivery_challan']);
+    $modalDeliveryPrintUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'doc' => 'delivery_challan', 'print' => 1]);
 
     return match ($sale->type) {
         'invoice', 'pos' => [

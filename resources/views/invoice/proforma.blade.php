@@ -8,12 +8,23 @@
   <meta name="description" content="Proforma invoice preview in the React invoice builder.">
 
   @php
-    $fallbackReactCss = file_exists(public_path('react-invoice/assets/index-BR-wnjuS.css'))
-      ? asset('react-invoice/assets/index-BR-wnjuS.css')
-      : null;
-    $fallbackReactJs = file_exists(public_path('react-invoice/assets/index-0IDGZc23.js'))
-      ? asset('react-invoice/assets/index-0IDGZc23.js')
-      : null;
+    $latestAsset = function (string $pattern) {
+      $files = glob(public_path($pattern)) ?: [];
+      if (empty($files)) {
+        return null;
+      }
+
+      usort($files, function ($a, $b) {
+        return filemtime($b) <=> filemtime($a);
+      });
+
+      $relative = str_replace(public_path() . DIRECTORY_SEPARATOR, '', $files[0]);
+      $publicRelative = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
+      return asset($publicRelative) . '?v=' . filemtime($files[0]);
+    };
+
+    $fallbackReactCss = $latestAsset('react-invoice/assets/index-*.css');
+    $fallbackReactJs = $latestAsset('react-invoice/assets/index-*.js');
     $reactCss = $reactCss ?? $fallbackReactCss;
     $reactJs = $reactJs ?? $fallbackReactJs;
     $reactIsModule = $reactIsModule ?? true;

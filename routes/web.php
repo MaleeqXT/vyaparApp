@@ -78,6 +78,7 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::put('/sales/{sale}', [SaleController::class, 'update'])->name('sale.update');
     Route::get('/sales/{sale}/invoice-preview', [SaleController::class, 'invoicePreview'])->name('sale.invoice-preview');
     Route::get('/sales/{sale}/invoice-pdf', [SaleController::class, 'invoicePdf'])->name('sale.invoice-pdf');
+    Route::post('/sales/{sale}/invoice-theme', [SaleController::class, 'storeInvoiceTheme'])->name('sale.invoice-theme.store');
     Route::get('/sales/{sale}/delivery-preview', [SaleController::class, 'deliveryPreview'])->name('sale.delivery-preview');
     Route::get('/sales/{sale}/payment-history', [SaleController::class, 'paymentHistory'])->name('sale.payment-history');
     Route::get('/sales/{sale}/bank-history', [SaleController::class, 'bankHistory'])->name('sale.bank-history');
@@ -472,6 +473,7 @@ Route::get('parties/{party}/transfer-history', [PartyController::class, 'transfe
     // payment-in
 Route::post('/payments-in', [PaymentInController::class, 'store'])->name('payments-in.store');
 Route::get('/payments-in/{paymentIn}/edit', [PaymentInController::class, 'edit'])->name('payments-in.edit');
+Route::get('/payments-in/{paymentIn}/duplicate', [PaymentInController::class, 'duplicate'])->name('payments-in.duplicate');
 Route::put('/payments-in/{paymentIn}', [PaymentInController::class, 'update'])->name('payments-in.update');
 Route::delete('/payments-in/{paymentIn}', [PaymentInController::class, 'destroy'])->name('payments-in.destroy');
 Route::get('/payments-in/{paymentIn}/print', [PaymentInController::class, 'print'])->name('payments-in.print');

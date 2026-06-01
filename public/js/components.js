@@ -401,6 +401,7 @@
 
   const sidebarHTML = `
   <aside class="sidebar" id="sidebar">
+
     <div class="sidebar-search position-relative">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
       <input type="text" placeholder="Open Anything (Ctrl+F)" id="sidebarSearch">
@@ -1476,7 +1477,7 @@ document.getElementById('globalSearchOverlay').addEventListener('click', (e) => 
 const extraComponentsHTML = `
 <div id="threeDotsMenu" style="display:none; position:fixed; top:60px; right:20px; width:220px; background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.15); z-index:1000001; font-family:sans-serif; overflow:hidden; border:1px solid #eee;">
     <div class="menu-item" onclick="openNotifications()">
-        <i class="fa-regular fa-bell"></i> Notifications
+        <i class="fa-regular fa-bell"></i> Notifications Ok
     </div>
 
     <div class="menu-item" onclick="window.location.href='/dashboard/settings/party-reminders'">

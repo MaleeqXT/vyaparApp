@@ -21,6 +21,7 @@ class SaleItem extends Model
         'unit_price',
         'discount',
         'extra_fields',
+        'custom_fields',
         'amount',
     ];
 
@@ -31,6 +32,7 @@ class SaleItem extends Model
         'discount'   => 'decimal:2',
         'amount'     => 'decimal:2',
         'extra_fields' => 'array',
+        'custom_fields' => 'array',
     ];
 
     public function sale()

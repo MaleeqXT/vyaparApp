@@ -250,6 +250,7 @@ class ItemController extends Controller
     {
         $data = $request->isJson() ? $request->json()->all() : $request->all();
         $type = $data['type'] ?? 'product';
+        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
 
         $categoryId = null;
         if (!empty($data['category_id'])) {
@@ -265,7 +266,6 @@ class ItemController extends Controller
         $openingQty = $this->normalizeDecimal($data['opening_qty'] ?? 0);
         $minStock = $this->normalizeDecimal($data['min_stock'] ?? 0);
         $customFields = $this->normalizeCustomFieldsFromRequest($data);
-        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
         $itemStocksTableExists = Schema::hasTable('item_stocks');
         $itemStocksColumns = $itemStocksTableExists ? array_flip(Schema::getColumnListing('item_stocks')) : [];
 
@@ -357,6 +357,7 @@ class ItemController extends Controller
         $data = $request->isJson() ? $request->json()->all() : $request->all();
 
         $categoryId = $item->category_id;
+        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
         if (!empty($data['category_id'])) {
             $categoryId = $data['category_id'];
         } elseif (!empty($data['category'])) {
@@ -372,7 +373,6 @@ class ItemController extends Controller
             $imagePaths = $this->storeItemImages($request);
         }
         $customFields = $this->normalizeCustomFieldsFromRequest($data);
-        $hasCustomFieldsColumn = Schema::hasColumn('items', 'custom_fields');
 
         $item->update([
             'name'            => $data['name']            ?? $item->name,

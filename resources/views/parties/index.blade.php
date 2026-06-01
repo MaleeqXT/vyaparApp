@@ -4737,7 +4737,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.stopPropagation();
             closeAllGroupActionMenus();
             if (type === 'group') {
-                editPartyGroup(payload);
+                if (window.requestTransactionPasscode) {
+                    window.requestTransactionPasscode(() => editPartyGroup(payload));
+                } else {
+                    editPartyGroup(payload);
+                }
                 return;
             }
             openPartyEditorById(payload.id);
@@ -4747,7 +4751,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.stopPropagation();
             closeAllGroupActionMenus();
             if (type === 'group') {
-                deletePartyGroup(payload);
+                if (window.requestTransactionPasscode) {
+                    window.requestTransactionPasscode(() => deletePartyGroup(payload));
+                } else {
+                    deletePartyGroup(payload);
+                }
                 return;
             }
             deletePartyById(payload.id);
@@ -5040,13 +5048,31 @@ document.addEventListener("DOMContentLoaded", function () {
         const li = document.querySelector(`.party-item[data-id="${partyId}"]`);
         if (!li) return;
 
-        li.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        document.getElementById("editPartyBtn")?.click();
+        const openEditor = () => {
+            li.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            document.getElementById("editPartyBtn")?.click();
+        };
+
+        if (window.requestTransactionPasscode) {
+            window.requestTransactionPasscode(openEditor);
+            return;
+        }
+
+        openEditor();
     }
 
     function deletePartyById(partyId) {
-        currentPartyId = partyId;
-        deleteBtn?.click();
+        const openDelete = () => {
+            currentPartyId = partyId;
+            deleteBtn?.click();
+        };
+
+        if (window.requestTransactionPasscode) {
+            window.requestTransactionPasscode(openDelete);
+            return;
+        }
+
+        openDelete();
     }
 
     function editPartyGroup(group) {

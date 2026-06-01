@@ -1,6 +1,7 @@
 import './DoubleDivine.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const DoubleDivine = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, onSignatureClick, selectedColor, terms, onTermsClick, invoiceData }) => {
   const view = getInvoiceViewModel(invoiceData)
@@ -73,7 +74,7 @@ const DoubleDivine = ({ businessInfo, onCompanyClick, onLogoClick, logo, signatu
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td>{index + 1}</td>
-              <td><strong>{item.name}</strong></td>
+              <td><ItemDisplayName item={item} /></td>
               <td>{item.qty}</td>
               <td>{formatCurrency(item.rate)}</td>
               <td>{formatCurrency(item.amount ?? item.amt)}</td>

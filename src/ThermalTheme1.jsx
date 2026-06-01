@@ -1,5 +1,6 @@
 import './ThermalTheme1.css'
 import { getInvoiceViewModel } from './invoiceData'
+import ItemDisplayName from './ItemDisplayName'
 
 const ThermalTheme1 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, onSignatureClick, selectedColor, terms, onTermsClick, invoiceData }) => {
   const accent = selectedColor || '#111111'
@@ -61,7 +62,7 @@ const ThermalTheme1 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signat
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="t5-td-left">{index + 1}</td>
-              <td className="t5-td-left">{item.name}</td>
+              <td className="t5-td-left"><ItemDisplayName item={item} /></td>
               <td className="t5-td-right">{item.qty}</td>
               <td className="t5-td-right">{item.rate.toFixed(2)}</td>
               <td className="t5-td-right">{item.amount.toFixed(2)}</td>

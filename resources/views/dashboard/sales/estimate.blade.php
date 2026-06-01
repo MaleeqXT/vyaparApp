@@ -20,6 +20,10 @@
     border-bottom: 1px solid #f1f1f1; white-space: nowrap;
   }
   .custom-table tbody tr:hover { background-color: #fafafa; }
+  .custom-table tbody tr.row-open-flash,
+  .custom-table tbody tr.row-open-flash td {
+    background-color: #e8f1ff !important;
+  }
   .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
   .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
   .table-wrapper {
@@ -219,6 +223,7 @@
                       : ucfirst($estimate->status);
                 @endphp
                 <tr data-estimate-id="{{ $estimate->id }}"
+                    data-edit-url="{{ route('estimates.edit', $estimate->id) }}"
                     data-date="{{ $estimate->invoice_date ? $estimate->invoice_date->format('d/m/Y') : '-' }}"
                     data-party="{{ $estimate->display_party_name }}"
                     data-ref="{{ $estimate->bill_number ?? '-' }}"
@@ -255,9 +260,9 @@
                     </div>
                     <div class="dropdown d-inline estimate-action-menu"
                          data-estimate-id="{{ $estimate->id }}"
-                         data-preview-url="{{ route('estimates.preview', $estimate->id) }}"
-                         data-pdf-url="{{ route('estimates.pdf', $estimate->id) }}"
-                         data-print-url="{{ route('estimates.print', $estimate->id) }}"
+                         data-preview-url="{{ route('sale.invoice-preview', $estimate) }}"
+                         data-pdf-url="{{ route('sale.invoice-pdf', $estimate) }}"
+                         data-print-url="{{ route('sale.invoice-preview', ['sale' => $estimate->id, 'print' => 1]) }}"
                          data-duplicate-url="{{ route('estimates.create', ['duplicate_sale_id' => $estimate->id]) }}">
                       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
@@ -720,6 +725,26 @@
 
     syncEstimateFilterUi();
     estimateState.table.draw();
+
+    $(document).on('dblclick', '#estimatesTable tbody tr[data-edit-url]', function (event) {
+      if ($(event.target).closest('.dropdown, a, button, input, select, textarea, label').length) {
+        return;
+      }
+
+      const editUrl = this.dataset.editUrl;
+      if (editUrl) {
+        const row = this;
+          row.classList.add('row-open-flash');
+          setTimeout(() => {
+            row.classList.remove('row-open-flash');
+            if (window.transactionPasscodeNavigate) {
+              window.transactionPasscodeNavigate(editUrl);
+            } else {
+              window.location.href = editUrl;
+            }
+          }, 120);
+        }
+      });
 
     estimateSearchToggle?.addEventListener('click', function () {
       estimateSearchBox?.classList.toggle('open');

@@ -167,7 +167,8 @@ class PerfomaController extends Controller
         $sale->update($this->buildSalePayload(
             $data,
             array_values(array_filter(array_merge($existingImagePaths, $uploadedImagePaths))),
-            array_values(array_filter(array_merge($existingDocumentPaths, $uploadedDocumentPaths)))
+            array_values(array_filter(array_merge($existingDocumentPaths, $uploadedDocumentPaths))),
+            $sale
         ));
         $this->syncDetails($sale, $data);
         $sale->items()->delete();
@@ -315,7 +316,7 @@ class PerfomaController extends Controller
         ]);
     }
 
-    private function buildSalePayload(array $data, array $imagePaths = [], array $documentPaths = []): array
+    private function buildSalePayload(array $data, array $imagePaths = [], array $documentPaths = [], ?Sale $existingSale = null): array
     {
         $grandTotal = (float) ($data['grand_total'] ?? 0);
         $partyTransferDeduction = min($this->calculatePartyTransferDeduction($data), $grandTotal);
@@ -347,6 +348,18 @@ class PerfomaController extends Controller
             'document_path' => $documentPaths[0] ?? ($data['document_path'] ?? null),
             'image_paths' => !empty($imagePaths) ? array_values($imagePaths) : null,
             'document_paths' => !empty($documentPaths) ? array_values($documentPaths) : null,
+            'invoice_theme' => $data['invoice_theme'] ?? ($existingSale?->invoice_theme ?? $this->defaultInvoiceTheme()),
+        ];
+    }
+
+    private function defaultInvoiceTheme(): array
+    {
+        return [
+            'mode' => 'regular',
+            'regularThemeId' => 1,
+            'thermalThemeId' => 1,
+            'accent' => '#1f4e79',
+            'accent2' => '#ff981f',
         ];
     }
 

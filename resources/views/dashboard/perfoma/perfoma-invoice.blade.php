@@ -24,6 +24,10 @@
     border-bottom: 1px solid #f1f1f1; white-space: nowrap;
   }
   .custom-table tbody tr:hover { background-color: #fafafa; }
+  .custom-table tbody tr.row-open-flash,
+  .custom-table tbody tr.row-open-flash td {
+    background-color: #e8f1ff !important;
+  }
   .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
   .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
   .table-wrapper {
@@ -202,7 +206,7 @@
                     $convertedSaleNumber = $convertedSales[$proforma->id] ?? null;
                     $convertedSaleOrderNumber = $convertedSaleOrders[$proforma->id] ?? null;
                   @endphp
-                  <tr>
+                  <tr data-edit-url="{{ route('proforma-invoice.edit', $proforma->id) }}">
                     <td>{{ optional($proforma->invoice_date)->format('d/m/Y') ?? '-' }}</td>
                     <td>{{ $proforma->bill_number ?? '-' }}</td>
                     <td>{{ $proforma->display_party_name }}</td>
@@ -236,9 +240,9 @@
                         </ul>
                       </div>
                       <div class="dropdown d-inline proforma-action-menu"
-                           data-preview-url="{{ route('proforma-invoice.preview', $proforma->id) }}"
-                           data-pdf-url="{{ route('proforma-invoice.pdf', $proforma->id) }}"
-                           data-print-url="{{ route('proforma-invoice.print', $proforma->id) }}"
+                           data-preview-url="{{ route('sale.invoice-preview', $proforma) }}"
+                           data-pdf-url="{{ route('sale.invoice-pdf', $proforma) }}"
+                           data-print-url="{{ route('sale.invoice-preview', ['sale' => $proforma->id, 'print' => 1]) }}"
                            data-duplicate-url="{{ route('proforma-invoice.duplicate', $proforma->id) }}">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                           <i class="fas fa-ellipsis-v"></i>
@@ -284,11 +288,13 @@
         <div class="modal-body p-0" style="min-height:72vh;">
           <iframe id="proformaPreviewFrame" title="Proforma Preview" style="width:100%; min-height:72vh; border:0;"></iframe>
         </div>
-        <div class="modal-footer justify-content-center gap-2 flex-wrap">
-          <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="proformaPreviewOpenPdf">Open PDF</button>
-          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="proformaPreviewPrint">Print</button>
-          <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-dismiss="modal">Close</button>
-        </div>
+          <div class="modal-footer justify-content-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="proformaPreviewOpenPdf">Open PDF</button>
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="proformaPreviewPrint">Print</button>
+            <button type="button" class="btn btn-outline-success rounded-pill px-4" id="proformaPreviewSavePdf">Save PDF</button>
+            <button type="button" class="btn btn-outline-primary rounded-pill px-4" id="proformaPreviewEmailPdf">Email PDF</button>
+            <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+          </div>
       </div>
     </div>
   </div>
@@ -346,6 +352,8 @@
       const proformaPreviewFrame = document.getElementById('proformaPreviewFrame');
       const proformaPreviewOpenPdf = document.getElementById('proformaPreviewOpenPdf');
       const proformaPreviewPrint = document.getElementById('proformaPreviewPrint');
+      const proformaPreviewSavePdf = document.getElementById('proformaPreviewSavePdf');
+      const proformaPreviewEmailPdf = document.getElementById('proformaPreviewEmailPdf');
       const proformaSearchToggle = document.getElementById('proformaSearchToggle');
       const proformaSearchForm = document.getElementById('proformaSearchForm');
       const proformaSearchInput = document.getElementById('proformaSearchInput');
@@ -445,6 +453,31 @@
         });
       }
 
+      if (proformaPreviewSavePdf) {
+        proformaPreviewSavePdf.addEventListener('click', function () {
+          const url = proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
+          if (!url) return;
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        });
+      }
+
+      if (proformaPreviewEmailPdf) {
+        proformaPreviewEmailPdf.addEventListener('click', function () {
+          const url = proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
+          if (!url) return;
+          const subject = 'Proforma Invoice';
+          const body = `Please find the proforma invoice here: ${url}`;
+          window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+        });
+      }
+
       proformaSearchToggle?.addEventListener('click', function () {
         if (!proformaSearchForm) return;
         const isHidden = proformaSearchForm.classList.contains('d-none');
@@ -476,7 +509,7 @@
       });
 
       $(document).ready(function () {
-        proformaState.table = $('#proformaTable').DataTable({
+      proformaState.table = $('#proformaTable').DataTable({
           pageLength: 10,
           lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
           order: [[0, 'desc']],
@@ -492,11 +525,31 @@
           }
         });
 
-        if (proformaSearchInput?.value) {
-          proformaState.table.search(proformaSearchInput.value).draw();
+      if (proformaSearchInput?.value) {
+        proformaState.table.search(proformaSearchInput.value).draw();
+      }
+
+      $(document).on('dblclick', '#proformaTable tbody tr[data-edit-url]', function (event) {
+        if ($(event.target).closest('.dropdown, a, button, input, select, textarea, label, .proforma-filter-flyout, .proforma-filter-trigger').length) {
+          return;
         }
 
-        proformaState.table.draw();
+        const editUrl = this.dataset.editUrl;
+        if (editUrl) {
+          const row = this;
+          row.classList.add('row-open-flash');
+          setTimeout(() => {
+            row.classList.remove('row-open-flash');
+            if (window.transactionPasscodeNavigate) {
+              window.transactionPasscodeNavigate(editUrl);
+            } else {
+              window.location.href = editUrl;
+            }
+          }, 120);
+        }
+      });
+
+      proformaState.table.draw();
 
         document.querySelectorAll('.table-wrapper .dropdown').forEach(function (dropdown) {
           dropdown.addEventListener('show.bs.dropdown', function () {

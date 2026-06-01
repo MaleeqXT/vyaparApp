@@ -1,6 +1,7 @@
 import './FrenchElite.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const FrenchElite = ({ selectedColor, businessInfo, signature, onCompanyClick, onSignatureClick, terms, onTermsClick, logo, onLogoClick, invoiceData }) => {
   const view = getInvoiceViewModel(invoiceData)
@@ -60,7 +61,7 @@ const FrenchElite = ({ selectedColor, businessInfo, signature, onCompanyClick, o
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="fe-td-left">{index + 1}</td>
-              <td className="fe-td-left"><strong>{item.name}</strong></td>
+              <td className="fe-td-left"><ItemDisplayName item={item} /></td>
               <td className="fe-td-right">{item.qty}</td>
               <td className="fe-td-right">{formatCurrency(item.rate)}</td>
               <td className="fe-td-right">{formatCurrency(item.amount ?? item.amt)}</td>

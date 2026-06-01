@@ -1,6 +1,7 @@
 import './Theme4.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const Theme4 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, onSignatureClick, selectedColor, terms, onTermsClick, invoiceData }) => {
   const accent = selectedColor || '#888888'
@@ -84,7 +85,7 @@ const Theme4 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, on
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="t4-td-left">{index + 1}</td>
-              <td className="t4-td-left"><strong>{item.name}</strong></td>
+              <td className="t4-td-left"><ItemDisplayName item={item} /></td>
               <td className="t4-td-right">{item.qty}</td>
               <td className="t4-td-right">{formatCurrency(item.rate)}</td>
               <td className="t4-td-right">{formatCurrency(item.amount)}</td>

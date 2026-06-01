@@ -149,31 +149,44 @@
           </div>
           <div class="modal fade" id="defaultUnitModal" tabindex="-1" aria-labelledby="defaultUnitModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header" style="background:#dbeafe;">
-                  <h1 class="modal-title fs-5" id="defaultUnitModalLabel">Select Default Unit</h1>
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 560px;">
+              <div class="modal-content" style="border-radius: 2px; overflow: hidden;">
+                <div class="modal-header" style="background:#dbeafe; padding: 12px 16px;">
+                  <h1 class="modal-title fs-5 fw-semibold" id="defaultUnitModalLabel" style="color:#334155;">Select Default Unit</h1>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                  <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
-                      <label class="form-label fw-semibold">Default Base Unit</label>
+                <div class="modal-body" style="padding: 20px 18px 20px;">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold text-uppercase mb-1" style="font-size:12px; color:#0f5b8a;">Default Base Unit</label>
                       <select class="form-select" id="defaultUnitBaseSelect"></select>
                     </div>
-                    <div class="col-md-5">
-                      <label class="form-label fw-semibold">Default Secondary Unit</label>
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold text-uppercase mb-1" style="font-size:12px; color:#0f5b8a;">Default Secondary Unit</label>
                       <select class="form-select" id="defaultUnitSecondarySelect"></select>
                     </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Rate</label>
-                      <input type="number" class="form-control" id="defaultUnitRateInput" min="0" step="0.0001" value="0">
+                  </div>
+
+                  <div class="mt-4">
+                    <div class="fw-semibold text-secondary mb-2" style="font-size:14px;">Conversion Rates</div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;border:2px solid #4f46e5;color:#4f46e5;">
+                          <i class="fa fa-circle" style="font-size:8px;"></i>
+                        </span>
+                        <span class="text-secondary fw-semibold" id="defaultUnitConversionBaseLabel">1</span>
+                        <span class="text-secondary fw-semibold" id="defaultUnitConversionBaseName">KILOGRAMS</span>
+                        <span class="text-secondary fw-semibold">=</span>
+                      </div>
+                      <input type="number" class="form-control" id="defaultUnitRateInput" min="0" step="0.0001" value="0" style="max-width:120px;">
+                      <span class="text-secondary fw-semibold" id="defaultUnitConversionSecondaryName">Chitank</span>
                     </div>
+                    <div class="text-muted small mt-2" id="defaultUnitConversionHint">1 KILOGRAMS = 0 Chitank</div>
                   </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="padding: 12px 18px 18px;">
                   <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary" id="saveDefaultUnitBtn">Save</button>
+                  <button type="button" class="btn btn-primary" id="saveDefaultUnitBtn" style="background:#0ea5e9; border-color:#0ea5e9; min-width: 88px;">Save</button>
                 </div>
               </div>
             </div>
@@ -881,6 +894,10 @@
         default_unit_base: document.getElementById('defaultUnitBaseSelect'),
         default_unit_secondary: document.getElementById('defaultUnitSecondarySelect'),
         default_unit_rate: document.getElementById('defaultUnitRateInput'),
+        default_unit_conversion_base_label: document.getElementById('defaultUnitConversionBaseLabel'),
+        default_unit_conversion_base_name: document.getElementById('defaultUnitConversionBaseName'),
+        default_unit_conversion_secondary_name: document.getElementById('defaultUnitConversionSecondaryName'),
+        default_unit_conversion_hint: document.getElementById('defaultUnitConversionHint'),
       };
 
       const normalizeBatchDateFormat = (value) => {
@@ -893,6 +910,39 @@
 
       const normalizeUnitValue = (value) => String(value || '').trim();
       const unitsModal = () => refs.default_unit_modal ? bootstrap.Modal.getOrCreateInstance(refs.default_unit_modal) : null;
+      const formatUnitName = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return 'Select Unit';
+        const unit = defaultUnitsCache.find((entry) => normalizeUnitValue(entry.short_name || entry.short || entry.name) === raw);
+        if (unit?.name && unit?.short_name) {
+          return `${String(unit.name).trim()} (${String(unit.short_name).trim()})`;
+        }
+        if (unit?.name) {
+          return String(unit.name).trim();
+        }
+        return raw;
+      };
+
+      const updateDefaultUnitConversionPreview = () => {
+        const baseValue = normalizeUnitValue(refs.default_unit_base?.value || itemSettings.default_unit_base);
+        const secondaryValue = normalizeUnitValue(refs.default_unit_secondary?.value || itemSettings.default_unit_secondary);
+        const rate = Number(refs.default_unit_rate?.value || 0);
+        const baseLabel = formatUnitName(baseValue);
+        const secondaryLabel = formatUnitName(secondaryValue);
+
+        if (refs.default_unit_conversion_base_label) {
+          refs.default_unit_conversion_base_label.textContent = '1';
+        }
+        if (refs.default_unit_conversion_base_name) {
+          refs.default_unit_conversion_base_name.textContent = baseLabel !== 'Select Unit' ? baseLabel.replace(/\s*\([^)]+\)\s*$/, '') : 'Select Unit';
+        }
+        if (refs.default_unit_conversion_secondary_name) {
+          refs.default_unit_conversion_secondary_name.textContent = secondaryLabel !== 'Select Unit' ? secondaryLabel.replace(/\s*\([^)]+\)\s*$/, '') : 'Select Unit';
+        }
+        if (refs.default_unit_conversion_hint) {
+          refs.default_unit_conversion_hint.textContent = `1 ${baseLabel !== 'Select Unit' ? baseLabel.replace(/\s*\([^)]+\)\s*$/, '') : 'Select Unit'} = ${rate} ${secondaryLabel !== 'Select Unit' ? secondaryLabel.replace(/\s*\([^)]+\)\s*$/, '') : 'Select Unit'}`;
+        }
+      };
 
       const loadUnitsIntoDefaultModal = async () => {
         if (defaultUnitsCache.length) return defaultUnitsCache;
@@ -923,6 +973,7 @@
         refs.default_unit_base.value = normalizeUnitValue(itemSettings.default_unit_base);
         refs.default_unit_secondary.value = normalizeUnitValue(itemSettings.default_unit_secondary);
         refs.default_unit_rate.value = itemSettings.default_unit_rate ?? 0;
+        updateDefaultUnitConversionPreview();
       };
 
       const syncDefaultUnitLink = () => {
@@ -935,6 +986,7 @@
       const openDefaultUnitModal = async () => {
         if (!refs.default_unit_modal) return;
         await populateDefaultUnitSelects();
+        updateDefaultUnitConversionPreview();
         unitsModal()?.show();
       };
 
@@ -1013,6 +1065,7 @@
         refs.default_unit_base.value = itemSettings.default_unit_base || '';
         refs.default_unit_secondary.value = itemSettings.default_unit_secondary || '';
         refs.default_unit_rate.value = itemSettings.default_unit_rate ?? 0;
+        updateDefaultUnitConversionPreview();
         refs.item_category_enabled.checked = !!itemSettings.item_category_enabled;
         refs.party_wise_item_rate_enabled.checked = !!itemSettings.party_wise_item_rate_enabled;
         refs.description_enabled.checked = !!itemSettings.description_enabled;
@@ -1175,6 +1228,10 @@
           alert(error.message || 'Unable to save default unit.');
         }
       });
+
+      refs.default_unit_base?.addEventListener('change', updateDefaultUnitConversionPreview);
+      refs.default_unit_secondary?.addEventListener('change', updateDefaultUnitConversionPreview);
+      refs.default_unit_rate?.addEventListener('input', updateDefaultUnitConversionPreview);
 
       document.getElementById('saveItemSettingsBtn')?.addEventListener('click', async () => {
         const $button = document.getElementById('saveItemSettingsBtn');

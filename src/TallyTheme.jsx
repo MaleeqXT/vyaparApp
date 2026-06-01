@@ -1,6 +1,7 @@
 import './TallyTheme.css'
 import { getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const TallyTheme = ({ businessInfo, invoiceData, onCompanyClick, signature, onSignatureClick, selectedColor, terms, onTermsClick, logo, onLogoClick }) => {
   const view = getInvoiceViewModel(invoiceData)
@@ -112,7 +113,7 @@ const TallyTheme = ({ businessInfo, invoiceData, onCompanyClick, signature, onSi
           {items.map((item, index) => (
               <tr key={`${item.name}-${index}`}>
                 <td>{index + 1}</td>
-                <td><strong>{item.name}</strong></td>
+                <td><ItemDisplayName item={item} /></td>
                 <td>{item.tadaat ?? item.qty}</td>
                 <td>{Number(item.grossW || 0).toFixed(2)}</td>
                 <td>{Number(item.netW || 0).toFixed(2)}</td>

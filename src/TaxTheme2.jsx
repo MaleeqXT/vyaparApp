@@ -1,6 +1,7 @@
 import './TaxTheme2.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const TaxTheme2 = ({ selectedColor, businessInfo, signature, onCompanyClick, onSignatureClick, terms, onTermsClick, logo, onLogoClick, invoiceData }) => {
   const view = getInvoiceViewModel(invoiceData)
@@ -58,7 +59,7 @@ const TaxTheme2 = ({ selectedColor, businessInfo, signature, onCompanyClick, onS
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="tax2-td-left">{index + 1}</td>
-              <td className="tax2-td-left"><strong>{item.name}</strong></td>
+              <td className="tax2-td-left"><ItemDisplayName item={item} /></td>
               <td className="tax2-td-right">{item.qty}</td>
               <td className="tax2-td-right">{formatCurrency(item.rate)}</td>
               <td className="tax2-td-right">{formatCurrency(item.amount ?? item.amt)}</td>

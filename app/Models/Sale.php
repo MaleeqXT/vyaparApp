@@ -40,6 +40,7 @@ class Sale extends Model
         'received_amount',
         'balance',
         'status',
+        'invoice_theme',
         'description',
         'image_path',
         'image_paths',
@@ -66,6 +67,7 @@ class Sale extends Model
         'grand_total' => 'decimal:2',
         'brokerage_rate' => 'decimal:2',
         'broker_amount' => 'decimal:2',
+        'invoice_theme' => 'array',
         'image_paths' => 'array',
         'document_paths' => 'array',
     ];

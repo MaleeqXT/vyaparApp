@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\Party;
 use App\Models\Transaction;
@@ -25,6 +26,9 @@ class PaymentInController extends Controller
             'nextEntryNo'  => (Transaction::max('id') ?? 0) + 1,
             'editPaymentIn' => $request->filled('edit_payment_in')
                 ? PaymentIn::with(['party', 'bankAccount', 'links.sale'])->find($request->integer('edit_payment_in'))
+                : null,
+            'duplicatePaymentIn' => $request->filled('duplicate_payment_in')
+                ? PaymentIn::with(['party', 'bankAccount', 'links.sale'])->find($request->integer('duplicate_payment_in'))
                 : null,
         ]);
     }
@@ -190,6 +194,11 @@ class PaymentInController extends Controller
         return redirect()->route('payment-in', ['edit_payment_in' => $paymentIn->id]);
     }
 
+    public function duplicate(PaymentIn $paymentIn)
+    {
+        return redirect()->route('payment-in', ['duplicate_payment_in' => $paymentIn->id]);
+    }
+
     public function update(Request $request, PaymentIn $paymentIn)
     {
         $request->validate([
@@ -344,12 +353,21 @@ class PaymentInController extends Controller
 
     public function print(PaymentIn $paymentIn)
     {
-        return view('invoice.print', ['paymentIn' => $paymentIn->load(['party', 'bankAccount'])]);
+        return view('dashboard.sales.payment-in-pdf', [
+            'paymentIn' => $paymentIn->load(['party', 'bankAccount', 'links.sale']),
+        ]);
     }
 
     public function pdf(PaymentIn $paymentIn)
     {
-        return redirect()->route('invoice.payment-in', ['payment_in' => $paymentIn->id]);
+        $paymentIn->load(['party', 'bankAccount', 'links.sale']);
+        $downloadName = 'payment-in-' . ($paymentIn->receipt_no ?: $paymentIn->id) . '.pdf';
+
+        $pdf = Pdf::loadView('dashboard.sales.payment-in-pdf', [
+            'paymentIn' => $paymentIn,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download($downloadName);
     }
 
     private function findMatchingTransaction(PaymentIn $paymentIn, float $amount): ?Transaction

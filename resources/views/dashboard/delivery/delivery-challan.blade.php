@@ -32,6 +32,10 @@
     border-bottom: 1px solid #f1f1f1; white-space: nowrap;
   }
   .custom-table tbody tr:hover { background-color: #fafafa; }
+  .custom-table tbody tr.row-open-flash,
+  .custom-table tbody tr.row-open-flash td {
+    background-color: #e8f1ff !important;
+  }
   .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
   .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
   .table-wrapper {
@@ -395,6 +399,7 @@
                   $challanDescriptionJson = $challan->description ?? ($challan->challanDetail?->description ?? '');
                 @endphp
                 <tr class="challan-row"
+                    data-edit-url="{{ route('delivery-challan.edit', $challan->id) }}"
                     data-date="{{ optional($challan->invoice_date)->format('d/m/Y') ?? '-' }}"
                     data-party-name="{{ $challan->display_party_name }}"
                     data-challan-no="{{ $challan->bill_number ?? '-' }}"
@@ -445,9 +450,9 @@
                         <li><a class="dropdown-item" href="#" onclick="return transactionPasscodeNavigate('{{ route('delivery-challan.edit', $challan->id) }}');">View/Edit</a></li>
                         <li><a class="dropdown-item" href="#" onclick="return transactionPasscodeExecute('deleteChallan','{{ route('delivery-challan.destroy', $challan->id) }}');">Delete</a></li>
                         <li><a class="dropdown-item" href="{{ route('delivery-challan.duplicate', $challan->id) }}">Duplicate</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="openChallanRecordPreview('{{ route('delivery-challan.preview', $challan->id) }}', '{{ route('delivery-challan.pdf', $challan->id) }}', '{{ route('delivery-challan.print', $challan->id) }}'); return false;">Preview</a></li>
-                        <li><a class="dropdown-item" href="{{ route('delivery-challan.pdf', $challan->id) }}" target="_blank" rel="noopener">Open PDF</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="printChallanPdf('{{ route('delivery-challan.print', $challan->id) }}'); return false;">Print</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openChallanRecordPreview('{{ route('sale.invoice-preview', $challan) }}', '{{ route('sale.invoice-pdf', $challan) }}', '{{ route('sale.invoice-preview', ['sale' => $challan->id, 'print' => 1]) }}'); return false;">Preview</a></li>
+                        <li><a class="dropdown-item" href="{{ route('sale.invoice-pdf', $challan) }}" target="_blank" rel="noopener">Open PDF</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="printChallanPdf('{{ route('sale.invoice-preview', ['sale' => $challan->id, 'print' => 1]) }}'); return false;">Print</a></li>
                       </ul>
                     </div>
                   </td>
@@ -1169,6 +1174,26 @@
           lengthMenu: 'Show _MENU_ delivery challans',
           info: 'Showing _START_ to _END_ of _TOTAL_ delivery challans',
           emptyTable: 'No delivery challans found'
+        }
+      });
+
+      $(document).on('dblclick', '#challanTable tbody tr.challan-row', function (event) {
+        if ($(event.target).closest('.dropdown, a, button, input, select, textarea, label, .challan-filter-flyout, .challan-filter-trigger').length) {
+          return;
+        }
+
+        const editUrl = this.dataset.editUrl;
+        if (editUrl) {
+          const row = this;
+          row.classList.add('row-open-flash');
+          setTimeout(() => {
+            row.classList.remove('row-open-flash');
+            if (window.transactionPasscodeNavigate) {
+              window.transactionPasscodeNavigate(editUrl);
+            } else {
+              window.location.href = editUrl;
+            }
+          }, 120);
         }
       });
 

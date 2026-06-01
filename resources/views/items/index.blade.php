@@ -1081,11 +1081,13 @@ input:checked + .adj-slider:before { transform: translateX(20px); }
             <div class="modal-body p-0" style="min-height:70vh;">
                 <iframe id="itemTxnPreviewFrame" title="Preview" style="width:100%; min-height:70vh; border:0;"></iframe>
             </div>
-            <div class="modal-footer justify-content-center gap-2 flex-wrap">
+              <div class="modal-footer justify-content-center gap-2 flex-wrap">
                 <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="itemTxnPreviewOpenPdf">Open PDF</button>
                 <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="itemTxnPreviewPrint">Print</button>
+                <button type="button" class="btn btn-outline-success rounded-pill px-4" id="itemTxnPreviewSavePdf">Save PDF</button>
+                <button type="button" class="btn btn-outline-primary rounded-pill px-4" id="itemTxnPreviewEmailPdf">Email PDF</button>
                 <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-dismiss="modal">Close</button>
-            </div>
+              </div>
         </div>
     </div>
 </div>
@@ -1412,7 +1414,7 @@ function renderList(items = getFilteredItems()) {
                 </button>
                 <div class="il-item-dd" id="item-dd-${index}">
                     <div class="il-item-dd-item" onclick="editItemNav(${index})">View/Edit</div>
-                    <div class="il-item-dd-item danger" onclick="deleteItem(${index})">Delete</div>
+                <div class="il-item-dd-item danger" onclick="deleteItemWithPasscode(${index})">Delete</div>
                 </div>
             </div>
         </div>
@@ -1424,7 +1426,14 @@ function toggleItemDD(e, i) {
     document.querySelectorAll('.il-item-dd.open').forEach(d => d.classList.remove('open'));
     document.getElementById(`item-dd-${i}`).classList.toggle('open');
 }
-function editItemNav(i) { window.location.href = '{{ url('dashboard/items') }}/' + (allItems[i].id || i) + '/edit'; }
+function editItemNav(i) {
+    const url = '{{ url('dashboard/items') }}/' + (allItems[i].id || i) + '/edit';
+    if (window.requestTransactionPasscode) {
+        window.requestTransactionPasscode(() => { window.location.href = url; });
+        return;
+    }
+    window.location.href = url;
+}
 /* ── Delete modal state ── */
 let deleteTargetIdx = null;
 
@@ -1455,7 +1464,7 @@ function confirmDelete() {
     formData.append('_method', 'DELETE');
     formData.append('_token', csrfToken);
 
-   fetch(`{{ url('dashboard/items') }}/${item.id}`, {
+    fetch(`{{ url('dashboard/items') }}/${item.id}`, {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
         body: formData
@@ -1481,6 +1490,18 @@ function confirmDelete() {
         }
     })
     .catch(() => showToast('Network error. Please try again.'));
+}
+
+function deleteItemWithPasscode(i) {
+    if (window.requestTransactionPasscode) {
+        window.requestTransactionPasscode(() => {
+            deleteTargetIdx = i;
+            document.getElementById('delete-overlay')?.classList.add('open');
+            document.querySelectorAll('.il-item-dd.open').forEach(d => d.classList.remove('open'));
+        });
+        return;
+    }
+    deleteItem(i);
 }
 
 function getTotalQty(idx) {
@@ -1930,8 +1951,8 @@ function getTxnActionLinks(txn) {
         links.duplicate = `${base}/sales/${id}/duplicate`;
         links.convert_return = `${base}/sale-return/create?sale_id=${id}`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview`;
+        links.print = `${base}/sales/${id}/invoice-preview?print=1`;
         links.payment = `${base}/payment-in?sale_id=${id}`;
         links.payment_history = `${base}/sales/${id}/payment-history`;
         links.history = `${base}/sales/${id}/bank-history`;
@@ -1942,8 +1963,8 @@ function getTxnActionLinks(txn) {
         links.delete = `${base}/estimates/${id}`;
         links.duplicate = `${base}/estimates/${id}/convert-to-sale`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview`;
+        links.print = `${base}/sales/${id}/invoice-preview?print=1`;
         return links;
     }
     if (type === 'proforma') {
@@ -1951,8 +1972,8 @@ function getTxnActionLinks(txn) {
         links.delete = `${base}/proforma-invoice/${id}`;
         links.duplicate = `${base}/proforma-invoice/${id}/convert-to-sale`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview`;
+        links.print = `${base}/sales/${id}/invoice-preview?print=1`;
         return links;
     }
     if (type === 'sale_return') {
@@ -1960,8 +1981,8 @@ function getTxnActionLinks(txn) {
         links.delete = `${base}/sale-return/${id}`;
         links.duplicate = `${base}/sale-return/${id}/duplicate`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview`;
+        links.print = `${base}/sales/${id}/invoice-preview?print=1`;
         return links;
     }
     if (type === 'delivery_challan') {
@@ -1969,15 +1990,15 @@ function getTxnActionLinks(txn) {
         links.delete = `${base}/delivery-challan/${id}`;
         links.duplicate = `${base}/delivery-challans/${id}/convert-to-sale`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}&doc=delivery_challan`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}&doc=delivery_challan`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&doc=delivery_challan&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview?doc=delivery_challan`;
+        links.print = `${base}/sales/${id}/invoice-preview?doc=delivery_challan&print=1`;
         return links;
     }
     if (type === 'sale_order') {
         links.duplicate = `${base}/sale-orders/${id}/convert-to-sale`;
         links.pdf = `${base}/invoice/download-pdf?sale_id=${id}`;
-        links.preview = `${base}/invoice/modal-preview?sale_id=${id}`;
-        links.print = `${base}/invoice/modal-preview?sale_id=${id}&print=1`;
+        links.preview = `${base}/sales/${id}/invoice-preview`;
+        links.print = `${base}/sales/${id}/invoice-preview?print=1`;
         return links;
     }
     return links;
@@ -2007,6 +2028,8 @@ const itemTxnPreviewFrame = document.getElementById('itemTxnPreviewFrame');
 const itemTxnPreviewModalTitle = document.getElementById('itemTxnPreviewModalTitle');
 const itemTxnPreviewOpenPdfBtn = document.getElementById('itemTxnPreviewOpenPdf');
 const itemTxnPreviewPrintBtn = document.getElementById('itemTxnPreviewPrint');
+const itemTxnPreviewSavePdfBtn = document.getElementById('itemTxnPreviewSavePdf');
+const itemTxnPreviewEmailPdfBtn = document.getElementById('itemTxnPreviewEmailPdf');
 const itemTxnHistoryModalEl = document.getElementById('itemTxnHistoryModal');
 const itemTxnHistoryModal = itemTxnHistoryModalEl ? bootstrap.Modal.getOrCreateInstance(itemTxnHistoryModalEl) : null;
 const itemTxnHistoryModalTitle = document.getElementById('itemTxnHistoryModalTitle');
@@ -2027,6 +2050,7 @@ function openItemTxnPreview(url, title, options = {}) {
     itemTxnPreviewFrame.src = url;
     itemTxnPreviewFrame.dataset.pdfUrl = options.pdfUrl || url;
     itemTxnPreviewFrame.dataset.printUrl = options.printUrl || '';
+    itemTxnPreviewFrame.dataset.downloadUrl = options.downloadUrl || options.pdfUrl || url;
     itemTxnPreviewModal.show();
 }
 
@@ -2042,11 +2066,32 @@ itemTxnPreviewPrintBtn?.addEventListener('click', function () {
     openUrlInNewTab(printUrl);
 });
 
+itemTxnPreviewSavePdfBtn?.addEventListener('click', function () {
+    const downloadUrl = itemTxnPreviewFrame?.dataset?.downloadUrl || itemTxnPreviewFrame?.dataset?.pdfUrl || itemTxnPreviewFrame?.src;
+    if (!downloadUrl) return showToast('PDF is not available for this transaction.');
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+});
+
+itemTxnPreviewEmailPdfBtn?.addEventListener('click', function () {
+    const downloadUrl = itemTxnPreviewFrame?.dataset?.downloadUrl || itemTxnPreviewFrame?.dataset?.pdfUrl || itemTxnPreviewFrame?.src;
+    if (!downloadUrl) return showToast('PDF is not available for this transaction.');
+    const subject = document.getElementById('txnTitle')?.textContent?.trim() || 'Transaction PDF';
+    const body = `Please find the PDF here: ${downloadUrl}`;
+    window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+});
+
 itemTxnPreviewModalEl?.addEventListener('hidden.bs.modal', function () {
     if (itemTxnPreviewFrame) {
         itemTxnPreviewFrame.src = 'about:blank';
         delete itemTxnPreviewFrame.dataset.pdfUrl;
         delete itemTxnPreviewFrame.dataset.printUrl;
+        delete itemTxnPreviewFrame.dataset.downloadUrl;
     }
 });
 

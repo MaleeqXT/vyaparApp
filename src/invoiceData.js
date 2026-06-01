@@ -31,7 +31,8 @@ export function getInvoiceViewModel(invoiceData = {}) {
       const baseName = String(item.name || 'Item').trim()
 
       return {
-        name: customFieldSummary ? `${baseName} (${customFieldSummary})` : baseName,
+        name: baseName,
+        displayName: baseName,
         hsn: item.hsn || '',
         qty,
         tadaat: Number(item.tadaat ?? qty),

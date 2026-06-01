@@ -59,13 +59,24 @@ class InvoiceController extends Controller
     {
         $viewData = $this->buildInvoiceViewData($request);
         $saleId = (int) ($viewData['sale']->id ?? $request->integer('sale_id') ?? $request->integer('payment_in'));
+        $themeDefaults = $this->resolveStoredInvoiceThemeConfig($viewData['sale'] ?? null, $request);
+        $themeConfig = $this->resolveInvoiceThemeConfig(
+            $themeDefaults['mode'],
+            $themeDefaults[$themeDefaults['mode'] === 'thermal' ? 'thermalThemeId' : 'regularThemeId']
+        );
 
         abort_unless($saleId > 0 || !empty($viewData['invoicePreviewData']), 404);
 
-        $pdf = Pdf::loadView('invoice.party-preview', [
+        $pdf = Pdf::loadView('themes.sales_invoice_pdf_document', [
             'invoicePreviewData' => $viewData['invoicePreviewData'],
-            'autoPrint' => false,
+            'themeConfig' => $themeConfig,
+            'accent' => $themeDefaults['accent'],
+            'accent2' => $themeDefaults['accent2'],
         ])->setPaper('a4', 'portrait');
+
+        if (($themeConfig['mode'] ?? 'regular') === 'thermal') {
+            $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait');
+        }
 
         $downloadName = 'invoice-' . ($viewData['invoicePreviewData']['invoiceNo'] ?? $saleId ?: 'preview') . '.pdf';
 
@@ -85,17 +96,20 @@ class InvoiceController extends Controller
         $invoicePreviewData = $this->mapSaleToThemePreviewData($sale);
         $invoicePreviewData['title'] = 'Proforma Invoice';
         $reactAssets = $this->resolveReactInvoiceAssets();
+        $themeDefaults = $this->resolveStoredInvoiceThemeConfig($sale, $request);
 
         return view('invoice.proforma', [
             'invoicePreviewData' => $invoicePreviewData,
             'pageTitle' => 'Proforma Preview',
             'browserTabLabel' => 'Proforma #' . ($sale->bill_number ?: $sale->id),
             'saveCloseUrl' => route('proforma-invoice'),
-            'initialMode' => (string) $request->query('mode', 'regular'),
-            'initialRegularThemeId' => (int) $request->query('theme_id', 1),
-            'initialThermalThemeId' => (int) $request->query('theme_id', 1),
-            'initialAccent' => (string) $request->query('accent', '#1f4e79'),
-            'initialAccent2' => (string) $request->query('accent2', '#ff981f'),
+            'themeSaveUrl' => route('sale.invoice-theme.store', $sale),
+            'initialMode' => $themeDefaults['mode'],
+            'initialRegularThemeId' => $themeDefaults['regularThemeId'],
+            'initialThermalThemeId' => $themeDefaults['thermalThemeId'],
+            'initialAccent' => $themeDefaults['accent'],
+            'initialAccent2' => $themeDefaults['accent2'],
+            'autoPrintPreview' => $request->boolean('print'),
             'reactCss' => $reactAssets['css_url'],
             'reactJs' => $reactAssets['js_url'],
             'reactIsModule' => true,
@@ -152,6 +166,13 @@ class InvoiceController extends Controller
             $viewData['sale'] = $sale;
             $viewData['invoicePreviewData'] = $this->mapSaleToThemePreviewData($invoiceSource);
             $viewData['browserTabLabel'] = ($invoiceSource->type === 'delivery_challan' ? 'Delivery Challan' : 'Invoice') . ' #' . ($invoiceSource->bill_number ?: $invoiceSource->id);
+            $themeDefaults = $this->resolveStoredInvoiceThemeConfig($invoiceSource, $request);
+            $viewData['initialMode'] = $themeDefaults['mode'];
+            $viewData['initialRegularThemeId'] = $themeDefaults['regularThemeId'];
+            $viewData['initialThermalThemeId'] = $themeDefaults['thermalThemeId'];
+            $viewData['initialAccent'] = $themeDefaults['accent'];
+            $viewData['initialAccent2'] = $themeDefaults['accent2'];
+            $viewData['themeSaveUrl'] = route('sale.invoice-theme.store', $invoiceSource);
         } elseif ($request->filled('payment_in')) {
             $paymentInRecord = PaymentIn::with(['party', 'bankAccount'])
                 ->findOrFail($request->integer('payment_in'));
@@ -162,6 +183,78 @@ class InvoiceController extends Controller
         }
 
         return $viewData;
+    }
+
+    private function resolveInvoiceThemeConfig(string $mode, int $themeId): array
+    {
+        $mode = $mode === 'thermal' ? 'thermal' : 'regular';
+
+        $themes = $mode === 'thermal'
+            ? [
+                1 => ['name' => 'Thermal Theme 1', 'variant' => 'thermal1'],
+                2 => ['name' => 'Thermal Theme 2', 'variant' => 'thermal2'],
+                3 => ['name' => 'Thermal Theme 3', 'variant' => 'thermal3'],
+                4 => ['name' => 'Thermal Theme 4', 'variant' => 'thermal4'],
+                5 => ['name' => 'Thermal Theme 5', 'variant' => 'thermal5'],
+            ]
+            : [
+                1 => ['name' => 'Telly Theme', 'variant' => 'classicA'],
+                2 => ['name' => 'Landscape Theme 1', 'variant' => 'purpleA'],
+                3 => ['name' => 'Landscape Theme 2', 'variant' => 'classicB'],
+                4 => ['name' => 'Tax Theme 1', 'variant' => 'purpleB'],
+                5 => ['name' => 'Tax Theme 2', 'variant' => 'classicC'],
+                6 => ['name' => 'Tax Theme 3', 'variant' => 'modernPurple'],
+                7 => ['name' => 'Tax Theme 4', 'variant' => 'purpleC'],
+                8 => ['name' => 'Tax Theme 5', 'variant' => 'classicSale'],
+                9 => ['name' => 'Tax Theme 6', 'variant' => 'taxTheme6'],
+                10 => ['name' => 'Double Divine', 'variant' => 'doubleDivine'],
+                11 => ['name' => 'French Elite', 'variant' => 'frenchElite'],
+                12 => ['name' => 'Theme 1', 'variant' => 'theme1'],
+                13 => ['name' => 'Theme 2', 'variant' => 'theme2'],
+                14 => ['name' => 'Theme 3', 'variant' => 'theme3'],
+                15 => ['name' => 'Theme 4', 'variant' => 'theme4'],
+            ];
+
+        $theme = $themes[$themeId] ?? reset($themes);
+
+        return [
+            'id' => $themeId,
+            'mode' => $mode,
+            'name' => $theme['name'],
+            'variant' => $theme['variant'],
+        ];
+    }
+
+    private function resolveStoredInvoiceThemeConfig(?Sale $sale, Request $request): array
+    {
+        $stored = $sale?->invoice_theme;
+
+        if (is_string($stored)) {
+            $stored = json_decode($stored, true);
+        }
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $mode = (string) ($request->query('mode', $stored['mode'] ?? 'regular'));
+        $mode = $mode === 'thermal' ? 'thermal' : 'regular';
+
+        $regularThemeId = (int) $request->query(
+            'theme_id',
+            (int) ($stored['regularThemeId'] ?? ($stored['theme_id'] ?? 1))
+        );
+        $thermalThemeId = (int) ($stored['thermalThemeId'] ?? ($stored['theme_id'] ?? 1));
+        $accent = (string) $request->query('accent', (string) ($stored['accent'] ?? '#1f4e79'));
+        $accent2 = (string) $request->query('accent2', (string) ($stored['accent2'] ?? '#ff981f'));
+
+        return [
+            'mode' => $mode,
+            'regularThemeId' => $regularThemeId > 0 ? $regularThemeId : 1,
+            'thermalThemeId' => $thermalThemeId > 0 ? $thermalThemeId : 1,
+            'accent' => $accent !== '' ? $accent : '#1f4e79',
+            'accent2' => $accent2 !== '' ? $accent2 : '#ff981f',
+        ];
     }
 
     private function resolveChromeExecutable(): ?string
@@ -285,22 +378,54 @@ class InvoiceController extends Controller
             $quantity = (float) ($item->quantity ?? 0);
             $rate = (float) ($item->unit_price ?? 0);
             $amount = (float) ($item->amount ?? 0);
-            $customFields = collect($item->item?->custom_fields ?? [])
-                ->map(function ($field) {
+            $itemDefinitions = collect($item->item?->custom_fields ?? []);
+            $customFieldsSource = $item->custom_fields ?? [];
+            if (empty($customFieldsSource)) {
+                $extraFields = is_array($item->extra_fields ?? null) ? $item->extra_fields : [];
+                $customFieldsSource = collect(range(1, 6))
+                    ->map(function ($index) use ($extraFields) {
+                        $value = trim((string) ($extraFields['custom_field_' . $index] ?? ''));
+                        if ($value === '') {
+                            return null;
+                        }
+
+                        return [
+                            'key' => 'custom_field_' . $index,
+                            'enabled' => true,
+                            'label' => 'Custom Field ' . $index,
+                            'show_in_print' => true,
+                            'value' => $value,
+                        ];
+                    })
+                    ->filter()
+                    ->values()
+                    ->all();
+            }
+
+            $customFields = collect($customFieldsSource ?: $itemDefinitions->all())
+                ->values()
+                ->map(function ($field, $index) use ($itemDefinitions) {
+                    $definition = $itemDefinitions->get($index, []);
                     if (is_array($field)) {
+                        $label = trim((string) ($field['label'] ?? $field['name'] ?? ''));
+                        $definitionLabel = is_array($definition) ? trim((string) ($definition['label'] ?? $definition['name'] ?? '')) : '';
+                        if ($label === '' || preg_match('/^Custom Field\s*\d+$/i', $label)) {
+                            $label = $definitionLabel;
+                        }
                         return [
                             'key' => (string) ($field['key'] ?? ''),
                             'enabled' => (bool) ($field['enabled'] ?? true),
-                            'label' => trim((string) ($field['label'] ?? $field['name'] ?? '')),
+                            'label' => $label,
                             'show_in_print' => (bool) ($field['show_in_print'] ?? true),
                             'value' => trim((string) ($field['value'] ?? $field['text'] ?? '')),
                         ];
                     }
 
+                    $definitionLabel = is_array($definition) ? trim((string) ($definition['label'] ?? $definition['name'] ?? '')) : '';
                     return [
                         'key' => '',
                         'enabled' => true,
-                        'label' => '',
+                        'label' => $definitionLabel,
                         'show_in_print' => true,
                         'value' => trim((string) $field),
                     ];
@@ -328,6 +453,22 @@ class InvoiceController extends Controller
                 'gst' => $taxPct,
                 'amt' => $amount,
                 'customFields' => $customFields,
+                'customFieldSummary' => collect($customFields)
+                    ->map(function ($field) {
+                        if (!is_array($field)) {
+                            return trim((string) $field);
+                        }
+
+                        $label = trim((string) ($field['label'] ?? ''));
+                        $value = trim((string) ($field['value'] ?? ''));
+                        if ($label === '' && $value === '') {
+                            return '';
+                        }
+
+                        return $value !== '' ? ($label !== '' ? $label . ': ' . $value : $value) : $label;
+                    })
+                    ->filter()
+                    ->implode(' | '),
                 'amount' => $amount,
             ];
         })->values()->all();

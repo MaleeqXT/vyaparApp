@@ -144,7 +144,7 @@
     /* ── Type Label ── */
     .type-label { font-size: 13px; font-weight: 400; color: #000000; text-transform: capitalize; display: inline-block; }
 
-   
+
 
     /* ── Deposit Action Link ── */
     .deposit-link {

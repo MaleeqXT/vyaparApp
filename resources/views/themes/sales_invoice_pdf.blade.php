@@ -4,6 +4,8 @@
     'pageTitle' => $pageTitle ?? 'Invoice PDF',
     'browserTabLabel' => $browserTabLabel ?? 'Invoice PDF',
     'saveCloseUrl' => $saveCloseUrl ?? route('sale.invoice-preview', $sale),
+    'themeSaveUrl' => $themeSaveUrl ?? route('sale.invoice-theme.store', $sale),
+    'autoPrintPreview' => $autoPrintPreview ?? false,
     'pdfMode' => $pdfMode ?? true,
     'initialMode' => $initialMode ?? 'regular',
     'initialRegularThemeId' => $initialRegularThemeId ?? 1,
