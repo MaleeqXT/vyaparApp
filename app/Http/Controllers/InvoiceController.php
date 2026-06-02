@@ -40,6 +40,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
+        // return $request->all();
         return view('invoice.index', $this->buildInvoiceViewData($request));
     }
 
@@ -123,16 +124,28 @@ class InvoiceController extends Controller
 
     private function buildInvoiceViewData(Request $request): array
     {
+        $type = $request->query('type');
         $selectedTheme = (string) $request->query('theme', 'tally');
         $selectedColor = (string) $request->query('color', '#707070');
         $selectedColor2 = (string) $request->query('color2', '#ff981f');
         $reactAssets = $this->resolveReactInvoiceAssets();
 
+        $saveCloseUrl = route('sale.index');
+        if ($type === 'sale_order') {
+            $saveCloseUrl = route('sale-order');
+        } elseif ($type === 'return-order') {
+            $saveCloseUrl = route('sale-return');
+        }
+
         $viewData = [
             'invoicePreviewData' => [],
             'pageTitle' => 'Preview',
             'browserTabLabel' => 'Invoice Preview',
-            'saveCloseUrl' => route('sale.index'),
+            'saveCloseUrl' => $saveCloseUrl,
+            'documentType' => $type,
+            // 'saveCloseUrl' => route('sale.index'),
+            // 'saveCloseUrl' => route('sale-order'),
+
             'initialMode' => $selectedTheme,
             'initialRegularThemeId' => (int) $request->query('theme_id', 1),
             'initialThermalThemeId' => (int) $request->query('theme_id', 1),
@@ -148,6 +161,7 @@ class InvoiceController extends Controller
 
             $docType = $request->query('doc');
             $invoiceSource = $sale;
+            $savedTheme = $this->resolveSavedSaleThemeState($sale);
 
             if ($docType === 'delivery_challan') {
                 if ($sale->type === 'delivery_challan') {
