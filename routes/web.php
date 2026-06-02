@@ -78,6 +78,8 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::put('/sales/{sale}', [SaleController::class, 'update'])->name('sale.update');
     Route::get('/sales/{sale}/invoice-preview', [SaleController::class, 'invoicePreview'])->name('sale.invoice-preview');
     Route::get('/sales/{sale}/invoice-pdf', [SaleController::class, 'invoicePdf'])->name('sale.invoice-pdf');
+    Route::get('/sales/{sale}/print', [SaleController::class, 'print'])->name('sale.print');
+    Route::post('/sales/{sale}/invoice-theme', [SaleController::class, 'storeInvoiceTheme'])->name('sale.invoice-theme.store');
     Route::get('/sales/{sale}/delivery-preview', [SaleController::class, 'deliveryPreview'])->name('sale.delivery-preview');
     Route::get('/sales/{sale}/payment-history', [SaleController::class, 'paymentHistory'])->name('sale.payment-history');
     Route::get('/sales/{sale}/bank-history', [SaleController::class, 'bankHistory'])->name('sale.bank-history');
@@ -248,6 +250,7 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('settings/items', [SettingController::class, 'items'])->name('settings.items');
     Route::post('settings/items', [SettingController::class, 'updateItems'])->name('settings.items.update');
     Route::get('settings/parties', [SettingController::class, 'parties'])->name('settings.parties');
+    Route::get('settings/party-reminders', [SettingController::class, 'partyReminders'])->name('settings.party-reminders');
     Route::get('settings/transaction-messages', [SettingController::class, 'transactionMessages'])->name('settings.transaction-messages');
     Route::get('settings/print-layout', [SettingController::class, 'printLayout'])->name('settings.print-layout');
 
@@ -474,14 +477,15 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::post('/warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');
     Route::post('/bank-accounts/bulk-status', [BankAccountController::class, 'bulkStatus'])->name('bank-accounts.bulk-status');
     // payment-in
-    Route::post('/payments-in', [PaymentInController::class, 'store'])->name('payments-in.store');
-    Route::get('/payments-in/{paymentIn}/edit', [PaymentInController::class, 'edit'])->name('payments-in.edit');
-    Route::put('/payments-in/{paymentIn}', [PaymentInController::class, 'update'])->name('payments-in.update');
-    Route::delete('/payments-in/{paymentIn}', [PaymentInController::class, 'destroy'])->name('payments-in.destroy');
-    Route::get('/payments-in/{paymentIn}/print', [PaymentInController::class, 'print'])->name('payments-in.print');
-    Route::get('/payments-in/{paymentIn}/pdf', [PaymentInController::class, 'pdf'])->name('payments-in.pdf');
-    Route::get('/payments-in/{paymentIn}/history', [PaymentInController::class, 'getHistory'])->name('payments-in.history');
-    Route::get('/payments-in/linkable-sales/{party}', [PaymentInController::class, 'linkableSales'])->name('payments-in.linkable-sales');
+Route::post('/payments-in', [PaymentInController::class, 'store'])->name('payments-in.store');
+Route::get('/payments-in/{paymentIn}/edit', [PaymentInController::class, 'edit'])->name('payments-in.edit');
+Route::get('/payments-in/{paymentIn}/duplicate', [PaymentInController::class, 'duplicate'])->name('payments-in.duplicate');
+Route::put('/payments-in/{paymentIn}', [PaymentInController::class, 'update'])->name('payments-in.update');
+Route::delete('/payments-in/{paymentIn}', [PaymentInController::class, 'destroy'])->name('payments-in.destroy');
+Route::get('/payments-in/{paymentIn}/print', [PaymentInController::class, 'print'])->name('payments-in.print');
+Route::get('/payments-in/{paymentIn}/pdf', [PaymentInController::class, 'pdf'])->name('payments-in.pdf');
+Route::get('/payments-in/{paymentIn}/history', [PaymentInController::class, 'getHistory'])->name('payments-in.history');
+Route::get('/payments-in/linkable-sales/{party}', [PaymentInController::class, 'linkableSales'])->name('payments-in.linkable-sales');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

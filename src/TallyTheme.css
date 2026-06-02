@@ -53,6 +53,26 @@
   margin-bottom: 20px;
 }
 
+.tally-party-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+.tally-party-field-group {
+  min-width: 0;
+}
+
+.tally-party-field-item {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #222;
+  word-break: break-word;
+}
+
 .tally-transport-info {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -199,6 +219,10 @@
 
 @media (max-width: 768px) {
   .tally-transport-info {
+    grid-template-columns: 1fr;
+  }
+
+  .tally-party-fields {
     grid-template-columns: 1fr;
   }
 }

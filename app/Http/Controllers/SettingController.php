@@ -148,12 +148,16 @@ class SettingController extends Controller
             'direct_barcode_scan_enabled' => ['nullable', 'boolean'],
             'stock_maintenance_enabled' => ['nullable', 'boolean'],
             'manufacturing_enabled' => ['nullable', 'boolean'],
-            'show_low_stock_dialog' => ['nullable', 'boolean'],
-            'items_unit_enabled' => ['nullable', 'boolean'],
-            'default_unit_enabled' => ['nullable', 'boolean'],
-            'item_category_enabled' => ['nullable', 'boolean'],
-            'party_wise_item_rate_enabled' => ['nullable', 'boolean'],
-            'description_enabled' => ['nullable', 'boolean'],
+              'show_low_stock_dialog' => ['nullable', 'boolean'],
+              'items_unit_enabled' => ['nullable', 'boolean'],
+              'default_unit_enabled' => ['nullable', 'boolean'],
+              'default_unit_label' => ['nullable', 'string', 'max:100'],
+              'default_unit_base' => ['nullable', 'string', 'max:100'],
+              'default_unit_secondary' => ['nullable', 'string', 'max:100'],
+              'default_unit_rate' => ['nullable', 'numeric', 'min:0'],
+              'item_category_enabled' => ['nullable', 'boolean'],
+              'party_wise_item_rate_enabled' => ['nullable', 'boolean'],
+              'description_enabled' => ['nullable', 'boolean'],
             'description_label' => ['nullable', 'string', 'max:100'],
             'item_wise_tax_enabled' => ['nullable', 'boolean'],
             'item_wise_discount_enabled' => ['nullable', 'boolean'],
@@ -206,7 +210,17 @@ class SettingController extends Controller
 
     public function parties()
     {
-        return view('dashboard.settings.parties');
+        return view('dashboard.settings.parties', [
+            'partySettings' => $this->getPartySettings(),
+        ]);
+    }
+
+    public function partyReminders()
+    {
+        return view('dashboard.settings.party-reminders', [
+            'partySettings' => $this->getPartySettings(),
+            'reminderParties' => \App\Models\Party::query()->orderBy('name')->get(),
+        ]);
     }
 
     public function transactionMessages()
@@ -217,6 +231,25 @@ class SettingController extends Controller
     public function printLayout()
     {
         return view('dashboard.settings.print');
+    }
+
+    private function getPartySettings(): array
+    {
+        return [
+            'party_grouping' => AppSetting::getValue('party_grouping', '1') === '1',
+            'shipping_address' => AppSetting::getValue('shipping_address', '1') === '1',
+            'print_shipping_address' => AppSetting::getValue('print_shipping_address', '1') === '1',
+            'party_status' => AppSetting::getValue('party_status', '1') === '1',
+            'payment_reminder' => AppSetting::getValue('payment_reminder', '1') === '1',
+            'payment_reminder_days' => (int) AppSetting::getValue('payment_reminder_days', '2'),
+            'payment_reminder_message' => (string) AppSetting::getValue('payment_reminder_message', "Dear [Party Name],\n\nYour payment of [Amount] is pending with [Business Name].\n\n[Additional Message]\n\nIf you already have made the payment, kindly ignore this message."),
+            'additional_field_1' => AppSetting::getValue('party_additional_field_1', '0') === '1',
+            'additional_field_1_name' => (string) AppSetting::getValue('party_additional_field_1_name', ''),
+            'additional_field_1_print' => AppSetting::getValue('party_additional_field_1_print', '0') === '1',
+            'additional_field_2' => AppSetting::getValue('party_additional_field_2', '0') === '1',
+            'additional_field_2_name' => (string) AppSetting::getValue('party_additional_field_2_name', ''),
+            'additional_field_2_print' => AppSetting::getValue('party_additional_field_2_print', '0') === '1',
+        ];
     }
 
     private function defaultTransactionSettings(): array
@@ -309,10 +342,14 @@ class SettingController extends Controller
             'stock_maintenance_enabled' => false,
             'manufacturing_enabled' => false,
             'show_low_stock_dialog' => false,
-            'items_unit_enabled' => true,
-            'default_unit_enabled' => false,
-            'item_category_enabled' => false,
-            'party_wise_item_rate_enabled' => false,
+              'items_unit_enabled' => true,
+              'default_unit_enabled' => false,
+              'default_unit_label' => 'Add Default Unit',
+              'default_unit_base' => '',
+              'default_unit_secondary' => '',
+              'default_unit_rate' => 0,
+              'item_category_enabled' => false,
+              'party_wise_item_rate_enabled' => false,
             'description_enabled' => false,
             'description_label' => 'Description',
             'item_wise_tax_enabled' => false,

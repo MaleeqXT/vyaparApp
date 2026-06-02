@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> -->
 
 
@@ -189,305 +189,175 @@
         </div>
       </div>
 
-
-    <div class="detail-panel-body">
-  <div class="table-header">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <h6 class="fw-600 mb-3" style="font-size: 14px !important; margin-bottom:0 !important;">Transactions</h6>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <input type="date" class="form-control form-control-sm" id="txnDateFrom" style="width:145px;">
-        <span style="font-size:12px;color:#64748b;">to</span>
-        <input type="date" class="form-control form-control-sm" id="txnDateTo" style="width:145px;">
-        <button type="button" class="btn btn-sm btn-outline-primary" id="txnDateApply">Apply</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="txnDateClear">Clear</button>
-      </div>
-            {{-- <button type="button" class="btn btn-sm btn-outline-primary" id="openLedgerModalBtn">
-              <i class="fa-solid fa-book-open me-1"></i> Payment History
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="openTransferHistoryModalBtn">
-              <i class="fa-solid fa-right-left me-1"></i> Transfer History
-            </button> --}}
-    </div>
-    <div class="header-icons">
-      <i class="fa fa-search" title="Search" id="txnSearchToggle"></i>
-      <i class="fa fa-file-excel" title="Export to Excel" id="txnExcelTrigger"></i>
-      <i class="fa-solid fa-file-pdf" title="Export PDF" id="txnPdfTrigger"></i>
-      <i class="fa-brands fa-whatsapp" title="Share on WhatsApp" id="txnWhatsappTrigger"></i>
-      <i class="fa fa-print" title="Print" id="txnPrintTrigger"></i>
-    </div>
-  </div>
-  <div class="txn-toolbar" id="txnToolbar" style="display:none;">
-    <div class="search-box txn-search-box" style="max-width: 280px;">
-      <i class="fa fa-search"></i>
-      <input type="text" class="form-control search-input" id="txnSearchInput" placeholder="Search transactions">
-    </div>
-  </div>
-
-
-        <table class="txn-table" id="partyTxnTable">
-          <thead>
-            <tr>
-           <th style="width:110px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span>Date</span>
-
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-
- <div class="filter-wrapper" style=" position: relative !important;
-  overflow: visible;">
-  <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-
-  <div class="filter-dropdown"  style="width:242px;">
-    <div class="filter-options">
-    <div class="dropdown-container">
-  <input type="text" readonly class="dropdown-input" placeholder="Select..." >
-  <div class="dropdown-options" style="position:absolute; z-index:100!important;">
-    <div class="dropdown-option"> Equal To</div>
-    <div class="dropdown-option">Less Than</div>
-     <div class="dropdown-option">Greater Than</div>
-      <div class="dropdown-option">Range</div>
-  </div>
-</div>
-
-        <label style="color: #9ca3af; margin-top:6px; width:176px;">Select Date</label>
-      <input type="date" style="border:1px solid #d9dfe5; border-radius:6px;height:5vh;color:#9ca3af;padding:6px" >
-
-    </div>
-
-    <div class="filter-actions" style="position: relative;">
-      <button class="clear-btn">Clear</button>
-      <button class="apply-btn">Apply</button>
-    </div>
-  </div>
-</div>
-
-  </div>
-</th>
-           <th style="width:180px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span>Type</span>
-
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-
- <div class="filter-wrapper">
-  <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-
-  <div class="filter-dropdown">
-    <div class="filter-options">
-      <!-- 24 checkboxes -->
-      <label><input type="checkbox"> Sale </label>
-      <label><input type="checkbox"> Sale(e-invoice) </label>
-      <label><input type="checkbox"> Purchase </label>
-      <label><input type="checkbox"> Credit Note</label>
-      <label><input type="checkbox"> Credit Note(e-invoice)</label>
-      <label><input type="checkbox"> Debit Note </label>
-      <label><input type="checkbox"> Sale order</label>
-      <label><input type="checkbox"> Purchase Order</label>
-      <label><input type="checkbox"> Payment-In </label>
-      <label><input type="checkbox"> Payment-Out </label>
-      <label><input type="checkbox"> Estimate </label>
-      <label><input type="checkbox"> Performance Invoice </label>
-      <label><input type="checkbox"> Delivery Challan </label>
-      <label><input type="checkbox"> Receivable Opening Balance </label>
-      <label><input type="checkbox"> Payable Opening Balance</label>
-      <label><input type="checkbox"> Sale FA</label>
-      <label><input type="checkbox"> Purchase FA</label>
-      <label><input type="checkbox"> Sale[Cancelled]</label>
-      <label><input type="checkbox"> Job work out(Challan)</label>
-      <label><input type="checkbox"> Purchase(Job work)</label>
-      <label><input type="checkbox"> Journal Entry</label>
-
-    </div>
-
-    <div class="filter-actions">
-      <button class="clear-btn">Clear</button>
-      <button class="apply-btn">Apply</button>
-    </div>
-  </div>
-</div>
-
-  </div>
-</th>
-
-   <th style="width:100px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span style="margin-left: -7px"> Bill No</span>
-
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-
- <div class="filter-wrapper">
-  <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-
-  <div class="filter-dropdown"  style="width:242px; text-align:;">
-    <div class="filter-options">
-      <!-- 24 checkboxes -->
-    <div class="dropdown-container">
-  <label style="color: #9ca3af; width:176px;">Select Category</label>
-  <input type="text" readonly class="dropdown-input" placeholder="Select..." >
-  <div class="dropdown-options">
-    <div class="dropdown-option">Contains</div>
-    <div class="dropdown-option">Exact Match</div>
-  </div>
-</div>
-
-        <label style="color: #9ca3af; margin-top:6px; width:176px;"> Number</label>
-      <input type="text" style="border:1px solid #d9dfe5; border-radius:6px;height:5vh"
-      >
-
-    </div>
-
-    <div class="filter-actions">
-      <button class="clear-btn">Clear</button>
-      <button class="apply-btn">Apply</button>
-    </div>
-  </div>
-</div>
-
-  </div>
-    <th style="width:100px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span>Debit</span>
-
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-
- <div class="filter-wrapper">
-  <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-
-  <div class="filter-dropdown"  style="width:242px; text-align:;">
-    <div class="filter-options">
-      <!-- 24 checkboxes -->
-    <div class="dropdown-container">
-  <label style="color: #9ca3af; width:176px;">Select Category</label>
-  <input type="text" readonly class="dropdown-input" placeholder="Select..." >
-  <div class="dropdown-options" style="position:absolute; z-index:100!important;">
-    <div class="dropdown-option"> Equal To</div>
-    <div class="dropdown-option">Less Than</div>
-     <div class="dropdown-option">Greater Than</div>
-  </div>
-</div>
-
-        <label style="color: #9ca3af; margin-top:6px; width:176px;">Debit</label>
-      <input type="text" style="border:1px solid #d9dfe5; border-radius:6px;height:5vh"
-      >
-
-    </div>
-
-    <div class="filter-actions">
-      <button class="clear-btn">Clear</button>
-      <button class="apply-btn">Apply</button>
-    </div>
-  </div>
-</div>
-
-  </div>
-</th>
-
-    <th style="width:100px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span>Credit</span>
-
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-
- <div class="filter-wrapper">
-  <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-
-  <div class="filter-dropdown"  style="width:242px; right: 12px !important;">
-    <div class="filter-options">
-      <!-- 24 checkboxes -->
-    <div class="dropdown-container">
-  <label style="color: #9ca3af; width:176px;">Select Category</label>
-  <input type="text" readonly class="dropdown-input" placeholder="Select..." >
-  <div class="dropdown-options" style="position:absolute; z-index:100!important;">
-    <div class="dropdown-option"> Equal To</div>
-    <div class="dropdown-option">Less Than</div>
-     <div class="dropdown-option">Greater Than</div>
-  </div>
-</div>
-
-        <label style="color: #9ca3af; margin-top:6px; width:176px;">Credit</label>
-      <input type="text" style="border:1px solid #d9dfe5; border-radius:6px;height:5vh"
-      >
-
-    </div>
-
-    <div class="filter-actions">
-      <button class="clear-btn">Clear</button>
-      <button class="apply-btn">Apply</button>
-    </div>
-  </div>
-</div>
-
-  </div>
-</th>
-<th style="width:120px">
-  <div class="table-main" onclick="toggleSort(this)">
-    <span>Running Balance</span>
-    <div class="sort-arrows">
-      <i class="fa-solid fa-sort-up"></i>
-      <i class="fa-solid fa-sort-down"></i>
-    </div>
-    <div class="filter-wrapper">
-      <i class="fa-solid fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
-      <div class="filter-dropdown"  style="width:242px; right: 12px !important;">
-        <div class="filter-options">
-          <div class="dropdown-container">
-            <label style="color: #9ca3af; width:176px;">Select Category</label>
-            <input type="text" readonly class="dropdown-input" placeholder="Select..." >
-            <div class="dropdown-options" style="position:absolute; z-index:100!important;">
-              <div class="dropdown-option"> Equal To</div>
-              <div class="dropdown-option">Less Than</div>
-              <div class="dropdown-option">Greater Than</div>
+      <div class="party-transactions-panel">
+        <div class="table-header">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <h6 class="mb-0">Transactions</h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <input type="date" class="form-control form-control-sm" id="txnDateFrom" style="width:165px;">
+              <span class="text-muted">to</span>
+              <input type="date" class="form-control form-control-sm" id="txnDateTo" style="width:165px;">
+              <button type="button" class="btn btn-sm btn-outline-primary" id="txnDateApply">Apply</button>
+              <button type="button" class="btn btn-sm btn-light" id="txnDateClear">Clear</button>
             </div>
           </div>
-
-          <label style="color: #9ca3af; margin-top:6px; width:176px;">Running Balance</label>
-          <input type="text" style="border:1px solid #d9dfe5; border-radius:6px;height:5vh">
+          <div class="header-icons">
+            <div class="txn-toolbar" id="txnToolbar" style="display:none;">
+              <input type="text" class="form-control form-control-sm" id="txnSearchInput" placeholder="Search transactions">
+            </div>
+            <i class="fa fa-search" id="txnSearchToggle" title="Search"></i>
+            <i class="fa-solid fa-file-excel" id="txnExcelTrigger" title="Export Excel"></i>
+            <i class="fa-solid fa-file-pdf" id="txnPdfTrigger" title="Export PDF"></i>
+            <i class="fa-brands fa-whatsapp" id="txnWhatsappTrigger" title="Share on WhatsApp"></i>
+            <i class="fa fa-print" id="txnPrintTrigger" title="Print"></i>
+          </div>
         </div>
 
-        <div class="filter-actions">
-          <button class="clear-btn">Clear</button>
-          <button class="apply-btn">Apply</button>
+        <div class="table-responsive">
+          <table class="txn-table" id="partyTxnTable">
+            <thead>
+              <tr>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Date</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <input type="text" class="dropdown-input" value="Equal To" readonly>
+                    <div class="dropdown-options">
+                      <div class="dropdown-option">Equal To</div>
+                      <div class="dropdown-option">Less Than</div>
+                      <div class="dropdown-option">Greater Than</div>
+                      <div class="dropdown-option">Range</div>
+                    </div>
+                    <input type="date">
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Type</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <label><input type="checkbox" value="Sale"> Sale</label>
+                    <label><input type="checkbox" value="Purchase"> Purchase</label>
+                    <label><input type="checkbox" value="Estimate"> Estimate</label>
+                    <label><input type="checkbox" value="Sale Order"> Sale Order</label>
+                    <label><input type="checkbox" value="Proforma Invoice"> Proforma Invoice</label>
+                    <label><input type="checkbox" value="Delivery Challan"> Delivery Challan</label>
+                    <label><input type="checkbox" value="Credit Note"> Credit Note</label>
+                    <label><input type="checkbox" value="Receivable Opening Balance"> Receivable Opening Balance</label>
+                    <label><input type="checkbox" value="Payable Opening Balance"> Payable Opening Balance</label>
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Bill No</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <input type="text" class="dropdown-input" value="Contains" readonly>
+                    <div class="dropdown-options">
+                      <div class="dropdown-option">Contains</div>
+                      <div class="dropdown-option">Exact Match</div>
+                    </div>
+                    <input type="text" placeholder="Bill no">
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Debit</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <input type="text" class="dropdown-input" value="Equal To" readonly>
+                    <div class="dropdown-options">
+                      <div class="dropdown-option">Equal To</div>
+                      <div class="dropdown-option">Less Than</div>
+                      <div class="dropdown-option">Greater Than</div>
+                      <div class="dropdown-option">Range</div>
+                    </div>
+                    <input type="text" placeholder="Amount">
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Credit</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <input type="text" class="dropdown-input" value="Equal To" readonly>
+                    <div class="dropdown-options">
+                      <div class="dropdown-option">Equal To</div>
+                      <div class="dropdown-option">Less Than</div>
+                      <div class="dropdown-option">Greater Than</div>
+                      <div class="dropdown-option">Range</div>
+                    </div>
+                    <input type="text" placeholder="Amount">
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="table-main" onclick="toggleSort(this)">
+                    <span>Running Balance</span>
+                    <span class="sort-arrows"><i class="fa fa-chevron-up"></i><i class="fa fa-chevron-down"></i></span>
+                    <i class="fa fa-filter table-filter-icon" onclick="toggleFilterDropdown(this)"></i>
+                  </div>
+                  <div class="filter-dropdown">
+                    <input type="text" class="dropdown-input" value="Equal To" readonly>
+                    <div class="dropdown-options">
+                      <div class="dropdown-option">Equal To</div>
+                      <div class="dropdown-option">Less Than</div>
+                      <div class="dropdown-option">Greater Than</div>
+                      <div class="dropdown-option">Range</div>
+                    </div>
+                    <input type="text" placeholder="Amount">
+                    <div class="filter-actions">
+                      <button class="clear-btn" type="button">Clear</button>
+                      <button class="apply-btn" type="button">Apply</button>
+                    </div>
+                  </div>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="txnTableBody">
+              <tr>
+                <td colspan="7" class="text-center" style="padding: 40px;">
+                  <i class="fa-solid fa-receipt" style="font-size: 40px; color: #d1d5db;"></i>
+                  <p class="mt-2" style="color: #6b7280;">No transactions yet</p>
+                  <p style="font-size: 12px; color: #9ca3af;">Select a party to view transactions</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-  </div>
-</th>
-<th style="width:110px">
-  <div class="table-main">
-    <span>Actions</span>
-  </div>
-</th>
 
-
-            </tr>
-          </thead>
-          <tbody id="txnTableBody">
-    <!-- Transactions will be loaded here dynamically -->
-    <tr id="noTxnRow">
-        <td colspan="7" class="text-center text-muted" style="padding: 40px;">
-            <i class="fa-solid fa-receipt" style="font-size: 40px; color: #d1d5db;"></i>
-            <p class="mt-2">No Transactions Found</p>
-            <p style="font-size: 12px; color: #9ca3af;">Select a party to view transactions</p>
-        </td>
-    </tr>
-</tbody>
-        </table>
-      </div>
     </div>
   </div>
 
@@ -777,27 +647,27 @@
       <div class="party-settings-group-title">General</div>
       <label class="party-settings-item">
         <span>Party Grouping <i class="fa-regular fa-circle-info party-settings-info"></i></span>
-        <input type="checkbox" class="party-setting-toggle" data-setting-target="party_grouping" checked>
+        <input type="checkbox" class="party-setting-toggle" data-setting-target="party_grouping" @checked($partySettings['party_grouping'] ?? true)>
       </label>
       <label class="party-settings-item">
         <span>Shipping Address <i class="fa-regular fa-circle-info party-settings-info"></i></span>
-        <input type="checkbox" class="party-setting-toggle" data-setting-target="shipping_address" checked>
+        <input type="checkbox" class="party-setting-toggle" data-setting-target="shipping_address" @checked($partySettings['shipping_address'] ?? true)>
       </label>
       <label class="party-settings-item">
         <span>Print Shipping Address <i class="fa-regular fa-circle-info party-settings-info"></i></span>
-        <input type="checkbox" class="party-setting-toggle" data-setting-target="print_shipping_address" checked>
+        <input type="checkbox" class="party-setting-toggle" data-setting-target="print_shipping_address" @checked($partySettings['print_shipping_address'] ?? true)>
       </label>
       <label class="party-settings-item">
         <span>Manage Party Status <i class="fa-regular fa-circle-info party-settings-info"></i></span>
-        <input type="checkbox" class="party-setting-toggle" data-setting-target="party_status" @checked($partyStatusEnabled)>
+        <input type="checkbox" class="party-setting-toggle" data-setting-target="party_status" @checked($partySettings['party_status'] ?? $partyStatusEnabled)>
       </label>
       <label class="party-settings-item">
         <span>Enable Payment Reminder <i class="fa-regular fa-circle-info party-settings-info"></i></span>
-        <input type="checkbox" class="party-setting-toggle" data-setting-target="payment_reminder" checked>
+        <input type="checkbox" class="party-setting-toggle" data-setting-target="payment_reminder" @checked($partySettings['payment_reminder'] ?? true)>
       </label>
       <div class="party-settings-subtext">Remind me for payment due in <i class="fa-regular fa-circle-info party-settings-info"></i></div>
       <div class="party-settings-reminder-row">
-        <input type="number" min="1" value="1" id="partyReminderDays" class="party-settings-reminder-input">
+              <input type="number" min="1" value="{{ $partySettings['payment_reminder_days'] ?? 2 }}" id="partyReminderDays" class="party-settings-reminder-input">
         <span class="party-settings-reminder-suffix">(Days)</span>
       </div>
     </div>
@@ -806,23 +676,23 @@
       <div class="party-settings-extra-field">
         <label class="party-settings-item">
           <span>Additional Field 1</span>
-          <input type="checkbox" class="party-setting-toggle" data-setting-target="additional_field_1">
+          <input type="checkbox" class="party-setting-toggle" data-setting-target="additional_field_1" @checked($partySettings['additional_field_1'] ?? false)>
         </label>
-        <input type="text" class="party-settings-extra-input" id="partyAdditionalField1Name" placeholder="Enter Field Name">
+        <input type="text" class="party-settings-extra-input" id="partyAdditionalField1Name" placeholder="Enter Field Name" value="{{ $partySettings['additional_field_1_name'] ?? '' }}">
         <label class="party-settings-switch-row">
           <span>Show In Print</span>
-          <input type="checkbox" class="party-settings-switch" id="partyAdditionalField1Print">
+          <input type="checkbox" class="party-settings-switch" id="partyAdditionalField1Print" @checked($partySettings['additional_field_1_print'] ?? false)>
         </label>
       </div>
       <div class="party-settings-extra-field">
         <label class="party-settings-item">
           <span>Additional Field 2</span>
-          <input type="checkbox" class="party-setting-toggle" data-setting-target="additional_field_2">
+          <input type="checkbox" class="party-setting-toggle" data-setting-target="additional_field_2" @checked($partySettings['additional_field_2'] ?? false)>
         </label>
-        <input type="text" class="party-settings-extra-input" id="partyAdditionalField2Name" placeholder="Enter Field Name">
+        <input type="text" class="party-settings-extra-input" id="partyAdditionalField2Name" placeholder="Enter Field Name" value="{{ $partySettings['additional_field_2_name'] ?? '' }}">
         <label class="party-settings-switch-row">
           <span>Show In Print</span>
-          <input type="checkbox" class="party-settings-switch" id="partyAdditionalField2Print">
+          <input type="checkbox" class="party-settings-switch" id="partyAdditionalField2Print" @checked($partySettings['additional_field_2_print'] ?? false)>
         </label>
       </div>
       <button type="button" class="party-settings-more-btn">
@@ -1021,6 +891,8 @@
       <div class="modal-footer justify-content-center gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="partyTxnPreviewOpenPdf">Open PDF</button>
         <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="partyTxnPreviewPrint">Print</button>
+        <button type="button" class="btn btn-outline-success rounded-pill px-4" id="partyTxnPreviewSavePdf">Save PDF</button>
+        <button type="button" class="btn btn-outline-primary rounded-pill px-4" id="partyTxnPreviewEmailPdf">Email PDF</button>
         <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
@@ -1069,6 +941,22 @@
       <label class="txn-option-item">
         <span>Running Balance</span>
         <input type="checkbox" class="txn-export-column" value="running_balance" checked>
+      </label>
+      <label class="txn-option-item txn-export-extra-item">
+        <span>Item Details</span>
+        <input type="checkbox" class="txn-export-extra" value="item_details">
+      </label>
+      <label class="txn-option-item txn-export-extra-item">
+        <span>Description</span>
+        <input type="checkbox" class="txn-export-extra" value="description">
+      </label>
+      <label class="txn-option-item txn-export-extra-item">
+        <span>Payment Status</span>
+        <input type="checkbox" class="txn-export-extra" value="payment_status">
+      </label>
+      <label class="txn-option-item txn-export-extra-item">
+        <span>Payment Information</span>
+        <input type="checkbox" class="txn-export-extra" value="payment_information">
       </label>
     </div>
     <div class="txn-option-actions">
@@ -2525,7 +2413,7 @@ function closeHeaderDropdown() {
 
 function toggleSort(el){
     if (window.event) {
-        const clickedInsideFilter = window.event.target?.closest?.('.filter-wrapper');
+        const clickedInsideFilter = window.event.target?.closest?.('.filter-wrapper, .table-filter-icon, .filter-dropdown');
         if (clickedInsideFilter) {
             return;
         }
@@ -2618,7 +2506,8 @@ function toggleFilterDropdown(icon){
         window.event.preventDefault();
     }
 
-    const dropdown = icon.nextElementSibling;
+    const dropdown = icon.nextElementSibling || icon.closest('.table-main')?.nextElementSibling;
+    if (!dropdown) return;
     dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
 }
 
@@ -2665,6 +2554,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const partyTxnPreviewModalTitle = document.getElementById("partyTxnPreviewModalTitle");
     const partyTxnPreviewOpenPdfBtn = document.getElementById("partyTxnPreviewOpenPdf");
     const partyTxnPreviewPrintBtn = document.getElementById("partyTxnPreviewPrint");
+    const partyTxnPreviewSavePdfBtn = document.getElementById("partyTxnPreviewSavePdf");
+    const partyTxnPreviewEmailPdfBtn = document.getElementById("partyTxnPreviewEmailPdf");
     const partyTxnHistoryModalEl = document.getElementById("partyTxnHistoryModal");
     const partyTxnHistoryModal = partyTxnHistoryModalEl ? bootstrap.Modal.getOrCreateInstance(partyTxnHistoryModalEl) : null;
     const partyTxnHistoryModalTitle = document.getElementById("partyTxnHistoryModalTitle");
@@ -2736,7 +2627,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const creditLimitAmountInput = document.getElementById("creditLimitAmountInput");
     const partyReminderDays = document.getElementById("partyReminderDays");
     const partyAdditionalField1Name = document.getElementById("partyAdditionalField1Name");
+    const partyAdditionalField1Print = document.getElementById("partyAdditionalField1Print");
     const partyAdditionalField2Name = document.getElementById("partyAdditionalField2Name");
+    const partyAdditionalField2Print = document.getElementById("partyAdditionalField2Print");
     const partyTransferModalEl = document.getElementById("partyTransferModal");
     const partyTransferModal = partyTransferModalEl ? bootstrap.Modal.getOrCreateInstance(partyTransferModalEl) : null;
     const partyTransferSave = document.getElementById("partyTransferSave");
@@ -2762,6 +2655,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const partyTransferHistoryModal = partyTransferHistoryModalEl ? bootstrap.Modal.getOrCreateInstance(partyTransferHistoryModalEl) : null;
     const partyTransferHistoryTableBody = document.getElementById("partyTransferHistoryTableBody");
     const partyTransferHistoryModalTitle = document.getElementById("partyTransferHistoryModalTitle");
+    const appCompanyName = @json(config('app.name', 'My Company'));
 
     let currentPartyId = null;
     let currentPartyView = 'parties';
@@ -2784,15 +2678,23 @@ document.addEventListener("DOMContentLoaded", function () {
             };
         });
     let managePartyStatusRows = [];
-    let partySettingsState = {
-        party_grouping: true,
-        shipping_address: true,
-        print_shipping_address: true,
-        party_status: @json($partyStatusEnabled),
-        payment_reminder: true,
-        additional_field_1: false,
-        additional_field_2: false
-    };
+    @php
+      $partySettingsData = $partySettings ?? [
+        'party_grouping' => true,
+        'shipping_address' => true,
+        'print_shipping_address' => true,
+        'party_status' => true,
+        'payment_reminder' => true,
+        'payment_reminder_days' => 2,
+        'additional_field_1' => false,
+        'additional_field_1_name' => '',
+        'additional_field_1_print' => false,
+        'additional_field_2' => false,
+        'additional_field_2_name' => '',
+        'additional_field_2_print' => false,
+      ];
+    @endphp
+    let partySettingsState = @json($partySettingsData);
     const exportColumns = [
         { key: 'date', label: 'Date' },
         { key: 'type', label: 'Type' },
@@ -2896,18 +2798,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const transactionTypeValue = document.getElementById('transactionTypeValue');
 
     [toReceive, toPay].forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            if (this.checked) {
-                [toReceive, toPay].forEach(cb => {
-                    if (cb !== this) cb.checked = false;
-                });
-                transactionTypeValue.value = this.value;
-            } else {
-                transactionTypeValue.value = '';
-            }
-        });
+      if (!checkbox) return;
+      checkbox.addEventListener('change', function () {
+        if (this.checked) {
+          [toReceive, toPay].forEach(cb => {
+            if (cb !== this && cb) cb.checked = false;
+          });
+          if (transactionTypeValue) transactionTypeValue.value = this.value;
+        } else {
+          if (transactionTypeValue) transactionTypeValue.value = '';
+        }
+      });
     });
-    creditLimitSwitch.addEventListener('change', syncCreditLimitVisibility);
+    creditLimitSwitch?.addEventListener('change', syncCreditLimitVisibility);
 
     if (partyFilterInputs.length) {
         const allInput = partyFilterInputs.find(input => input.dataset.partyFilter === 'all');
@@ -3167,6 +3070,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function getPartyData() {
         const selectedPartyTypes = Array.from(document.querySelectorAll('input[name="party_type[]"]:checked'))
             .map((input) => input.value);
+        const customFieldInputs = Array.from(document.querySelectorAll('#partyAdditionalPane input[type="text"][name="custom_fields[]"]'));
+        const customFieldChecks = Array.from(document.querySelectorAll('#partyAdditionalPane .form-check-input[type="checkbox"]'));
+        const customFields = customFieldInputs
+            .map((input, index) => {
+                const label = String(input?.value || '').trim();
+                const enabled = !!customFieldChecks[index]?.checked;
+                return enabled || label ? label : '';
+            })
+            .filter(Boolean);
 
         return {
             name: document.getElementById("partyNameInput").value,
@@ -3190,6 +3102,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? 'pay'
                     : null,
             party_type: selectedPartyTypes,
+            custom_fields: customFields,
         };
     }
 
@@ -3216,7 +3129,11 @@ document.addEventListener("DOMContentLoaded", function () {
             number: txn.number || '-',
             debit: `Rs ${txn.debit ?? 0}`,
             credit: `Rs ${txn.credit ?? 0}`,
-            running_balance: `Rs ${txn.running_balance ?? 0}`
+            running_balance: `Rs ${txn.running_balance ?? 0}`,
+            description: txn.description || '',
+            payment_status_text: txn.payment_status_text || formatTxnStatus(txn.status),
+            item_details: txn.item_details || [],
+            payment_information: txn.payment_information || []
         }));
     }
 
@@ -3534,13 +3451,24 @@ document.addEventListener("DOMContentLoaded", function () {
     partyTxnPreviewOpenPdfBtn?.addEventListener('click', function () {
         const pdfUrl = partyTxnPreviewFrame?.dataset?.pdfUrl || partyTxnPreviewFrame?.src;
         if (!pdfUrl) {
-            alert('PDF is not available for this transaction.');
+            alert('Preview is not available for this transaction.');
             return;
         }
         window.open(pdfUrl, '_blank');
     });
 
     partyTxnPreviewPrintBtn?.addEventListener('click', function () {
+        const previewMode = partyTxnPreviewFrame?.dataset?.previewMode || '';
+        if (previewMode === 'party-statement' && partyTxnPreviewFrame?.contentWindow) {
+            try {
+                partyTxnPreviewFrame.contentWindow.focus();
+                partyTxnPreviewFrame.contentWindow.print();
+                return;
+            } catch (error) {
+                console.warn('Preview frame print failed, falling back to opening the PDF.', error);
+            }
+        }
+
         const printUrl = partyTxnPreviewFrame?.dataset?.printUrl || partyTxnPreviewFrame?.dataset?.pdfUrl || partyTxnPreviewFrame?.src;
         if (!printUrl) {
             alert('Print is not available for this transaction.');
@@ -3549,11 +3477,37 @@ document.addEventListener("DOMContentLoaded", function () {
         window.open(printUrl, '_blank');
     });
 
+    partyTxnPreviewSavePdfBtn?.addEventListener('click', function () {
+        const downloadUrl = partyTxnPreviewFrame?.dataset?.downloadUrl || partyTxnPreviewFrame?.dataset?.pdfUrl || partyTxnPreviewFrame?.src;
+        if (!downloadUrl) {
+            alert('Save PDF is not available for this transaction.');
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    });
+
+    partyTxnPreviewEmailPdfBtn?.addEventListener('click', function () {
+        const partyName = document.getElementById("partyDetailName")?.textContent?.trim() || 'Party Statement';
+        const downloadUrl = partyTxnPreviewFrame?.dataset?.downloadUrl || partyTxnPreviewFrame?.dataset?.pdfUrl || partyTxnPreviewFrame?.src;
+        const subject = `Party Statement - ${partyName}`;
+        const body = `Please find the party statement here: ${downloadUrl}`;
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    });
+
     partyTxnPreviewModalEl?.addEventListener('hidden.bs.modal', function () {
         if (partyTxnPreviewFrame) {
+            partyTxnPreviewFrame.removeAttribute('srcdoc');
             partyTxnPreviewFrame.src = 'about:blank';
             delete partyTxnPreviewFrame.dataset.pdfUrl;
+            delete partyTxnPreviewFrame.dataset.downloadUrl;
             delete partyTxnPreviewFrame.dataset.printUrl;
+            delete partyTxnPreviewFrame.dataset.previewMode;
         }
     });
 
@@ -3598,8 +3552,21 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
     }
 
+    function getPartyTxnTableBody() {
+        let tbody = document.getElementById("txnTableBody") || document.querySelector("#partyTxnTable tbody");
+        if (!tbody) {
+            const table = document.getElementById("partyTxnTable");
+            if (!table) return null;
+            tbody = document.createElement("tbody");
+            tbody.id = "txnTableBody";
+            table.appendChild(tbody);
+        }
+        return tbody;
+    }
+
     function showTxnMessage(iconClass, title, subtitle) {
-        const tbody = document.getElementById("txnTableBody");
+        const tbody = getPartyTxnTableBody();
+        if (!tbody) return;
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center" style="padding: 40px;">
@@ -4069,7 +4036,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderTransactionsTable(transactions) {
-        const tbody = document.getElementById("txnTableBody");
+        const tbody = getPartyTxnTableBody();
+        if (!tbody) return;
         const sortedTransactions = sortTransactions(transactions);
         filteredTransactionsState = [...sortedTransactions];
 
@@ -4179,7 +4147,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function openTxnOptionModal(actionType) {
         pendingTxnAction = actionType;
-        txnOptionTitle.textContent = actionType === 'print' ? 'Print Options' : 'Show Options';
+        txnOptionTitle.textContent = actionType === 'print' ? 'Print Options' : 'Excel Options';
         txnOptionModal.classList.add('active');
     }
 
@@ -4195,20 +4163,61 @@ document.addEventListener("DOMContentLoaded", function () {
         return exportColumns.filter(column => selected.includes(column.key));
     }
 
-    function exportTransactionsToExcel(columns, rows) {
+    function getSelectedExportExtras() {
+        return Array.from(document.querySelectorAll('.txn-export-extra:checked'))
+            .map(input => input.value);
+    }
+
+    function formatTxnItemDetails(txn) {
+        if (!Array.isArray(txn.item_details) || !txn.item_details.length) return '';
+
+        return txn.item_details.map((item, index) => {
+            const qty = item.tadaat ?? item.quantity ?? 0;
+            const unit = item.unit || '';
+            const price = Number(item.price ?? 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const amount = Number(item.amount ?? item.grand_total ?? 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `${index + 1}. ${item.name || '-'} | Qty: ${qty} ${unit}`.trim() + ` | Price: Rs ${price} | Amount: Rs ${amount}`;
+        }).join('\n');
+    }
+
+    function formatTxnPaymentInfo(txn) {
+        if (!Array.isArray(txn.payment_information) || !txn.payment_information.length) return '';
+
+        return txn.payment_information.map((payment, index) => {
+            const amount = Number(payment.amount ?? 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `${index + 1}. ${payment.payment_type || '-'} | ${payment.bank_name || '-'} | Rs ${amount} | Ref: ${payment.reference || '-'}`;
+        }).join('\n');
+    }
+
+    function exportTransactionsToExcel(columns, rows, extras = []) {
         if (!rows.length) {
             alert('No transactions available for Excel export.');
             return;
         }
 
+        const extraColumns = [];
+        if (extras.includes('item_details')) extraColumns.push({ key: 'item_details', label: 'Item Details' });
+        if (extras.includes('description')) extraColumns.push({ key: 'description', label: 'Description' });
+        if (extras.includes('payment_status')) extraColumns.push({ key: 'payment_status', label: 'Payment Status' });
+        if (extras.includes('payment_information')) extraColumns.push({ key: 'payment_information', label: 'Payment Information' });
+
+        const finalColumns = [...columns, ...extraColumns];
         const csvLines = [
-            columns.map(column => `"${column.label.replace(/"/g, '""')}"`).join(',')
+            finalColumns.map(column => `"${column.label.replace(/"/g, '""')}"`).join(',')
         ];
 
         rows.forEach(row => {
+            const exportRow = {
+                ...row,
+                item_details: formatTxnItemDetails(row),
+                description: row.description || '',
+                payment_status: row.payment_status_text || formatTxnStatus(row.status),
+                payment_information: formatTxnPaymentInfo(row),
+            };
+
             csvLines.push(
-                columns
-                    .map(column => `"${String(row[column.key] ?? '').replace(/"/g, '""')}"`)
+                finalColumns
+                    .map(column => `"${String(exportRow[column.key] ?? '').replace(/"/g, '""')}"`)
                     .join(',')
             );
         });
@@ -4230,52 +4239,347 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const partyName = document.getElementById("partyDetailName")?.textContent?.trim() || 'Party Transactions';
-        const tableHead = columns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('');
-        const tableRows = rows.map(row => `
-            <tr>
-                ${columns.map(column => `<td>${escapeHtml(row[column.key])}</td>`).join('')}
-            </tr>
-        `).join('');
+        openTxnPrintPreview(columns, rows);
+    }
 
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
-        if (!printWindow) {
-            alert('Please allow popups to print transactions.');
+    function buildTxnPrintPreviewHtml(options = {}) {
+        const rows = (filteredTransactionsState && filteredTransactionsState.length ? filteredTransactionsState : transactionsState) || [];
+        const partyName = document.getElementById("partyDetailName")?.textContent?.trim() || 'Party';
+        const partyPhone = document.getElementById("partyPhone")?.textContent?.trim() || '-';
+        const partyEmail = document.getElementById("partyEmail")?.textContent?.trim() || '-';
+        const partyAddress = document.getElementById("partyAddress")?.textContent?.trim() || '-';
+        const partyCityPtcl = document.getElementById("partyCityPtcl")?.textContent?.trim() || '-';
+        const dateFrom = transactionDateRange.from || 'Start';
+        const dateTo = transactionDateRange.to || 'Today';
+        const showItemDetails = Boolean(options.item_details);
+        const showDescription = Boolean(options.description);
+        const showPaymentStatus = Boolean(options.payment_status);
+        const showPaymentInfo = Boolean(options.payment_information);
+        const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const normalizeStatus = (value) => {
+            const raw = String(value || '').trim().toLowerCase();
+            if (['paid', 'completed', 'closed', 'converted'].includes(raw)) return 'Paid';
+            if (['partial', 'pending', 'confirmed'].includes(raw)) return 'Partial';
+            return 'Unpaid';
+        };
+        const fmtPartyMeta = (label, value) => `<div class="party-meta"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value || '-')}</div>`;
+        const totalDebit = rows.reduce((sum, row) => sum + parseTxnNumber(row.debit || 0), 0);
+        const totalCredit = rows.reduce((sum, row) => sum + parseTxnNumber(row.credit || 0), 0);
+        const closingBalance = rows.length ? parseTxnNumber(rows[rows.length - 1].running_balance || 0) : parseTxnNumber(0);
+
+        const transactionRows = rows.map((txn) => {
+            const receivedPaid = parseTxnNumber(txn.received_amount ?? txn.paid_amount ?? 0);
+            const rowBalance = parseTxnNumber(txn.row_left_balance ?? txn.running_balance ?? 0);
+            const receivableBalance = rowBalance > 0 ? rowBalance : 0;
+            const payableBalance = rowBalance < 0 ? Math.abs(rowBalance) : 0;
+            const paymentStatus = normalizeStatus(txn.status);
+            const extraRows = [];
+
+            if (showItemDetails && Array.isArray(txn.item_details) && txn.item_details.length) {
+                const itemsHtml = txn.item_details.map((item, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHtml(item.name || '-')}</td>
+                        <td class="num">${escapeHtml(item.tadaat ?? item.quantity ?? 0)}</td>
+                        <td class="num">${escapeHtml(item.unit || '-')}</td>
+                        <td class="num">${money(item.price ?? 0)}</td>
+                        <td class="num">${money(item.amount ?? item.grand_total ?? 0)}</td>
+                    </tr>
+                `).join('');
+
+                extraRows.push(`
+                    <tr>
+                        <td colspan="9">
+                            <div class="section-box">
+                                <div class="section-title">Item Details</div>
+                                <table class="inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:42px;">#</th>
+                                            <th>Item name</th>
+                                            <th class="num" style="width:90px;">Quantity</th>
+                                            <th class="num" style="width:110px;">Unit</th>
+                                            <th class="num" style="width:130px;">Price / Unit</th>
+                                            <th class="num" style="width:130px;">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${itemsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            if (showDescription && txn.description) {
+                extraRows.push(`
+                    <tr>
+                        <td colspan="9">
+                            <div class="section-box">
+                                <div class="section-title">Description</div>
+                                <div>${escapeHtml(txn.description)}</div>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            if (showPaymentStatus) {
+                extraRows.push(`
+                    <tr>
+                        <td colspan="9">
+                            <div class="section-box">
+                                <div class="section-title">Payment Status</div>
+                                <div>Status: ${escapeHtml(paymentStatus)} | Paid: ${money(receivedPaid)} | Left: ${money(rowBalance)}</div>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            if (showPaymentInfo && Array.isArray(txn.payment_information) && txn.payment_information.length) {
+                const paymentsHtml = txn.payment_information.map((payment) => `
+                    <tr>
+                        <td>${escapeHtml(payment.payment_type || '-')}</td>
+                        <td>${escapeHtml(payment.bank_name || '-')}</td>
+                        <td class="num">${money(payment.amount || 0)}</td>
+                        <td>${escapeHtml(payment.reference || '-')}</td>
+                    </tr>
+                `).join('');
+
+                extraRows.push(`
+                    <tr>
+                        <td colspan="9">
+                            <div class="section-box">
+                                <div class="section-title">Payment Information</div>
+                                <table class="inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Payment Type</th>
+                                            <th>Bank / Cash</th>
+                                            <th class="num">Amount</th>
+                                            <th>Reference</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${paymentsHtml}</tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            return `
+                <tr>
+                    <td>${escapeHtml(txn.date || '-')}</td>
+                    <td>${escapeHtml(txn.type || '-')}</td>
+                    <td>${escapeHtml(txn.number || '-')}</td>
+                    <td>${showPaymentStatus ? escapeHtml(paymentStatus) : '-'}</td>
+                    <td class="num">${money(txn.total || 0)}</td>
+                    <td class="num">${money(receivedPaid)}</td>
+                    <td class="num">${money(txn.running_balance || 0)}</td>
+                    <td class="num">${money(receivableBalance)}</td>
+                    <td class="num">${money(payableBalance)}</td>
+                </tr>
+                ${extraRows.join('')}
+            `;
+        }).join('');
+
+        const supportText = document.querySelector('.customer-support, .header-support')?.textContent?.trim() || '';
+
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    :root { color-scheme: light; }
+                    html, body { margin: 0; padding: 0; background: #f4f5f7; color: #111827; }
+                    body { font-family: Arial, sans-serif; }
+                    .sheet {
+                        width: min(1120px, calc(100vw - 48px));
+                        margin: 18px auto;
+                        background: #fff;
+                        border: 1px solid #e5e7eb;
+                        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+                        padding: 18px 20px 24px;
+                    }
+                    .company {
+                        text-align: center;
+                        font-size: 22px;
+                        font-weight: 700;
+                        line-height: 1.2;
+                    }
+                    .company-meta {
+                        text-align: center;
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin-top: 2px;
+                    }
+                    .title {
+                        text-align: center;
+                        font-size: 24px;
+                        font-weight: 700;
+                        text-decoration: underline;
+                        margin: 22px 0 18px;
+                    }
+                    .party-block { margin-bottom: 12px; }
+                    .party-name {
+                        font-size: 18px;
+                        font-weight: 700;
+                        margin-bottom: 8px;
+                    }
+                    .party-meta {
+                        font-size: 12px;
+                        line-height: 1.6;
+                        color: #374151;
+                    }
+                    .summary-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        border: 1px solid #dbe1ea;
+                        margin: 14px 0 18px;
+                    }
+                    .summary-card {
+                        border-right: 1px solid #dbe1ea;
+                        padding: 12px 14px;
+                    }
+                    .summary-card:last-child { border-right: 0; }
+                    .summary-label { color: #64748b; font-size: 12px; }
+                    .summary-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+                    .range {
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin: 8px 0 14px;
+                    }
+                    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                    th, td {
+                        border: 1px solid #d1d5db;
+                        padding: 8px 10px;
+                        text-align: left;
+                        vertical-align: top;
+                    }
+                    th {
+                        background: #e5e7eb;
+                        font-weight: 700;
+                    }
+                    .num { text-align: right; white-space: nowrap; }
+                    .section-box {
+                        border: 1px solid #dbe1ea;
+                        background: #fafafa;
+                        padding: 10px 12px;
+                        margin-top: 8px;
+                    }
+                    .section-title {
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #475569;
+                        margin-bottom: 6px;
+                    }
+                    .inner-table th, .inner-table td { font-size: 11px; }
+                    .footer-note {
+                        margin-top: 10px;
+                        font-size: 10px;
+                        color: #64748b;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="sheet">
+                    <div class="company">${escapeHtml(appCompanyName || 'My Company')}</div>
+                    <div class="company-meta">${escapeHtml(supportText)}</div>
+                    <div class="title">Party statement</div>
+                    <div class="party-block">
+                        <div class="party-name">Party name: ${escapeHtml(partyName)}</div>
+                        ${fmtPartyMeta('Contact No', partyPhone)}
+                        ${fmtPartyMeta('Email', partyEmail)}
+                        ${fmtPartyMeta('Address', partyAddress)}
+                        ${fmtPartyMeta('City / PTCL', partyCityPtcl)}
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-label">Total Debit</div>
+                            <div class="summary-value">${money(totalDebit)}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Total Credit</div>
+                            <div class="summary-value">${money(totalCredit)}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Closing Balance</div>
+                            <div class="summary-value">${money(closingBalance)}</div>
+                        </div>
+                    </div>
+                    <div class="range">Statement Period: ${escapeHtml(dateFrom)} to ${escapeHtml(dateTo)}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:11%;">Date</th>
+                                <th style="width:16%;">Type</th>
+                                <th style="width:12%;">Bill No</th>
+                                <th style="width:14%;">Payment Status</th>
+                                <th class="num" style="width:11%;">Total</th>
+                                <th class="num" style="width:12%;">Received / Paid</th>
+                                <th class="num" style="width:12%;">Txn Balance</th>
+                                <th class="num" style="width:12%;">Receivable Balance</th>
+                                <th class="num" style="width:12%;">Payable Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${transactionRows || '<tr><td colspan="9" style="text-align:center;color:#64748b;padding:18px;">No transactions found.</td></tr>'}
+                        </tbody>
+                    </table>
+                    <div class="footer-note">Generated on ${new Date().toLocaleString()}</div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    function openTxnPrintPreview() {
+        const options = {
+            item_details: partyStatementPdfItems?.checked,
+            description: partyStatementPdfDescription?.checked,
+            payment_status: partyStatementPdfPaymentStatus?.checked,
+            payment_information: partyStatementPdfPaymentInfo?.checked,
+        };
+
+        const previewHtml = buildTxnPrintPreviewHtml(options);
+        const pdfUrl = buildPartyStatementPdfUrl(false);
+        const downloadUrl = buildPartyStatementPdfUrl(true);
+
+        if (!partyTxnPreviewModal || !partyTxnPreviewFrame) {
+            window.open(pdfUrl || 'about:blank', '_blank');
             return;
         }
 
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>${escapeHtml(partyName)} - Transactions</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
-                        h2 { margin: 0 0 6px; }
-                        p { margin: 0 0 18px; color: #6b7280; }
-                        table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #d1d5db; padding: 10px 12px; text-align: left; font-size: 13px; }
-                        th { background: #f8fafc; }
-                    </style>
-                </head>
-                <body>
-                    <h2>${escapeHtml(partyName)}</h2>
-                    <p>Transactions Print Preview</p>
-                    <table>
-                        <thead>
-                            <tr>${tableHead}</tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+        partyTxnPreviewModalTitle.textContent = 'Preview';
+        partyTxnPreviewFrame.removeAttribute('src');
+        partyTxnPreviewFrame.srcdoc = previewHtml;
+        partyTxnPreviewFrame.dataset.pdfUrl = pdfUrl || '';
+        partyTxnPreviewFrame.dataset.downloadUrl = downloadUrl || '';
+        partyTxnPreviewFrame.dataset.printUrl = pdfUrl || '';
+        partyTxnPreviewFrame.dataset.previewMode = 'party-statement';
+        if (partyTxnPreviewOpenPdfBtn) {
+            partyTxnPreviewOpenPdfBtn.disabled = !pdfUrl;
+        }
+        if (partyTxnPreviewPrintBtn) {
+            partyTxnPreviewPrintBtn.disabled = false;
+        }
+        if (partyTxnPreviewSavePdfBtn) {
+            partyTxnPreviewSavePdfBtn.disabled = !downloadUrl;
+        }
+        if (partyTxnPreviewEmailPdfBtn) {
+            partyTxnPreviewEmailPdfBtn.disabled = !downloadUrl;
+        }
+        partyTxnPreviewModal.show();
     }
 
     function runPendingTxnAction() {
         const columns = getSelectedExportColumns();
+        const extras = getSelectedExportExtras();
         const rows = getTransactionExportRows();
 
         if (!columns.length) {
@@ -4284,9 +4588,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (pendingTxnAction === 'print') {
-            printTransactions(columns, rows);
+            openTxnPrintPreview(columns, rows);
         } else if (pendingTxnAction === 'excel') {
-            exportTransactionsToExcel(columns, rows);
+            exportTransactionsToExcel(columns, rows, extras);
         }
 
         closeTxnOptionModal();
@@ -4433,7 +4737,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.stopPropagation();
             closeAllGroupActionMenus();
             if (type === 'group') {
-                editPartyGroup(payload);
+                if (window.requestTransactionPasscode) {
+                    window.requestTransactionPasscode(() => editPartyGroup(payload));
+                } else {
+                    editPartyGroup(payload);
+                }
                 return;
             }
             openPartyEditorById(payload.id);
@@ -4443,7 +4751,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.stopPropagation();
             closeAllGroupActionMenus();
             if (type === 'group') {
-                deletePartyGroup(payload);
+                if (window.requestTransactionPasscode) {
+                    window.requestTransactionPasscode(() => deletePartyGroup(payload));
+                } else {
+                    deletePartyGroup(payload);
+                }
                 return;
             }
             deletePartyById(payload.id);
@@ -4736,13 +5048,31 @@ document.addEventListener("DOMContentLoaded", function () {
         const li = document.querySelector(`.party-item[data-id="${partyId}"]`);
         if (!li) return;
 
-        li.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        document.getElementById("editPartyBtn")?.click();
+        const openEditor = () => {
+            li.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            document.getElementById("editPartyBtn")?.click();
+        };
+
+        if (window.requestTransactionPasscode) {
+            window.requestTransactionPasscode(openEditor);
+            return;
+        }
+
+        openEditor();
     }
 
     function deletePartyById(partyId) {
-        currentPartyId = partyId;
-        deleteBtn?.click();
+        const openDelete = () => {
+            currentPartyId = partyId;
+            deleteBtn?.click();
+        };
+
+        if (window.requestTransactionPasscode) {
+            window.requestTransactionPasscode(openDelete);
+            return;
+        }
+
+        openDelete();
     }
 
     function editPartyGroup(group) {
@@ -4941,6 +5271,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (additionalFieldInputs[index]) {
                 additionalFieldInputs[index].disabled = !enabled;
             }
+            if (index === 0 && partyAdditionalField1Print) {
+                partyAdditionalField1Print.disabled = !enabled;
+            }
+            if (index === 1 && partyAdditionalField2Print) {
+                partyAdditionalField2Print.disabled = !enabled;
+            }
         });
 
         if (additionalFieldInputs[0]) {
@@ -4965,6 +5301,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function savePartyStatusSetting(enabled) {
+        savePartySettings({ party_status: !!enabled });
+    }
+
+    let partySettingsSaveTimer = null;
+    function buildPartySettingsPayload(overrides = {}) {
+        return {
+            party_grouping: !!partySettingsState.party_grouping,
+            shipping_address: !!partySettingsState.shipping_address,
+            print_shipping_address: !!partySettingsState.print_shipping_address,
+            party_status: !!partySettingsState.party_status,
+            payment_reminder: !!partySettingsState.payment_reminder,
+            payment_reminder_days: Number(partyReminderDays?.value || partySettingsState.payment_reminder_days || 2),
+            additional_field_1: !!partySettingsState.additional_field_1,
+            additional_field_1_name: partyAdditionalField1Name?.value || partySettingsState.additional_field_1_name || '',
+            additional_field_1_print: document.getElementById('partyAdditionalField1Print')?.checked ?? !!partySettingsState.additional_field_1_print,
+            additional_field_2: !!partySettingsState.additional_field_2,
+            additional_field_2_name: partyAdditionalField2Name?.value || partySettingsState.additional_field_2_name || '',
+            additional_field_2_print: document.getElementById('partyAdditionalField2Print')?.checked ?? !!partySettingsState.additional_field_2_print,
+            ...overrides
+        };
+    }
+
+    function savePartySettings(overrides = {}) {
+        const payload = buildPartySettingsPayload(overrides);
         fetch(`/dashboard/parties/settings/update`, {
             method: 'POST',
             headers: {
@@ -4973,8 +5333,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
                 "X-Requested-With": "XMLHttpRequest"
             },
-            body: JSON.stringify({ party_status: !!enabled })
-        }).catch(() => {});
+            body: JSON.stringify(payload)
+        })
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.message || 'Unable to save party settings.');
+            }
+            if (data.settings) {
+                partySettingsState = { ...partySettingsState, ...data.settings };
+            } else {
+                partySettingsState = { ...partySettingsState, ...payload };
+            }
+            applyPartySettings();
+        })
+        .catch(() => {});
+    }
+
+    function queueSavePartySettings() {
+        clearTimeout(partySettingsSaveTimer);
+        partySettingsSaveTimer = setTimeout(() => savePartySettings(), 250);
     }
 
     function openPartySettingsDrawer() {
@@ -5281,12 +5659,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    saveBtn.addEventListener("click", () => addParty(true));
-    saveNewBtn.addEventListener("click", () => addParty(false));
+    saveBtn?.addEventListener("click", () => addParty(true));
+    saveNewBtn?.addEventListener("click", () => addParty(false));
     openLedgerModalBtn?.addEventListener("click", openLedgerModal);
     openTransferHistoryModalBtn?.addEventListener("click", openTransferHistoryModal);
-    txnSearchToggle.addEventListener("click", toggleTransactionSearch);
-    txnSearchInput.addEventListener("input", applyTransactionSearch);
+    txnSearchToggle?.addEventListener("click", toggleTransactionSearch);
+    txnSearchInput?.addEventListener("input", applyTransactionSearch);
     initializeTransactionFilterControls();
     document.addEventListener('click', function (e) {
         const filterDropdown = e.target.closest('#partyTxnTable thead .filter-dropdown');
@@ -5317,8 +5695,8 @@ document.addEventListener("DOMContentLoaded", function () {
             applyTransactionSearch();
         }
     });
-    txnPrintTrigger.addEventListener("click", () => openTxnOptionModal('print'));
-    txnExcelTrigger.addEventListener("click", () => openTxnOptionModal('excel'));
+    txnPrintTrigger?.addEventListener("click", () => partyStatementPdfModal?.show());
+    txnExcelTrigger?.addEventListener("click", () => openTxnOptionModal('excel'));
     txnPdfTrigger?.addEventListener("click", () => {
         if (!currentPartyId) {
             alert('Select Party First');
@@ -5366,7 +5744,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         partyStatementPdfModal?.hide();
-        window.open(url, '_blank');
+        openTxnPrintPreview();
     });
     txnOptionCancel.addEventListener("click", closeTxnOptionModal);
     txnOptionConfirm.addEventListener("click", runPendingTxnAction);
@@ -5440,13 +5818,20 @@ document.addEventListener("DOMContentLoaded", function () {
         toggle.addEventListener('change', function () {
             partySettingsState[this.dataset.settingTarget] = this.checked;
             applyPartySettings();
-            if (this.dataset.settingTarget === 'party_status') {
-                savePartyStatusSetting(this.checked);
-            }
+            queueSavePartySettings();
         });
     });
-    partyAdditionalField1Name?.addEventListener('input', applyPartySettings);
-    partyAdditionalField2Name?.addEventListener('input', applyPartySettings);
+    partyAdditionalField1Name?.addEventListener('input', function () {
+        applyPartySettings();
+        queueSavePartySettings();
+    });
+    partyAdditionalField2Name?.addEventListener('input', function () {
+        applyPartySettings();
+        queueSavePartySettings();
+    });
+    partyReminderDays?.addEventListener('input', queueSavePartySettings);
+    document.getElementById('partyAdditionalField1Print')?.addEventListener('change', queueSavePartySettings);
+    document.getElementById('partyAdditionalField2Print')?.addEventListener('change', queueSavePartySettings);
     partyMoreOptionsTrigger.addEventListener("click", function (e) {
         e.stopPropagation();
         togglePartyMoreMenu();
@@ -5754,11 +6139,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (party.custom_fields && Array.isArray(party.custom_fields)) {
         party.custom_fields.forEach((field, index) => {
+            const fieldValue = typeof field === 'object' && field !== null
+                ? String(field.label || field.value || field.name || '')
+                : String(field || '');
             if (customFieldInputs[index]) {
-                customFieldInputs[index].value = field || '';
+                customFieldInputs[index].value = fieldValue;
             }
             if (customFieldChecks[index]) {
-                customFieldChecks[index].checked = field ? true : false;
+                customFieldChecks[index].checked = !!fieldValue;
             }
         });
     }
@@ -5962,7 +6350,7 @@ document.addEventListener('click', function (e) {
 
 // ============ FETCH & RENDER TRANSACTIONS ============
 function loadPartyTransactions(partyId) {
-    const tbody = document.getElementById("txnTableBody");
+    const tbody = getPartyTxnTableBody();
     const currentParty = document.querySelector(`.party-item[data-id="${partyId}"]`);
     transactionsState = [];
     filteredTransactionsState = [];

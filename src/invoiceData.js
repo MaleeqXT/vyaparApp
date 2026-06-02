@@ -7,9 +7,32 @@ export function getInvoiceViewModel(invoiceData = {}) {
       const rate = Number(item.rate || 0)
       const explicitAmount = Number(item.amount ?? item.amt ?? 0)
       const amount = explicitAmount > 0 ? explicitAmount : (qty > 0 && rate > 0 ? qty * rate : 0)
+      const customFields = Array.isArray(item.customFields)
+        ? item.customFields
+        : Array.isArray(item.custom_fields)
+          ? item.custom_fields
+          : []
+      const printableCustomFields = customFields
+        .map((field, index) => {
+          if (field == null) return ''
+          if (typeof field === 'object') {
+            const enabled = 'enabled' in field ? !!field.enabled : true
+            const showInPrint = 'show_in_print' in field ? !!field.show_in_print : true
+            const label = String(field.label || field.name || `Custom Field ${index + 1}`).trim()
+            const value = String(field.value ?? field.text ?? '').trim()
+            if (!enabled || !showInPrint || (!label && !value)) return ''
+            return value ? `${label}: ${value}` : label
+          }
+          const value = String(field).trim()
+          return value ? value : ''
+        })
+        .filter(Boolean)
+      const customFieldSummary = printableCustomFields.join(' | ')
+      const baseName = String(item.name || 'Item').trim()
 
       return {
-        name: item.name || 'Item',
+        name: baseName,
+        displayName: baseName,
         hsn: item.hsn || '',
         qty,
         tadaat: Number(item.tadaat ?? qty),
@@ -19,6 +42,8 @@ export function getInvoiceViewModel(invoiceData = {}) {
         rate,
         discount: Number(item.discount || 0),
         amount,
+        customFields,
+        customFieldSummary,
       }
     })
     : [fallbackItem]
@@ -46,6 +71,17 @@ export function getInvoiceViewModel(invoiceData = {}) {
         mode: row.mode || '',
       }))
       .filter((row) => row.amount > 0)
+    : []
+  const normalizeTextList = (items) => Array.isArray(items)
+    ? items
+      .map((item) => {
+        if (item == null) return ''
+        if (typeof item === 'object') {
+          return String(item.label || item.value || item.name || '').trim()
+        }
+        return String(item).trim()
+      })
+      .filter(Boolean)
     : []
 
   return {
@@ -78,6 +114,8 @@ export function getInvoiceViewModel(invoiceData = {}) {
     biltiGariNo: invoiceData.biltiGariNo || '',
     transportCity: invoiceData.transportCity || invoiceData.city || '',
     transportDetail: invoiceData.transportDetail || '',
+    partyExtraFields: normalizeTextList(invoiceData.partyExtraFields),
+    partyCustomFields: normalizeTextList(invoiceData.partyCustomFields),
     items,
     totalQty,
     totalGrossW,

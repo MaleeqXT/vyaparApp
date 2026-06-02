@@ -30,9 +30,13 @@ class PartyController extends Controller
 
         $parties = Party::with('sales')->latest()->get();
         $partyGroups = PartyGroup::orderBy('name')->get();
-        $partyStatusEnabled = AppSetting::getValue('party_status', '1') === '1';
+        $partySettings = $this->getPartySettings();
+        $partyStatusEnabled = $partySettings['party_status'];
+        $reminderParties = Party::query()
+            ->orderBy('name')
+            ->get();
 
-        return view('parties.index', compact('parties', 'partyGroups', 'partyStatusEnabled'));
+        return view('parties.index', compact('parties', 'partyGroups', 'partyStatusEnabled', 'partySettings', 'reminderParties'));
     }
 
     // Show create party form
@@ -261,6 +265,8 @@ class PartyController extends Controller
                 'credit_limit_enabled' => 'nullable|boolean',
                 'credit_limit_amount' => 'nullable|numeric|min:0',
                 'due_days' => 'nullable|integer|min:1|max:100',
+                'custom_fields' => 'nullable|array',
+                'custom_fields.*' => 'nullable|string|max:255',
                 'transaction_type' => 'nullable|in:receive,pay',
                 'party_type' => 'nullable|string',
                 'party_group' => 'nullable|string|max:100',
@@ -310,12 +316,12 @@ class PartyController extends Controller
                     'as_of_date' => $data['as_of_date'] ?? null,
                     'credit_limit_enabled' => $data['credit_limit_enabled'] ? 1 : 0,
                     'credit_limit_amount' => $data['credit_limit_amount'] ?? null,
-                    'due_days' => $data['due_days'] ?? null,
-                    'custom_fields' => $data['custom_fields'] ?? null,
-                    'transaction_type' => $data['transaction_type'] ?? null,
-                    'party_type' => $data['party_type'] ?? null,
-                    'party_group' => $data['party_group'] ?? null,
-                ],
+                'due_days' => $data['due_days'] ?? null,
+                'custom_fields' => $this->normalizePartyCustomFields($data['custom_fields'] ?? null),
+                'transaction_type' => $data['transaction_type'] ?? null,
+                'party_type' => $data['party_type'] ?? null,
+                'party_group' => $data['party_group'] ?? null,
+            ],
             ];
         }
 
@@ -597,6 +603,7 @@ public function update(Request $request, $id)
         'credit_limit_amount' => 'sometimes|nullable|numeric|min:0|required_if:credit_limit_enabled,1',
         'due_days' => 'sometimes|nullable|integer|min:1|max:100',
         'custom_fields' => 'sometimes|nullable|array',
+        'custom_fields.*' => 'nullable|string|max:255',
         'transaction_type' => 'sometimes|nullable|in:receive,pay',
         'party_type' => 'sometimes|nullable|array',
         'party_type.*' => 'in:customer,supplier,broker',
@@ -608,6 +615,9 @@ public function update(Request $request, $id)
     }
     if (array_key_exists('credit_limit_enabled', $data) && empty($data['credit_limit_enabled'])) {
         $data['credit_limit_amount'] = null;
+    }
+    if (array_key_exists('custom_fields', $data)) {
+        $data['custom_fields'] = $this->normalizePartyCustomFields($data['custom_fields']);
     }
 
     $party->update($data);
@@ -710,17 +720,73 @@ public function update(Request $request, $id)
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
+            'party_grouping' => 'nullable|boolean',
+            'shipping_address' => 'nullable|boolean',
+            'print_shipping_address' => 'nullable|boolean',
             'party_status' => 'nullable|boolean',
+            'payment_reminder' => 'nullable|boolean',
+            'payment_reminder_days' => 'nullable|integer|min:1|max:365',
+            'payment_reminder_message' => 'nullable|string|max:5000',
+            'additional_field_1' => 'nullable|boolean',
+            'additional_field_1_name' => 'nullable|string|max:100',
+            'additional_field_1_print' => 'nullable|boolean',
+            'additional_field_2' => 'nullable|boolean',
+            'additional_field_2_name' => 'nullable|string|max:100',
+            'additional_field_2_print' => 'nullable|boolean',
         ]);
 
-        if (array_key_exists('party_status', $data)) {
-            AppSetting::setValue('party_status', $data['party_status'] ? '1' : '0');
-        }
+        $settings = $this->getPartySettings();
+        $settings['party_grouping'] = array_key_exists('party_grouping', $data) ? (bool) $data['party_grouping'] : $settings['party_grouping'];
+        $settings['shipping_address'] = array_key_exists('shipping_address', $data) ? (bool) $data['shipping_address'] : $settings['shipping_address'];
+        $settings['print_shipping_address'] = array_key_exists('print_shipping_address', $data) ? (bool) $data['print_shipping_address'] : $settings['print_shipping_address'];
+        $settings['party_status'] = array_key_exists('party_status', $data) ? (bool) $data['party_status'] : $settings['party_status'];
+        $settings['payment_reminder'] = array_key_exists('payment_reminder', $data) ? (bool) $data['payment_reminder'] : $settings['payment_reminder'];
+        $settings['payment_reminder_days'] = array_key_exists('payment_reminder_days', $data) ? (int) $data['payment_reminder_days'] : $settings['payment_reminder_days'];
+        $settings['payment_reminder_message'] = trim((string) ($data['payment_reminder_message'] ?? $settings['payment_reminder_message']));
+        $settings['additional_field_1'] = array_key_exists('additional_field_1', $data) ? (bool) $data['additional_field_1'] : $settings['additional_field_1'];
+        $settings['additional_field_1_name'] = (string) ($data['additional_field_1_name'] ?? $settings['additional_field_1_name']);
+        $settings['additional_field_1_print'] = array_key_exists('additional_field_1_print', $data) ? (bool) $data['additional_field_1_print'] : $settings['additional_field_1_print'];
+        $settings['additional_field_2'] = array_key_exists('additional_field_2', $data) ? (bool) $data['additional_field_2'] : $settings['additional_field_2'];
+        $settings['additional_field_2_name'] = (string) ($data['additional_field_2_name'] ?? $settings['additional_field_2_name']);
+        $settings['additional_field_2_print'] = array_key_exists('additional_field_2_print', $data) ? (bool) $data['additional_field_2_print'] : $settings['additional_field_2_print'];
+
+        AppSetting::setValue('party_grouping', $settings['party_grouping'] ? '1' : '0');
+        AppSetting::setValue('shipping_address', $settings['shipping_address'] ? '1' : '0');
+        AppSetting::setValue('print_shipping_address', $settings['print_shipping_address'] ? '1' : '0');
+        AppSetting::setValue('party_status', $settings['party_status'] ? '1' : '0');
+        AppSetting::setValue('payment_reminder', $settings['payment_reminder'] ? '1' : '0');
+        AppSetting::setValue('payment_reminder_days', (string) max(1, (int) $settings['payment_reminder_days']));
+        AppSetting::setValue('payment_reminder_message', $settings['payment_reminder_message']);
+        AppSetting::setValue('party_additional_field_1', $settings['additional_field_1'] ? '1' : '0');
+        AppSetting::setValue('party_additional_field_1_name', $settings['additional_field_1_name']);
+        AppSetting::setValue('party_additional_field_1_print', $settings['additional_field_1_print'] ? '1' : '0');
+        AppSetting::setValue('party_additional_field_2', $settings['additional_field_2'] ? '1' : '0');
+        AppSetting::setValue('party_additional_field_2_name', $settings['additional_field_2_name']);
+        AppSetting::setValue('party_additional_field_2_print', $settings['additional_field_2_print'] ? '1' : '0');
 
         return response()->json([
             'success' => true,
-            'party_status' => AppSetting::getValue('party_status', '1') === '1',
+            'settings' => $settings,
         ]);
+    }
+
+    private function getPartySettings(): array
+    {
+        return [
+            'party_grouping' => AppSetting::getValue('party_grouping', '1') === '1',
+            'shipping_address' => AppSetting::getValue('shipping_address', '1') === '1',
+            'print_shipping_address' => AppSetting::getValue('print_shipping_address', '1') === '1',
+            'party_status' => AppSetting::getValue('party_status', '1') === '1',
+            'payment_reminder' => AppSetting::getValue('payment_reminder', '1') === '1',
+            'payment_reminder_days' => (int) AppSetting::getValue('payment_reminder_days', '2'),
+            'payment_reminder_message' => (string) AppSetting::getValue('payment_reminder_message', "Dear [Party Name],\n\nYour payment of [Amount] is pending with [Business Name].\n\n[Additional Message]\n\nIf you already have made the payment, kindly ignore this message."),
+            'additional_field_1' => AppSetting::getValue('party_additional_field_1', '0') === '1',
+            'additional_field_1_name' => (string) AppSetting::getValue('party_additional_field_1_name', ''),
+            'additional_field_1_print' => AppSetting::getValue('party_additional_field_1_print', '0') === '1',
+            'additional_field_2' => AppSetting::getValue('party_additional_field_2', '0') === '1',
+            'additional_field_2_name' => (string) AppSetting::getValue('party_additional_field_2_name', ''),
+            'additional_field_2_print' => AppSetting::getValue('party_additional_field_2_print', '0') === '1',
+        ];
     }
 
     public function statusList()
@@ -1134,14 +1200,14 @@ private function buildLedgerSourceKey(string $type, string $number): string
     return strtolower(trim($type)) . '|' . strtolower(trim($number));
 }
 
-private function saleActionUrls(Sale $sale): array
-{
-    $modalPreviewUrl = route('invoice.modal-preview', ['sale_id' => $sale->id]);
-    $modalPdfUrl = route('invoice.download-pdf', ['sale_id' => $sale->id]);
-    $modalPrintUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'print' => 1]);
-    $modalDeliveryPreviewUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'doc' => 'delivery_challan']);
-    $modalDeliveryPdfUrl = route('invoice.download-pdf', ['sale_id' => $sale->id, 'doc' => 'delivery_challan']);
-    $modalDeliveryPrintUrl = route('invoice.modal-preview', ['sale_id' => $sale->id, 'doc' => 'delivery_challan', 'print' => 1]);
+    private function saleActionUrls(Sale $sale): array
+    {
+    $modalPreviewUrl = route('sale.invoice-preview', $sale);
+    $modalPdfUrl = route('sale.invoice-pdf', $sale);
+    $modalPrintUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'print' => 1]);
+    $modalDeliveryPreviewUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'doc' => 'delivery_challan']);
+    $modalDeliveryPdfUrl = route('sale.invoice-pdf', ['sale' => $sale->id, 'doc' => 'delivery_challan']);
+    $modalDeliveryPrintUrl = route('sale.invoice-preview', ['sale' => $sale->id, 'doc' => 'delivery_challan', 'print' => 1]);
 
     return match ($sale->type) {
         'invoice', 'pos' => [
@@ -1341,8 +1407,27 @@ public function storeTransfer(Request $request)
     ]);
 }
 
-private function syncPartyCurrentBalance(int $partyId): void
-{
-    Transaction::syncPartyCurrentBalance($partyId);
-}
+    private function syncPartyCurrentBalance(int $partyId): void
+    {
+        Transaction::syncPartyCurrentBalance($partyId);
+    }
+
+    private function normalizePartyCustomFields($fields): array
+    {
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        return collect($fields)
+            ->map(function ($field) {
+                if (is_array($field)) {
+                    $field = $field['label'] ?? $field['value'] ?? $field['name'] ?? '';
+                }
+
+                return trim((string) $field);
+            })
+            ->filter(fn ($value) => $value !== '')
+            ->values()
+            ->all();
+    }
 }

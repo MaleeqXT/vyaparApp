@@ -4,103 +4,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estimate Preview</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-  .custom-table thead th {
-    font-size: 13px; color: #6c757d; font-weight: 500;
-    border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 5;
-    background-color: #fafafa; white-space: nowrap; position: relative;
-  }
-  .custom-table tbody td {
-    font-size: 14px; padding: 14px 10px;
-    border-bottom: 1px solid #f1f1f1; white-space: nowrap;
-  }
-  .custom-table tbody tr:hover { background-color: #fafafa; }
-  .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
-  .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
-  .table-wrapper {
-    overflow-x: auto; overflow-y: auto;
-    max-height: 68vh; border: 1px solid #eef2f7; border-radius: 12px;
-  }
-  @media (max-width: 991px) {
-    .table-wrapper { max-height: none; border-radius: 8px; }
-    .custom-table thead th { font-size: 11px; padding: 8px 6px; }
-    .custom-table tbody td { font-size: 12px; padding: 10px 6px; }
-  }
-  @media (max-width: 575px) {
-    .custom-table thead th { font-size: 10px; padding: 6px 4px; }
-    .custom-table tbody td { font-size: 11px; padding: 8px 4px; }
-  }
-</style>
+        :root {
+            --accent: #f59e0b;
+            --line: #d1d5db;
+            --text: #111827;
+            --muted: #6b7280;
+            --paper: #ffffff;
+            --page: #f3f4f6;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: var(--page); color: var(--text); }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .sheet {
+            width: min(1100px, calc(100vw - 36px));
+            margin: 18px auto;
+            background: var(--paper);
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+            padding: 24px 20px 28px;
+        }
+
+        .company {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .company-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .accent-line {
+            height: 2px;
+            background: var(--accent);
+            margin: 8px 0 14px;
+        }
+
+        .title {
+            text-align: center;
+            color: var(--accent);
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 18px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            margin-bottom: 16px;
+            align-items: start;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .estimate-details {
+            text-align: right;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items thead th {
+            background: #f59e0b !important;
+            color: #111827 !important;
+            font-size: 12px;
+            text-align: left;
+            padding: 8px 10px;
+            border: 1px solid #f59e0b !important;
+            font-weight: 700;
+        }
+
+        .items tbody td {
+            border: 1px solid var(--line);
+            padding: 8px 10px;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .items .num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .words-box {
+            padding-top: 6px;
+        }
+
+        .totals td {
+            padding: 7px 8px;
+            font-size: 14px;
+        }
+
+        .totals tr:last-child td {
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .sign-block {
+            margin-top: 26px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            min-height: 150px;
+        }
+
+        .sign-left,
+        .sign-right {
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .sign-right {
+            text-align: center;
+            align-self: end;
+        }
+
+        .sign-right .signature-line {
+            margin-top: 60px;
+            font-weight: 700;
+        }
+
+        @media print {
+            body { background: #fff; }
+            .sheet {
+                width: auto;
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                padding: 0 10px 16px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h3 class="mb-1">Estimate / Quotation</h3>
-                        <p class="text-muted mb-0">Reference No: {{ $sale->bill_number ?? '-' }}</p>
-                    </div>
-                    <div class="text-end">
-                        <div><strong>Date:</strong> {{ optional($sale->invoice_date)->format('d/m/Y') ?? '-' }}</div>
-                        <div><strong>Status:</strong> {{ ucfirst($sale->status ?? 'open') }}</div>
-                    </div>
-                </div>
+<body>
+@php
+    $items = collect($sale->items ?? [])->values();
+@endphp
+    <div class="sheet">
+        <div class="company">{{ config('app.name', 'My Company') }}</div>
+        <div class="company-meta">Phone no.: {{ $sale->phone ?? '-' }}</div>
+        <div class="accent-line"></div>
 
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6 class="text-muted">Party</h6>
-                        <div>{{ $sale->display_party_name }}</div>
-                        <div>{{ $sale->phone ?? '-' }}</div>
-                        <div>{{ $sale->billing_address ?? '-' }}</div>
-                    </div>
-                </div>
-<div class="table-wrapper">
-  <table class="table align-middle custom-table mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Item</th>
-                                <th>Qty</th>
-                                <th>Unit</th>
-                                <th>Rate</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($sale->items as $index => $item)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $item->item_name ?? '-' }}</td>
-                                    <td>{{ $item->quantity ?? 0 }}</td>
-                                    <td>{{ $item->unit ?? '-' }}</td>
-                                    <td>{{ number_format($item->unit_price ?? 0, 2) }}</td>
-                                    <td>{{ number_format($item->amount ?? 0, 2) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+        <div class="title">Estimate</div>
 
-                <div class="row justify-content-end mt-4">
-                    <div class="col-md-4">
-                        <table class="table table-sm">
-                            <tr>
-                                <th>Total Qty</th>
-                                <td class="text-end">{{ $sale->total_qty ?? 0 }}</td>
-                            </tr>
-                            <tr>
-                                <th>Total Amount</th>
-                                <td class="text-end">{{ number_format($sale->total_amount ?? 0, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Grand Total</th>
-                                <td class="text-end fw-bold">{{ number_format($sale->grand_total ?? 0, 2) }}</td>
-                            </tr>
-                        </table>
-                    </div>
+        <div class="info-grid">
+            <div>
+                <div class="section-title">Estimate For</div>
+                <div style="font-weight:700; font-size:18px;">{{ $sale->display_party_name }}</div>
+                <div class="muted" style="margin-top:8px; line-height:1.7;">
+                    <div><strong>Contact No:</strong> {{ $sale->phone ?? '-' }}</div>
+                    <div><strong>Email:</strong> {{ $sale->party?->email ?? '-' }}</div>
+                    <div><strong>Address:</strong> {{ $sale->billing_address ?? '-' }}</div>
                 </div>
+            </div>
+            <div class="estimate-details">
+                <div class="section-title" style="margin-bottom: 4px;">Estimate Details</div>
+                <div><strong>Estimate No.:</strong> {{ $sale->bill_number ?? '-' }}</div>
+                <div><strong>Date:</strong> {{ optional($sale->invoice_date)->format('d/m/Y') ?? '-' }}</div>
+                <div><strong>Status:</strong> {{ ucfirst($sale->status ?? 'open') }}</div>
+            </div>
+        </div>
+
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width:48px;">#</th>
+                    <th>Item name</th>
+                    <th style="width:120px;" class="num">Quantity</th>
+                    <th style="width:120px;" class="num">Unit</th>
+                    <th style="width:140px;" class="num">Price/ Unit</th>
+                    <th style="width:140px;" class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($items as $index => $item)
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>
+                            <strong>{{ $item->item_name ?? '-' }}</strong>
+                            @if(!empty($item->item_description))
+                                <div class="muted" style="margin-top:4px; font-size:12px;">{{ $item->item_description }}</div>
+                            @endif
+                        </td>
+                        <td class="num">{{ $item->quantity ?? 0 }}</td>
+                        <td class="num">{{ $item->unit ?? '-' }}</td>
+                        <td class="num">{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
+                        <td class="num">{{ number_format((float) ($item->amount ?? 0), 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center muted" style="padding:18px;">No items found.</td>
+                    </tr>
+                @endforelse
+                <tr>
+                    <td></td>
+                    <td><strong>Total</strong></td>
+                    <td class="num"><strong>{{ $items->sum('quantity') }}</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td class="num"><strong>{{ number_format((float) ($sale->grand_total ?? 0), 2) }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-grid">
+            <div class="words-box">
+                <div class="section-title">Estimate Amount In Words</div>
+                <div>{{ $sale->amount_in_words ?? 'One Thousand Rupees only' }}</div>
+            </div>
+            <table class="totals">
+                <tr>
+                    <td>Sub Total</td>
+                    <td class="num">{{ number_format((float) ($sale->total_amount ?? 0), 2) }}</td>
+                </tr>
+                <tr>
+                    <td>Total</td>
+                    <td class="num">{{ number_format((float) ($sale->grand_total ?? 0), 2) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="sign-block">
+            <div class="sign-left">
+                <div class="section-title">Notes</div>
+                <div>{{ $sale->description ?? 'Thank you for your inquiry.' }}</div>
+            </div>
+            <div class="sign-right">
+                <div>For: {{ config('app.name', 'My Company') }}</div>
+                <div class="signature-line">Authorized Signatory</div>
             </div>
         </div>
     </div>
@@ -111,40 +271,6 @@
                 window.print();
             });
         </script>
-        <script>
-  (function () {
-    var isResizing = false, startX = 0, startW = 0, thEl = null;
-    function init() {
-      document.querySelectorAll('.custom-table thead th').forEach(function (th) {
-        if (th.querySelector('.col-rh')) return;
-        th.style.position = 'relative';
-        var h = document.createElement('div');
-        h.className = 'col-rh';
-        h.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:10;';
-        th.appendChild(h);
-      });
-    }
-    document.addEventListener('mousedown', function (e) {
-      if (!e.target.classList.contains('col-rh')) return;
-      e.preventDefault();
-      thEl = e.target.closest('th'); isResizing = true;
-      startX = e.clientX; startW = thEl.getBoundingClientRect().width;
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    });
-    document.addEventListener('mousemove', function (e) {
-      if (!isResizing || !thEl) return;
-      var w = Math.max(60, startW + (e.clientX - startX));
-      thEl.style.minWidth = w + 'px'; thEl.style.width = w + 'px';
-    });
-    document.addEventListener('mouseup', function () {
-      if (!isResizing) return;
-      isResizing = false; thEl = null;
-      document.body.style.cursor = ''; document.body.style.userSelect = '';
-    });
-    document.addEventListener('DOMContentLoaded', init);
-  })();
-</script>
     @endif
 </body>
 </html>

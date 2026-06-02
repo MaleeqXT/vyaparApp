@@ -79,6 +79,7 @@ class EstimateController extends Controller
                 ->where('type', 'estimate')
                 ->findOrFail($request->integer('duplicate_sale_id'));
             $prefilledEstimateData = $sourceEstimate->toArray();
+            $prefilledEstimateData['source_estimate_id'] = $sourceEstimate->id;
             $prefilledEstimateData['bill_number'] = $nextInvoiceNumber;
             $prefilledEstimateData['invoice_date'] = now()->toDateString();
             $prefilledEstimateData['due_date'] = $sourceEstimate->due_date?->format('Y-m-d') ?: now()->toDateString();
@@ -155,6 +156,7 @@ return view('dashboard.sales.estimate-create', compact(
                 'balance'         => $data['grand_total'] ?? 0,
                 'status'          => $data['status'] ?? 'open',
                 'description'     => $data['description'] ?? null,
+                'invoice_theme'   => $data['invoice_theme'] ?? $this->defaultInvoiceTheme(),
             ]);
 
             foreach ($data['items'] as $item) {
@@ -190,5 +192,16 @@ return view('dashboard.sales.estimate-create', compact(
         $sale->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    private function defaultInvoiceTheme(): array
+    {
+        return [
+            'mode' => 'regular',
+            'regularThemeId' => 1,
+            'thermalThemeId' => 1,
+            'accent' => '#1f4e79',
+            'accent2' => '#ff981f',
+        ];
     }
 }

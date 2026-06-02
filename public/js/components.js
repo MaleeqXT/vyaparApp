@@ -297,7 +297,7 @@
           href: '/dashboard/cash-in-hand',
           dataPage: 'cash-in-hand',
           permission: 'cashbank.view'
-          
+
         },
         {
           label: `
@@ -401,6 +401,7 @@
 
   const sidebarHTML = `
   <aside class="sidebar" id="sidebar">
+
     <div class="sidebar-search position-relative">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
       <input type="text" placeholder="Open Anything (Ctrl+F)" id="sidebarSearch">
@@ -440,7 +441,7 @@
 <nav class="top-navbar" id="topNavbar">
   <div class="navbar-left">
     <span class="brand-logo"><i class="fa-solid fa-bolt"></i> Vyapar</span>
- 
+
     <!-- ── Company dropdown ── -->
     <div class="navbar-company-wrapper" style="position:relative;display:inline-block;">
       <a href="#" class="nav-link-item" id="navCompanyBtn"
@@ -458,7 +459,7 @@
       </div>
     </div>
     <!-- ── End Company dropdown ── -->
- 
+
     <div class="nav-help-wrapper" style="position:relative; display:inline-block;">
   <a href="#" class="nav-link-item" onclick="toggleHelpMenu(event)">
     <i class="fa-regular fa-circle-question"></i> Help
@@ -477,17 +478,17 @@
   </a>
 
   <div id="versionsDropdown" style="
-    display:none; 
-    position:absolute; 
-    top:100%; 
-    left:0; 
+    display:none;
+    position:absolute;
+    top:100%;
+    left:0;
     background:#d8dbe9; /* Matches the grayish-purple tint in your 2nd pic */
-    border:1px solid #c5c8d4; 
+    border:1px solid #c5c8d4;
     border-radius:2px;
     box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-    min-width:180px; 
-    z-index:9999; 
-    margin-top:2px; 
+    min-width:180px;
+    z-index:9999;
+    margin-top:2px;
     padding: 12px;
     text-align: left;
   ">
@@ -524,7 +525,7 @@
  <div class="navbar-right">
   </div>
 </nav>
- 
+
 <!-- ── Rename Company Modal (injected by navbar) ── -->
 <div id="navRenameOverlay" style="
   display:none; position:fixed; inset:0;
@@ -558,12 +559,12 @@
     <div style="clear:both"></div>
   </div>
 </div>`;
- 
+
 // ═══════════════════════════════════════════════════════════════
 //  ADD these CSS rules to your styles.css  (or inside components.js
 //  as an injected <style> block — see below)
 // ═══════════════════════════════════════════════════════════════
- 
+
 const navCompanyStyles = `
   .navbar-company-dropdown {
     display: none;
@@ -592,7 +593,7 @@ const navCompanyStyles = `
   }
   .navbar-company-item:hover { background: #f5f7fa; color: #1a73e8; }
 `;
- 
+
 // Inject styles
 (function() {
   const style = document.createElement('style');
@@ -693,35 +694,35 @@ const finalButtonStyles = `
 // ═══════════════════════════════════════════════════════════════
 //  ADD these JS functions anywhere after the navbarHTML injection
 // ═══════════════════════════════════════════════════════════════
- 
+
 window.toggleNavCompanyMenu = function(e) {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('navCompanyDropdown').classList.toggle('open');
 };
- 
+
 document.addEventListener('click', function() {
   const dd = document.getElementById('navCompanyDropdown');
   if (dd) dd.classList.remove('open');
 });
- 
+
 window.openNavRenameModal = function(e) {
   e.preventDefault();
   const dd = document.getElementById('navCompanyDropdown');
   if (dd) dd.classList.remove('open');
- 
+
   const currentName = window.App?.user?.company_name || window.currentCompanyName || '';
   document.getElementById('navRenameInput').value = currentName;
- 
+
   const overlay = document.getElementById('navRenameOverlay');
   overlay.style.display = 'flex';
   setTimeout(() => document.getElementById('navRenameInput').focus(), 100);
 };
- 
+
 window.closeNavRenameModal = function() {
   document.getElementById('navRenameOverlay').style.display = 'none';
 };
- 
+
 window.saveNavRename = async function() {
   const name = document.getElementById('navRenameInput').value.trim();
   if (!name) return;
@@ -756,12 +757,12 @@ window.saveNavRename = async function() {
     alert('Error renaming company.');
   }
 }
- 
+
 
  const topbarHTML = `
   <div id="topbar" class="bg-white border-bottom d-flex align-items-center mb-4" style="margin: -20px -24px 20px -24px; padding: 12px 24px; margin-top:5px; height: 65px;">
     <div class="topbar-inner w-100 d-flex align-items-center justify-content-between">
-      
+
       <div class="topbar-search d-flex align-items-center" style="background: #f1f3f7; border-radius: 8px; padding: 5px 15px; width: 300px;">
         <i class="fa-solid fa-magnifying-glass text-secondary me-2"></i>
         <input type="text" placeholder="Search..." style="border:none; background:transparent; outline:none; font-size:14px; width:100%;">
@@ -797,7 +798,7 @@ window.saveNavRename = async function() {
 
   // ── Inject into page ──
   document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
-  document.body.insertAdjacentHTML('afterbegin', navbarHTML); 
+  document.body.insertAdjacentHTML('afterbegin', navbarHTML);
 
 const shortcutModalsHTML = `
 <div id="shortcutsOverlay" style="
@@ -839,7 +840,7 @@ function trRow(label, key, isBlue = false, sub = '') {
 const transactionMenuHTML = `
 <div id="transMenuOverlay" style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(0,0,0,0.1);">
   <div id="transMenuBox" style="position:absolute; top:70px; right:20px; width:650px; background:#fff; border-radius:4px; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-family:sans-serif; overflow:hidden;">
-    
+
     <div style="position:absolute; top:-10px; right:45px; width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-bottom:10px solid #fff;"></div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; padding:25px 30px; gap:30px;">
@@ -1320,7 +1321,7 @@ document.head.appendChild(styleEl);
 window.toggleVersionsMenu = function(e) {
   e.preventDefault();
   e.stopPropagation();
-  
+
   const dd = document.getElementById('versionsDropdown');
   if (dd) {
     // Toggle between none and block
@@ -1476,8 +1477,12 @@ document.getElementById('globalSearchOverlay').addEventListener('click', (e) => 
 const extraComponentsHTML = `
 <div id="threeDotsMenu" style="display:none; position:fixed; top:60px; right:20px; width:220px; background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.15); z-index:1000001; font-family:sans-serif; overflow:hidden; border:1px solid #eee;">
     <div class="menu-item" onclick="openNotifications()">
-        <i class="fa-regular fa-bell"></i> Notifications
+        <i class="fa-regular fa-bell"></i> Notifications Ok
     </div>
+
+    <div class="menu-item" onclick="window.location.href='/dashboard/settings/party-reminders'">
+    <i class="fa-regular fa-credit-card"></i> Payment Reminder
+</div>
     <div class="menu-item" style="display:flex; justify-content:space-between; align-items:center;">
         <span><i class="fa-regular fa-eye"></i> Privacy</span>
         <label class="vy-switch">
@@ -1489,6 +1494,7 @@ const extraComponentsHTML = `
     <i class="fa-solid fa-gear"></i> Settings
 </div>
 </div>
+
 
 <div id="notificationsPanel" style="display:none; position:fixed; top:60px; right:20px; width:400px; background:#fff; border-radius:8px; box-shadow:0 15px 50px rgba(0,0,0,0.2); z-index:1000002; font-family:sans-serif; border:1px solid #ddd;">
     <div style="padding:15px 20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
@@ -1502,7 +1508,10 @@ const extraComponentsHTML = `
         <b style="display:block; margin-bottom:10px; color:#333;">No Notifications yet!</b>
         <p style="color:#777; font-size:13px;">Stay tuned! Notifications about your activity will show up here.</p>
     </div>
+
 </div>
+
+
 `;
 document.body.insertAdjacentHTML('beforeend', extraComponentsHTML);
 // ── Privacy Overlay (offset-aware, non-destructive) ──
@@ -1583,4 +1592,4 @@ document.addEventListener('click', function() {
   const helpDd = document.getElementById('helpDropdown');
   if (helpDd) helpDd.style.display = 'none';
 });
-})();  
+})();

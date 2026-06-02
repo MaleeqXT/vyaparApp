@@ -3,4 +3,6 @@
     'pageTitle' => $pageTitle ?? 'Preview',
     'browserTabLabel' => $browserTabLabel ?? (($invoicePreviewData['billTo'] ?? null) ?: 'Invoice Preview'),
     'saveCloseUrl' => $saveCloseUrl ?? route('sale.index'),
+    'themeSaveUrl' => $themeSaveUrl ?? (isset($sale) ? route('sale.invoice-theme.store', $sale) : null),
+    'autoPrintPreview' => $autoPrintPreview ?? false,
 ])

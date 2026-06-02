@@ -110,6 +110,9 @@
             <span class="check-row__label">Enable passcode for transactions edit/delete</span>
             <i class="fa fa-info-circle check-row__info" aria-hidden="true"></i>
           </label>
+          <div class="ms-4 mb-2 {{ !empty(data_get($transactionSettings ?? [], 'more_transaction_features.passcode_enabled')) && filled(data_get($transactionSettings ?? [], 'more_transaction_features.transaction_passcode_hash')) ? '' : 'd-none' }}" id="changeTransactionPasscodeWrap">
+            <a href="#" class="text-decoration-none small" id="changeTransactionPasscodeLink">Change passcode</a>
+          </div>
 
           <label class="check-row check-row--sm">
             <input type="checkbox" class="check-row__input" />
@@ -132,7 +135,10 @@
             <a href="#" class="text-decoration-none small" id="setPaymentTermsLink">Set Payment terms</a>
             <div class="mt-2 d-none" id="paymentTermsEditor">
               <input type="text" class="form-control form-control-sm mb-2" id="paymentTermNameInput" placeholder="Term name" value="{{ data_get($transactionSettings ?? [], 'payment_terms.name', 'Net 15') }}">
-              <input type="number" class="form-control form-control-sm" id="paymentTermDaysInput" min="0" placeholder="Days" value="{{ data_get($transactionSettings ?? [], 'payment_terms.days', 15) }}">
+              <label class="form-label small mb-1" for="paymentTermDaysInput">Deal Days</label>
+              <input type="number" class="form-control form-control-sm" id="paymentTermDaysInput" min="0" placeholder="Deal days" value="{{ data_get($transactionSettings ?? [], 'payment_terms.days', 15) }}">
+              <label class="form-label small mb-1 mt-2" for="paymentTermDueDatePreview">Due Date Preview</label>
+              <input type="date" class="form-control form-control-sm" id="paymentTermDueDatePreview" readonly>
             </div>
           </div>
           <label class="check-row check-row--sm">
@@ -470,7 +476,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Set Transaction Passcode</h5>
+          <h5 class="modal-title" id="transactionPasscodeModalLabel">Set Transaction Passcode</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -777,6 +783,9 @@
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
       const updateUrl = @json(route('settings.transactions.update'));
       let transactionSettings = @json($transactionSettings ?? []);
+      let transactionPasscodePreviousState = {{ !empty(data_get($transactionSettings ?? [], 'more_transaction_features.passcode_enabled')) ? 'true' : 'false' }};
+      let transactionPasscodeSaveCommitted = false;
+      let transactionPasscodeMode = 'create';
 
       const mergeDeep = (target, source) => {
         const output = Array.isArray(target) ? [...target] : { ...target };
@@ -827,6 +836,22 @@
       const qs = (selector) => document.querySelector(selector);
       const qsa = (selector) => Array.from(document.querySelectorAll(selector));
       const normalize = (settings) => mergeDeep(defaultSettings, settings || {});
+      const hasStoredTransactionPasscode = () => !!transactionSettings?.more_transaction_features?.transaction_passcode_hash;
+      const updatePasscodeChangeLink = () => {
+        const wrap = qs('#changeTransactionPasscodeWrap');
+        if (!wrap) return;
+        const shouldShow = !!transactionSettings?.more_transaction_features?.passcode_enabled && hasStoredTransactionPasscode();
+        wrap.classList.toggle('d-none', !shouldShow);
+      };
+      const openTransactionPasscodeModal = (mode = 'create') => {
+        transactionPasscodeMode = mode;
+        const title = qs('#transactionPasscodeModalLabel');
+        if (title) {
+          title.textContent = mode === 'change' ? 'Change Transaction Passcode' : 'Set Transaction Passcode';
+        }
+        transactionPasscodeSaveCommitted = false;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionPasscodeModal')).show();
+      };
       transactionSettings = normalize(transactionSettings);
 
       function saveSettings(extraPayload = {}) {
@@ -983,9 +1008,28 @@
         qs('#paymentTermsEditor')?.classList.toggle('d-none', !transactionSettings.more_transaction_features.due_dates_payment_terms_enabled);
         qs('#paymentTermNameInput').value = transactionSettings.payment_terms.name || 'Net 15';
         qs('#paymentTermDaysInput').value = transactionSettings.payment_terms.days || 0;
+        updatePasscodeChangeLink();
+        updatePaymentTermsPreview();
         renderTransportModal();
         renderAdditionalChargesModal();
         renderPrefixSelects();
+      }
+
+      function updatePaymentTermsPreview() {
+        const preview = qs('#paymentTermDueDatePreview');
+        const daysInput = qs('#paymentTermDaysInput');
+        if (!preview || !daysInput) return;
+        const days = parseInt(daysInput.value || 0, 10) || 0;
+        const base = new Date();
+        if (Number.isNaN(base.getTime())) {
+          preview.value = '';
+          return;
+        }
+        base.setDate(base.getDate() + days);
+        const yyyy = base.getFullYear();
+        const mm = String(base.getMonth() + 1).padStart(2, '0');
+        const dd = String(base.getDate()).padStart(2, '0');
+        preview.value = `${yyyy}-${mm}-${dd}`;
       }
 
       qsa('#invoiceNoCheckbox,#transactionTimeCheckbox,#cashSaleDefaultCheckbox,#billingNameCheckbox,#customerPoDetailsCheckbox,#freeItemQtyCheckbox,#countCheckbox,#quickEntryCheckbox,#invoicePreviewCheckbox,#linkPaymentsCheckbox,#paymentTermsCheckbox,#termsConditionsCheckbox').forEach(el => {
@@ -994,7 +1038,18 @@
 
       qs('#setPaymentTermsLink')?.addEventListener('click', function(e) {
         e.preventDefault();
-        qs('#paymentTermsEditor')?.classList.toggle('d-none');
+        const editor = qs('#paymentTermsEditor');
+        if (!editor) return;
+        editor.classList.toggle('d-none');
+        if (!editor.classList.contains('d-none')) {
+          updatePaymentTermsPreview();
+        }
+      });
+
+      qs('#paymentTermNameInput')?.addEventListener('input', () => saveSettings().catch(() => {}));
+      qs('#paymentTermDaysInput')?.addEventListener('input', () => {
+        updatePaymentTermsPreview();
+        saveSettings().catch(() => {});
       });
 
       qsa('.transaction-prefix-select').forEach(select => {
@@ -1031,10 +1086,26 @@
 
       qs('#transactionPasscodeCheckbox')?.addEventListener('change', function() {
         if (this.checked) {
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionPasscodeModal')).show();
+          transactionPasscodePreviousState = !!transactionSettings.more_transaction_features.passcode_enabled;
+          if (hasStoredTransactionPasscode()) {
+            saveSettings().catch(() => {
+              this.checked = transactionPasscodePreviousState;
+            });
+            return;
+          }
+          openTransactionPasscodeModal('create');
           return;
         }
+        transactionPasscodePreviousState = false;
         saveSettings().catch(() => {});
+      });
+
+      qs('#changeTransactionPasscodeLink')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!qs('#transactionPasscodeCheckbox')?.checked && !hasStoredTransactionPasscode()) {
+          qs('#transactionPasscodeCheckbox').checked = true;
+        }
+        openTransactionPasscodeModal('change');
       });
 
       qs('#saveTransactionPasscodeBtn')?.addEventListener('click', function() {
@@ -1042,10 +1113,21 @@
           transaction_passcode: qs('#transactionPasscodeInput')?.value || '',
           transaction_passcode_confirmation: qs('#transactionPasscodeConfirmInput')?.value || ''
         }).then(() => {
+          transactionPasscodeSaveCommitted = true;
           bootstrap.Modal.getOrCreateInstance(document.getElementById('transactionPasscodeModal')).hide();
           qs('#transactionPasscodeInput').value = '';
           qs('#transactionPasscodeConfirmInput').value = '';
+          updatePasscodeChangeLink();
         }).catch(() => {});
+      });
+
+      document.getElementById('transactionPasscodeModal')?.addEventListener('hidden.bs.modal', function() {
+        if (!transactionPasscodeSaveCommitted) {
+          qs('#transactionPasscodeCheckbox').checked = transactionPasscodePreviousState;
+        }
+        transactionPasscodeSaveCommitted = false;
+        transactionPasscodeMode = 'create';
+        updatePasscodeChangeLink();
       });
 
       renderSettings();

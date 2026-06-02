@@ -1,6 +1,7 @@
 import './Theme3.css'
 import { formatCurrency, getInvoiceViewModel } from './invoiceData'
 import AdjustmentSummaryRows from './AdjustmentSummaryRows'
+import ItemDisplayName from './ItemDisplayName'
 
 const Theme3 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, onSignatureClick, selectedColor, terms, onTermsClick, invoiceData }) => {
   const accent = selectedColor || '#888888'
@@ -85,7 +86,7 @@ const Theme3 = ({ businessInfo, onCompanyClick, onLogoClick, logo, signature, on
           {view.items.map((item, index) => (
             <tr key={`${item.name}-${index}`}>
               <td className="t1-td-left">{index + 1}</td>
-              <td className="t1-td-left"><strong>{item.name}</strong></td>
+              <td className="t1-td-left"><ItemDisplayName item={item} /></td>
               <td className="t1-td-right">{item.qty}</td>
               <td className="t1-td-right">{formatCurrency(item.rate)}</td>
               <td className="t1-td-right">{formatCurrency(item.amount)}</td>

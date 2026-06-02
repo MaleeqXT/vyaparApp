@@ -134,7 +134,7 @@
     /* ── Type Label ── */
     .type-label { font-size: 13px; font-weight: 400; color: #000000; text-transform: capitalize; display: inline-block; }
 
-   
+
 
     /* ── Deposit Action Link ── */
     .deposit-link {
@@ -1186,4 +1186,5 @@
     document.addEventListener('keydown', function(e){ if (e.key==='Escape') { closeAllMenus(); closeHistoryModal(); closeChequeModal(); closeDepositModal(); } });
     document.addEventListener('DOMContentLoaded', function(){ highlightFirstVisible(); });
   </script>
-@endpush
+</body>
+</html>

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'provider' => env('WHATSAPP_PROVIDER', 'cloud'),
+        'cloud_access_token' => env('WHATSAPP_CLOUD_ACCESS_TOKEN'),
+        'cloud_phone_number_id' => env('WHATSAPP_CLOUD_PHONE_NUMBER_ID'),
+        'cloud_api_version' => env('WHATSAPP_CLOUD_API_VERSION', 'v21.0'),
+    ],
+
 ];

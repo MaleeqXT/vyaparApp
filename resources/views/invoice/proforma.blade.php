@@ -7,6 +7,29 @@
   <title>Vyapar - Proforma Invoice</title>
   <meta name="description" content="Proforma invoice preview in the React invoice builder.">
 
+  @php
+    $latestAsset = function (string $pattern) {
+      $files = glob(public_path($pattern)) ?: [];
+      if (empty($files)) {
+        return null;
+      }
+
+      usort($files, function ($a, $b) {
+        return filemtime($b) <=> filemtime($a);
+      });
+
+      $relative = str_replace(public_path() . DIRECTORY_SEPARATOR, '', $files[0]);
+      $publicRelative = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
+      return asset($publicRelative) . '?v=' . filemtime($files[0]);
+    };
+
+    $fallbackReactCss = $latestAsset('react-invoice/assets/index-*.css');
+    $fallbackReactJs = $latestAsset('react-invoice/assets/index-*.js');
+    $reactCss = $reactCss ?? $fallbackReactCss;
+    $reactJs = $reactJs ?? $fallbackReactJs;
+    $reactIsModule = $reactIsModule ?? true;
+  @endphp
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">

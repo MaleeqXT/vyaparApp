@@ -454,6 +454,20 @@
                 $balance.text(`Rs ${amount}`);
             }
         }
+
+        const $summary = $context.find('#selectedPartySummary').first();
+        if ($summary.length) {
+            $summary.removeClass('d-none');
+            $summary.find('.party-summary-name').text(party.name || '-');
+            $summary.find('.party-summary-phone').text(party.phone || '-');
+            $summary.find('.party-summary-billing').text(party.billing_address || '-');
+            $summary.find('.party-summary-shipping').text(party.shipping_address || '-');
+        }
+
+        $context.find('.party-details').removeClass('d-none');
+        $context.find('.billing-address-field, .shipping-address-field, .phone-field').each(function () {
+            this.style.display = '';
+        });
     }
 
     function updateWindowParties(party) {
@@ -669,6 +683,10 @@
 
     function enhanceAllItemPickers() {
         $('select.item-name').each(function () {
+            const $select = $(this);
+            if ($select.closest('.item-picker').length && $select.closest('.item-picker').find('.item-picker-input').length) {
+                return;
+            }
             enhanceItemPicker(getBodyContext($(this)), $(this));
         });
     }
@@ -984,8 +1002,13 @@
         });
 
         $(document).on('hide.bs.dropdown.sharedPartySearch', '.party-dropdown-wrapper', function () {
-            $(this).find('.party-search-input').val('');
-            $(this).find('.party-option').closest('li').removeClass('d-none');
+            const $wrapper = $(this);
+            const $context = getBodyContext($wrapper);
+            const hasSelectedParty = String($wrapper.find('.party-id').first().val() || $context.find('.party-id').first().val() || '').trim() !== '';
+            if (!hasSelectedParty) {
+                $wrapper.find('.party-search-input').val('');
+                $wrapper.find('.party-option').closest('li').removeClass('d-none');
+            }
         });
     }
 

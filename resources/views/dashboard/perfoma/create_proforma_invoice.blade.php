@@ -87,6 +87,19 @@
         width: 40%; /* Opening balance */
         text-align: right;
     }
+    .selected-party-summary {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border: 1px solid #dbe4f0;
+        border-radius: 8px;
+        background: #f8fbff;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+    .selected-party-summary strong {
+        display: inline-block;
+        min-width: 72px;
+    }
     .dropdown-header {
         position: sticky;
         top: 0;
@@ -722,7 +735,7 @@
                         <div class="header-section">
                               <div class="input-group">
                                 <!-- Party dropdown button -->
-<div class="party-dropdown-wrapper" style="position: relative; display: inline-block;">
+<div class="party-dropdown-wrapper dropdown" style="position: relative; display: inline-block;">
     <input type="text" class="form-control party-search-input w-100" placeholder="Search party..." id="partyDropdownBtn" data-bs-toggle="dropdown" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; min-height: 34px;">
     <!-- Balance display -->
     <div id="partyBalanceDisplay" style="color: #007bff; font-weight: 600; margin-top: 4px;">
@@ -783,6 +796,12 @@
     </ul>
 </div>
 <input type="hidden" class="party-id" name="party_id">
+<div class="selected-party-summary d-none" id="selectedPartySummary">
+    <div><strong>Party:</strong> <span class="party-summary-name">-</span></div>
+    <div><strong>Phone:</strong> <span class="party-summary-phone">-</span></div>
+    <div><strong>Billing:</strong> <span class="party-summary-billing">-</span></div>
+    <div><strong>Shipping:</strong> <span class="party-summary-shipping">-</span></div>
+</div>
 
                                 </div>
 

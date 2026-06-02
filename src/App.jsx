@@ -11,16 +11,19 @@ import './App.css'
 
 const appData = window.invoiceAppData || {}
 const initialInvoiceData = appData.invoiceData || null
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
 
 const App = () => {
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [terms, setTerms] = useState(initialInvoiceData?.description || 'Thanks for doing business with us!')
   const [selectedTheme, setSelectedTheme] = useState(appData.initialTheme || 'tally')
   const [selectedColor, setSelectedColor] = useState(appData.initialColor || '#707070')
+  const [selectedColor2, setSelectedColor2] = useState(appData.initialColor2 || '#ff981f')
   const [showBusinessModal, setShowBusinessModal] = useState(false)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [showLogoModal, setShowLogoModal] = useState(false)
   const [logo, setLogo] = useState(null)
+  const [lastSavedThemeSignature, setLastSavedThemeSignature] = useState('')
 
   const [businessInfo, setBusinessInfo] = useState({
     name: initialInvoiceData?.businessName || 'My Company',
@@ -69,18 +72,32 @@ const App = () => {
 
     const payload = {
       mode: theme.startsWith('thermal') ? 'thermal' : 'regular',
-      regularThemeId: theme.startsWith('thermal') ? null : (regularMap[theme] || 1),
-      thermalThemeId: theme.startsWith('thermal') ? (thermalMap[theme] || 1) : null,
+      regularThemeId: regularMap[theme] || 1,
+      thermalThemeId: thermalMap[theme] || 1,
       accent: selectedColor || '#1f4e79',
-      accent2: null,
+      accent2: selectedColor2 || '#ff981f',
     }
+    const signature = JSON.stringify(payload)
 
     try {
-      window.localStorage.setItem(`saleInvoiceTheme:${appData.saleId}`, JSON.stringify(payload))
+      window.localStorage.setItem(`saleInvoiceTheme:${appData.saleId}`, signature)
     } catch (error) {
       // ignore storage errors
     }
-  }, [selectedTheme, selectedColor])
+
+    if (appData.themeSaveUrl && signature !== lastSavedThemeSignature) {
+      setLastSavedThemeSignature(signature)
+      fetch(appData.themeSaveUrl, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify(payload),
+      }).catch(() => {})
+    }
+  }, [selectedTheme, selectedColor, selectedColor2])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)

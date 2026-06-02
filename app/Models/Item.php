@@ -12,6 +12,7 @@ class Item extends Model
         'sale_price', 'wholesale_price', 'purchase_price',
         'opening_qty', 'item_code', 'location', 'description',
         'image_path', 'image_paths', 'min_stock', 'is_active',
+        'custom_fields',
     ];
 
     protected $casts = [
@@ -19,6 +20,7 @@ class Item extends Model
         'unit_conversion_rate' => 'decimal:4',
         'bag_weight' => 'decimal:2',
         'is_active' => 'boolean',
+        'custom_fields' => 'array',
     ];
 
     protected $appends = ['stock_qty', 'total_net_w'];
