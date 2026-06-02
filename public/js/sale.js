@@ -72,7 +72,7 @@ $(document).ready(function () {
     if (!saleId) return null;
 
     try {
-      const raw = window.localStorage.getItem(`saleInvoiceTheme:${saleId}`) || window.localStorage.getItem('saleInvoiceTheme:draft');
+      const raw = window.localStorage.getItem(`saleInvoiceTheme:${saleId}`);
       return raw ? JSON.parse(raw) : null;
     } catch (error) {
       return null;
@@ -105,38 +105,29 @@ $(document).ready(function () {
     return url.toString();
   }
 
-  function buildDownloadUrl(url) {
-    if (!url) return '';
-    try {
-      const parsed = new URL(url, window.location.origin);
-      parsed.searchParams.set('download', '1');
-      return parsed.toString();
-    } catch (error) {
-      return url + (String(url).includes('?') ? '&' : '?') + 'download=1';
-    }
-  }
-
-  function openMailClient(subject, body) {
-    const mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject || 'Invoice Preview') +
-      '&body=' + encodeURIComponent(body || '');
-
-    try {
-      const opened = window.open(mailtoUrl, '_self');
-      if (opened !== null) {
-        return;
-      }
-    } catch (error) {
-      // fall through to the anchor-based fallback
-    }
+  function triggerPdfDownload(url) {
+    if (!url) return;
 
     const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.target = '_self';
+    link.href = url;
+    link.download = '';
     link.rel = 'noopener';
-    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  function openMailClient(subject, body) {
+    const mailUrl = 'mailto:?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
+    const win = window.open(mailUrl, '_self');
+    if (!win) {
+      const a = document.createElement('a');
+      a.href = mailUrl;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   }
 
   function openPreviewModal(url, title, options = {}) {
@@ -149,7 +140,6 @@ $(document).ready(function () {
     salePreviewFrame.src = url;
     salePreviewFrame.dataset.pdfUrl = options.pdfUrl || '';
     salePreviewFrame.dataset.printUrl = options.printUrl || '';
-    salePreviewFrame.dataset.downloadUrl = options.downloadUrl || buildDownloadUrl(options.pdfUrl || url);
     salePreviewModal.show();
   }
 
@@ -260,7 +250,7 @@ $(document).ready(function () {
   salePreviewOpenPdfBtn?.addEventListener('click', function () {
     const pdfUrl = salePreviewFrame?.dataset?.pdfUrl || salePreviewFrame?.src;
     if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+      triggerPdfDownload(pdfUrl);
     }
   });
 
@@ -272,26 +262,16 @@ $(document).ready(function () {
   });
 
   salePreviewSavePdfBtn?.addEventListener('click', function () {
-    const downloadUrl = salePreviewFrame?.dataset?.downloadUrl || salePreviewFrame?.dataset?.pdfUrl || salePreviewFrame?.src;
-    if (!downloadUrl) return;
-
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.target = '_blank';
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    const pdfUrl = salePreviewFrame?.dataset?.pdfUrl || salePreviewFrame?.src;
+    if (pdfUrl) {
+      triggerPdfDownload(pdfUrl);
+    }
   });
 
-  salePreviewEmailPdfBtn?.addEventListener('click', function (event) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    const downloadUrl = salePreviewFrame?.dataset?.downloadUrl || salePreviewFrame?.dataset?.pdfUrl || salePreviewFrame?.src;
-    if (!downloadUrl) return;
-
-    const subject = salePreviewModalTitle?.textContent || 'Invoice Preview';
-    const body = 'Please review the invoice preview here: ' + downloadUrl;
+  salePreviewEmailPdfBtn?.addEventListener('click', function () {
+    const pdfUrl = salePreviewFrame?.dataset?.pdfUrl || salePreviewFrame?.src;
+    const subject = `Invoice PDF - ${salePreviewModalTitle?.textContent || 'Preview'}`;
+    const body = `Please find the invoice PDF here: ${pdfUrl || window.location.href}`;
     openMailClient(subject, body);
   });
 
@@ -300,7 +280,6 @@ $(document).ready(function () {
       salePreviewFrame.src = 'about:blank';
       delete salePreviewFrame.dataset.pdfUrl;
       delete salePreviewFrame.dataset.printUrl;
-      delete salePreviewFrame.dataset.downloadUrl;
     }
   });
 
@@ -842,7 +821,7 @@ $(document).ready(function () {
       window.location.href = duplicateUrl;
     } else if (action === 'pdf') {
       if (pdfUrl) {
-        window.open(pdfUrl, '_blank');
+        triggerPdfDownload(pdfUrl);
       }
     } else if (action === 'preview') {
       if (previewUrl) {
@@ -988,8 +967,9 @@ $(document).ready(function () {
   $(document).on('click', '.row-action-print', function () {
     const $menu = $(this).closest('td').find('.sale-action-menu');
     const saleId = $menu.data('sale-id');
-    if (saleId) {
-      window.open(`/dashboard/sales/${saleId}/print`, '_blank');
+    const printUrl = buildReactInvoiceUrl($menu.data('pdf-url'), saleId, { print: 1 });
+    if (printUrl) {
+      window.open(printUrl, '_blank');
     }
   });
 
