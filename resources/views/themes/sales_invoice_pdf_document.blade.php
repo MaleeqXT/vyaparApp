@@ -198,6 +198,7 @@ body{display:block}
 <tr class="grand"><td style="background:{{ $headBg }};">Total</td><td style="background:{{ $headBg }};" class="text-right">{{ number_format($total,2) }}</td></tr>
 <tr><td>Received</td><td class="text-right">{{ number_format($received,2) }}</td></tr><tr><td>Balance</td><td class="text-right">{{ number_format($balance,2) }}</td></tr>
 </table></div></td></tr></table>
+@endif
 <div style="display:flex;justify-content:flex-end;margin-top:34px;">
 <div style="width:280px;text-align:center;">
 <div style="margin-bottom:12px;">For : {{ $invoice['businessName'] ?? 'My Company' }}</div>

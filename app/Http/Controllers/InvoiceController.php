@@ -98,8 +98,21 @@ class InvoiceController extends Controller
         $invoicePreviewData['title'] = 'Proforma Invoice';
         $reactAssets = $this->resolveReactInvoiceAssets();
         $themeDefaults = $this->resolveStoredInvoiceThemeConfig($sale, $request);
+        $invoiceAppData = [
+            'invoiceData' => $invoicePreviewData,
+            'saleId' => $sale->id,
+            'initialTheme' => $themeDefaults['mode'],
+            'initialColor' => $themeDefaults['accent'],
+            'initialColor2' => $themeDefaults['accent2'],
+            'browserTabLabel' => 'Proforma #' . ($sale->bill_number ?: $sale->id),
+            'saveCloseUrl' => route('proforma-invoice'),
+            'themeSaveUrl' => route('sale.invoice-theme.store', $sale),
+            'initialRegularThemeId' => $themeDefaults['regularThemeId'],
+            'initialThermalThemeId' => $themeDefaults['thermalThemeId'],
+        ];
 
         return view('invoice.proforma', [
+            'invoiceAppData' => $invoiceAppData,
             'invoicePreviewData' => $invoicePreviewData,
             'pageTitle' => 'Proforma Preview',
             'browserTabLabel' => 'Proforma #' . ($sale->bill_number ?: $sale->id),
@@ -124,18 +137,23 @@ class InvoiceController extends Controller
 
     private function buildInvoiceViewData(Request $request): array
     {
-        $type = $request->query('type');
+        $type = strtolower(trim((string) $request->query('type', '')));
+     
         $selectedTheme = (string) $request->query('theme', 'tally');
         $selectedColor = (string) $request->query('color', '#707070');
         $selectedColor2 = (string) $request->query('color2', '#ff981f');
         $reactAssets = $this->resolveReactInvoiceAssets();
 
         $saveCloseUrl = route('sale.index');
-        if ($type === 'sale_order') {
+
+        if (in_array($type, ['sale_order', 'sale-order'], true)) {
             $saveCloseUrl = route('sale-order');
-        } elseif ($type === 'return-order') {
+        } elseif (in_array($type, ['return-order', 'sale_return', 'sale-return'], true)) {
             $saveCloseUrl = route('sale-return');
+        } elseif (in_array($type, ['proforma', 'proforma-invoice'], true)) {
+            $saveCloseUrl = route('proforma-invoice');
         }
+
 
         $viewData = [
             'invoicePreviewData' => [],
@@ -143,9 +161,6 @@ class InvoiceController extends Controller
             'browserTabLabel' => 'Invoice Preview',
             'saveCloseUrl' => $saveCloseUrl,
             'documentType' => $type,
-            // 'saveCloseUrl' => route('sale.index'),
-            // 'saveCloseUrl' => route('sale-order'),
-
             'initialMode' => $selectedTheme,
             'initialRegularThemeId' => (int) $request->query('theme_id', 1),
             'initialThermalThemeId' => (int) $request->query('theme_id', 1),
@@ -187,6 +202,12 @@ class InvoiceController extends Controller
             $viewData['initialAccent'] = $themeDefaults['accent'];
             $viewData['initialAccent2'] = $themeDefaults['accent2'];
             $viewData['themeSaveUrl'] = route('sale.invoice-theme.store', $invoiceSource);
+
+            if ($invoiceSource->type === 'proforma' || in_array($type, ['proforma', 'proforma-invoice'], true)) {
+                $viewData['saveCloseUrl'] = route('proforma-invoice');
+                $viewData['documentType'] = 'proforma-invoice';
+                $viewData['browserTabLabel'] = 'Proforma #' . ($invoiceSource->bill_number ?: $invoiceSource->id);
+            }
         } elseif ($request->filled('payment_in')) {
             $paymentInRecord = PaymentIn::with(['party', 'bankAccount'])
                 ->findOrFail($request->integer('payment_in'));
