@@ -440,7 +440,7 @@
                 filename:`invoice-${invoiceData.invoiceNo || 'preview'}.pdf`,
                 image:{ type:'jpeg', quality:.98 },
                 html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff' },
-                jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' }
+                jsPDF:{ unit:'mm', format:'a4', orientation: 'portrait' }
             }).from(exportTarget.node).save().then(() => exportTarget.cleanup()).catch(() => {
                 exportTarget.cleanup();
                 window.print();
@@ -479,11 +479,11 @@
         if(openPreviewModalBtn) openPreviewModalBtn.addEventListener('click', function(){ syncModalPreview(); invoicePreviewModal.classList.add('open'); });
         if(closePreviewModalBtn) closePreviewModalBtn.addEventListener('click', function(){ invoicePreviewModal.classList.remove('open'); });
         if(invoicePreviewModal) invoicePreviewModal.addEventListener('click', function(e){ if(e.target === invoicePreviewModal) invoicePreviewModal.classList.remove('open'); });
-        activeRegularId = initialRegularThemeId || 1;
-        activeThermalId = initialThermalThemeId || 1;
-        setAccent(initialAccent || '#1f4e79');
-        setSecondAccent(initialAccent2 || '#ff981f');
-        setMode(initialMode || 'regular');
+        activeRegularId = Number(storedThemeState?.regularThemeId || activeRegularId || 1);
+        activeThermalId = Number(storedThemeState?.thermalThemeId || activeThermalId || 1);
+        setAccent(storedThemeState?.accent || initialAccent || '#1f4e79');
+        setSecondAccent(storedThemeState?.accent2 || initialAccent2 || '#ff981f');
+        setMode(currentMode || initialMode || 'regular');
         if(document.body.classList.contains('pdf-export-page') && autoDownload){
             setTimeout(function(){
                 if(window.html2pdf){

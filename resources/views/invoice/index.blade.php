@@ -145,6 +145,7 @@
   @if (!empty($reactJs))
     <div id="root"></div>
     <script>
+      window.docType = @json($documentType ?? null);
       window.invoiceAppData = {
         invoiceData: @json($invoicePreviewData ?? null),
         saleId: @json($sale->id ?? null),

@@ -40,6 +40,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
+        // return $request->all();
         return view('invoice.index', $this->buildInvoiceViewData($request));
     }
 
@@ -123,16 +124,28 @@ class InvoiceController extends Controller
 
     private function buildInvoiceViewData(Request $request): array
     {
+        $type = $request->query('type');
         $selectedTheme = (string) $request->query('theme', 'tally');
         $selectedColor = (string) $request->query('color', '#707070');
         $selectedColor2 = (string) $request->query('color2', '#ff981f');
         $reactAssets = $this->resolveReactInvoiceAssets();
 
+        $saveCloseUrl = route('sale.index');
+        if ($type === 'sale_order') {
+            $saveCloseUrl = route('sale-order');
+        } elseif ($type === 'return-order') {
+            $saveCloseUrl = route('sale-return');
+        }
+
         $viewData = [
             'invoicePreviewData' => [],
             'pageTitle' => 'Preview',
             'browserTabLabel' => 'Invoice Preview',
-            'saveCloseUrl' => route('sale.index'),
+            'saveCloseUrl' => $saveCloseUrl,
+            'documentType' => $type,
+            // 'saveCloseUrl' => route('sale.index'),
+            // 'saveCloseUrl' => route('sale-order'),
+
             'initialMode' => $selectedTheme,
             'initialRegularThemeId' => (int) $request->query('theme_id', 1),
             'initialThermalThemeId' => (int) $request->query('theme_id', 1),
@@ -148,6 +161,7 @@ class InvoiceController extends Controller
 
             $docType = $request->query('doc');
             $invoiceSource = $sale;
+            $savedTheme = $this->resolveSavedSaleThemeState($sale);
 
             if ($docType === 'delivery_challan') {
                 if ($sale->type === 'delivery_challan') {
@@ -254,6 +268,27 @@ class InvoiceController extends Controller
             'thermalThemeId' => $thermalThemeId > 0 ? $thermalThemeId : 1,
             'accent' => $accent !== '' ? $accent : '#1f4e79',
             'accent2' => $accent2 !== '' ? $accent2 : '#ff981f',
+        ];
+    }
+
+    private function resolveSavedSaleThemeState(?Sale $sale): array
+    {
+        $stored = $sale?->invoice_theme;
+
+        if (is_string($stored)) {
+            $stored = json_decode($stored, true);
+        }
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        return [
+            'mode' => (string) ($stored['mode'] ?? 'regular'),
+            'regularThemeId' => (int) ($stored['regularThemeId'] ?? ($stored['theme_id'] ?? 1)),
+            'thermalThemeId' => (int) ($stored['thermalThemeId'] ?? ($stored['theme_id'] ?? 1)),
+            'accent' => (string) ($stored['accent'] ?? '#1f4e79'),
+            'accent2' => (string) ($stored['accent2'] ?? '#ff981f'),
         ];
     }
 
@@ -571,6 +606,7 @@ class InvoiceController extends Controller
             'date' => $invoiceDate->format('d/m/Y'),
             'time' => $createdAt->format('h:i A'),
             'dueDate' => ($sale->due_date ? Carbon::parse($sale->due_date) : $invoiceDate)->format('d/m/Y'),
+            'rate' => (float) ($sale->rate ?? 0),
             'billTo' => (string) ($sale->display_party_name !== '-' ? $sale->display_party_name : 'Walk-in Customer'),
             'billAddress' => (string) ($sale->billing_address ?: ''),
             'billPhone' => (string) ($sale->phone ?: ($sale->party?->phone ?: '')),
