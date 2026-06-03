@@ -31,12 +31,12 @@
   .custom-table th, .custom-table td { border-right: 1px solid #f1f1f1; }
   .custom-table th:last-child, .custom-table td:last-child { border-right: none; }
   .table-wrapper {
-    overflow-x: auto; overflow-y: auto;
-    max-height: 68vh; border: 1px solid #eef2f7; border-radius: 12px;
-    padding-bottom: 72px;
+    overflow-x: hidden; overflow-y: visible;
+    max-height: none; border: 1px solid #eef2f7; border-radius: 12px;
+    padding-bottom: 0;
   }
   .table-wrapper .dropdown-menu { z-index: 2000; max-height: 48vh; overflow-y: auto; }
-  .proforma-header-cell { min-width: 120px; position: relative; }
+  .proforma-header-cell { min-width: 0; position: relative; }
   .proforma-header-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .proforma-filter-trigger {
     border: 0; background: transparent; color: #adb5bd; padding: 0; line-height: 1; font-size: 12px; cursor: pointer;
@@ -66,6 +66,24 @@
   }
 
 </style>
+  <style>
+    #proformaTable {
+      width: 100% !important;
+      table-layout: fixed;
+    }
+
+    #proformaTable th,
+    #proformaTable td {
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    #proformaTable th:last-child,
+    #proformaTable td:last-child,
+    #proformaTable td:nth-last-child(2) {
+      white-space: nowrap;
+    }
+  </style>
   <script>
     const authUser = @json(Auth::user());
     window.App = window.App || {
@@ -514,7 +532,7 @@
           lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
           order: [[0, 'desc']],
           autoWidth: false,
-          scrollX: true,
+          scrollX: false,
           responsive: false,
           columnDefs: [{ orderable: false, searchable: false, targets: [6] }],
           dom: '<"row mb-2 align-items-center"<"col-md-6"l><"col-md-6 text-end">>rt<"row mt-3 align-items-center"<"col-md-6"i><"col-md-6"p>>',

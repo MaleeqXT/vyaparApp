@@ -68,6 +68,7 @@ class PerfomaController extends Controller
             ->whereIn('reference_id', $allProformas->pluck('id'))
             ->pluck('bill_number', 'reference_id');
 
+    
         return view('dashboard.perfoma.perfoma-invoice', compact(
             'proformas',
             'allProformas',
@@ -77,7 +78,8 @@ class PerfomaController extends Controller
             'partyId',
             'partyOptions',
             'convertedSales',
-            'convertedSaleOrders'
+            'convertedSaleOrders',
+            
         ));
     }
 
@@ -148,14 +150,26 @@ class PerfomaController extends Controller
             'success' => true,
             'sale_id' => $sale->id,
             'bill_number' => $sale->bill_number,
-            'redirect_url' => route('proforma-invoice.react', $sale),
-            'share_url' => route('proforma-invoice.react', $sale),
+            'redirect_url' => route('proforma-invoice.react', [
+                'sale' => $sale->id,
+                'type' => 'proforma-invoice',
+            ]),
+            'share_url' => route('proforma-invoice.react', [
+                'sale' => $sale->id,
+                'type' => 'proforma-invoice',
+            ]),
         ]);
     }
 
     public function update(Request $request, Sale $sale)
     {
         abort_unless($sale->type === 'proforma', 404);
+        if ($sale->status === 'converted') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This Data is Converted please close the Tab',
+            ], 422);
+        }
 
         $this->normalizeJsonInputs($request);
         $data = $this->validateProformaRequest($request);
@@ -178,8 +192,14 @@ class PerfomaController extends Controller
             'success' => true,
             'sale_id' => $sale->id,
             'bill_number' => $sale->bill_number,
-            'redirect_url' => route('proforma-invoice.react', $sale),
-            'share_url' => route('proforma-invoice.react', $sale),
+            'redirect_url' => route('proforma-invoice.react', [
+                'sale' => $sale->id,
+                'type' => 'proforma-invoice',
+            ]),
+            'share_url' => route('proforma-invoice.react', [
+                'sale' => $sale->id,
+                'type' => 'proforma-invoice',
+            ]),
         ]);
     }
 
