@@ -210,7 +210,6 @@ body{display:block}
 <div style="border-top:1px solid #b8c2d1;padding-top:8px;font-weight:700;">{{ $signatureText }}</div>
 </div>
 </div>
-@endif
 @if(!empty($autoPrint))
 <script>
 window.addEventListener('load', function () {

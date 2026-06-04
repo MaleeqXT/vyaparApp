@@ -163,6 +163,7 @@ Route::get('delivery-challan/next-number', [DeliveryController::class, 'getNextN
     // Sale Orders
     Route::get('sale-order', [SaleOrderController::class, 'saleOrder'])->name('sale-order');
     Route::get('sale-order/create', [SaleOrderController::class, 'create'])->name('sale-order.create');
+    Route::get('sale-order/{sale}/edit', [SaleOrderController::class, 'edit'])->name('sale-order.edit');
     Route::get('estimates/{sale}/convert-to-sale-order', [SaleOrderController::class, 'createFromEstimate'])->name('estimates.convert-to-sale-order');
 
     // Invoice
