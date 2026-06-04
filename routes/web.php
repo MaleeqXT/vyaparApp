@@ -447,6 +447,8 @@ Route::get('/items/{id}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/parties', [PartyController::class, 'index'])->name('parties');
     Route::post('/parties', [PartyController::class, 'store'])->name('parties.store');
     Route::post('/parties/settings/update', [PartyController::class, 'updateSettings'])->name('parties.settings.update');
+    Route::post('/parties/{party}/reminder', [PartyController::class, 'storeReminder'])->name('parties.reminder.store');
+    Route::get('/parties/reminders/notifications', [PartyController::class, 'reminderNotifications'])->name('parties.reminders.notifications');
     Route::get('/parties/status/list', [PartyController::class, 'statusList'])->name('parties.status.list');
     Route::post('/parties/status/update', [PartyController::class, 'updateStatuses'])->name('parties.status.update');
     Route::post('/party-groups', [PartyGroupController::class, 'store'])->name('party-groups.store');

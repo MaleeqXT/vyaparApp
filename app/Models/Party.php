@@ -27,6 +27,11 @@ class Party extends Model
         'transaction_type',
         'party_type',
         'party_group',
+        'payment_reminder_enabled',
+        'payment_reminder_phone',
+        'payment_reminder_date',
+        'payment_reminder_message',
+        'payment_reminder_sent_at',
     ];
 
     protected $appends = [
@@ -40,6 +45,9 @@ class Party extends Model
         'current_balance' => 'decimal:2',
         'credit_limit_amount' => 'decimal:2',
         'custom_fields' => 'array',
+        'payment_reminder_enabled' => 'boolean',
+        'payment_reminder_date' => 'date',
+        'payment_reminder_sent_at' => 'datetime',
     ];
 
     public function getAsOfDateAttribute($value)

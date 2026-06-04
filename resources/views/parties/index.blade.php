@@ -127,6 +127,10 @@
         data-due-days="{{ $party->due_days }}"
         data-credit-limit-enabled="{{ $party->credit_limit_enabled }}"
         data-credit-limit-amount="{{ $party->credit_limit_amount }}"
+        data-payment-reminder-enabled="{{ $party->payment_reminder_enabled ? 1 : 0 }}"
+        data-payment-reminder-date="{{ optional($party->payment_reminder_date)->format('Y-m-d') }}"
+        data-payment-reminder-message="{{ e($party->payment_reminder_message ?? '') }}"
+        data-payment-reminder-sent-at="{{ optional($party->payment_reminder_sent_at)->format('Y-m-d H:i:s') }}"
         data-custom-fields="{{ json_encode($party->custom_fields ?? []) }}">
       <span class="entity-name">{{ $party->name }}</span>
       @if(!$party->is_active)
@@ -149,18 +153,15 @@
     </div>
     <!-- Right: Party Details -->
     <div class="split-right">
-      <div class="detail-panel-header">
-        <div>
-          <div style="display: flex;">
-          <div class="entity-detail-name" id="partyDetailName" style="font-weight: 400;">abc
-
+      <div class="detail-panel-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1 1 420px; min-width:0;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="entity-detail-name" id="partyDetailName" style="font-weight: 400;">abc</div>
+            <button class="btn-icon" id="editPartyBtn" title="Edit" type="button">
+              <i class="fa-solid fa-pen"></i>
+            </button>
           </div>
-           <button class="btn-icon"  id="editPartyBtn" title="Edit">  <i class="fa-solid fa-pen"></i>
-
-</button>
-</div>
-
-         <div class="entity-detail-meta-row">
+          <div class="entity-detail-meta-row">
 
   <div class="entity-detail-meta">
     <div class="meta-heading">Phone Number</div>
@@ -184,8 +185,13 @@
 
 </div>
         </div>
-        <div class="action-buttons">
-
+        <div class="action-buttons" style="display:flex; align-items:center; justify-content:flex-end; gap:10px; flex:0 0 auto; padding-top:4px;">
+          <button class="btn-icon btn-party-reminder" id="openPartyReminderBtn" title="Payment Reminder" type="button" style="color:#f59e0b;">
+            <i class="fa-regular fa-clock"></i>
+          </button>
+          <button class="btn-icon btn-party-reminder" id="openPartyReminderWhatsappBtn" title="Send Reminder on WhatsApp" type="button" style="color:#25D366;">
+            <i class="fa-brands fa-whatsapp"></i>
+          </button>
         </div>
       </div>
 
@@ -995,6 +1001,79 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-danger" id="partyStatementPdfApply">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="partyReminderModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-1">Set Reminder</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold">Party</div>
+            <div class="fw-bold" id="partyReminderPartyName">-</div>
+            <div class="text-muted" id="partyReminderPartyPhone">-</div>
+          </div>
+          <div class="text-end">
+            <div class="text-muted small text-uppercase fw-semibold">Pending Amount</div>
+            <div class="fw-bold text-danger" id="partyReminderPartyAmount">Rs 0.00</div>
+          </div>
+        </div>
+
+        <div class="mb-3 d-flex align-items-center justify-content-between border rounded-3 p-3">
+          <div>
+            <div class="fw-semibold">Remind me</div>
+          </div>
+          <input type="checkbox" class="form-check-input m-0" id="partyReminderEnabled">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="partyReminderDate">Reminder Date</label>
+          <input type="date" class="form-control" id="partyReminderDate">
+        </div>
+
+        <div class="rounded-3 border bg-light p-3 text-muted small">
+          Note: You can set payment reminder for yourself on a selected date.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" id="deletePartyReminderBtn">Delete Reminder</button>
+        <button type="button" class="btn btn-success" id="savePartyReminderBtn">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="partyReminderWhatsappModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-1">Send Reminder on WhatsApp</h5>
+          <div class="text-muted" style="font-size:13px;">Enter the number where the reminder should be sent.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="partyReminderWhatsappPhone">WhatsApp Phone No.</label>
+          <input type="text" class="form-control" id="partyReminderWhatsappPhone" placeholder="Enter WhatsApp number">
+        </div>
+        <div class="text-muted small">The reminder message will use the current party balance and saved reminder template.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" id="sendPartyReminderWhatsappQuickBtn">
+          <i class="fa-brands fa-whatsapp me-1"></i> Send WhatsApp
+        </button>
       </div>
     </div>
   </div>
@@ -2568,6 +2647,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const partyStatementPdfPaymentStatus = document.getElementById("partyStatementPdfPaymentStatus");
     const partyStatementPdfPaymentInfo = document.getElementById("partyStatementPdfPaymentInfo");
     const partyStatementPdfApply = document.getElementById("partyStatementPdfApply");
+    const partyReminderModalEl = document.getElementById("partyReminderModal");
+    const partyReminderModal = partyReminderModalEl ? bootstrap.Modal.getOrCreateInstance(partyReminderModalEl) : null;
+    const partyReminderPartyName = document.getElementById("partyReminderPartyName");
+    const partyReminderPartyPhone = document.getElementById("partyReminderPartyPhone");
+    const partyReminderPartyAmount = document.getElementById("partyReminderPartyAmount");
+    const partyReminderEnabled = document.getElementById("partyReminderEnabled");
+    const partyReminderPhone = document.getElementById("partyReminderPhone");
+    const partyReminderDate = document.getElementById("partyReminderDate");
+    const partyReminderMessage = document.getElementById("partyReminderMessage");
+    const sendPartyReminderWhatsappBtn = document.getElementById("sendPartyReminderWhatsappBtn");
+    const savePartyReminderBtn = document.getElementById("savePartyReminderBtn");
+    const deletePartyReminderBtn = document.getElementById("deletePartyReminderBtn");
+    const partyReminderWhatsappModalEl = document.getElementById("partyReminderWhatsappModal");
+    const partyReminderWhatsappModal = partyReminderWhatsappModalEl ? bootstrap.Modal.getOrCreateInstance(partyReminderWhatsappModalEl) : null;
+    const partyReminderWhatsappPhone = document.getElementById("partyReminderWhatsappPhone");
+    const sendPartyReminderWhatsappQuickBtn = document.getElementById("sendPartyReminderWhatsappQuickBtn");
     const partySettingsTrigger = document.getElementById("partySettingsTrigger");
     const partyModalSettingsTrigger = document.getElementById("partyModalSettingsTrigger");
     const partySettingsDrawer = document.getElementById("partySettingsDrawer");
@@ -5213,6 +5308,234 @@ document.addEventListener("DOMContentLoaded", function () {
         return parseFloat(fallbackBalance ?? partyData.current_balance ?? partyData.opening_balance ?? 0).toFixed(2);
     }
 
+    function getPartyListItemById(partyId) {
+        return document.querySelector(`.party-item[data-id="${partyId}"]`);
+    }
+
+    function getPartyReminderDefaultsFromItem(li) {
+        const reminderMessageFromSettings = @json($partySettings['payment_reminder_message'] ?? "Dear [Party Name],\n\nYour payment of [Amount] is pending with [Business Name].\n\n[Additional Message]\n\nIf you already have made the payment, kindly ignore this message.");
+        const partyName = li?.dataset?.name || '';
+        const partyPhone = li?.dataset?.paymentReminderPhone || li?.dataset?.phone || '';
+        const amount = parseFloat(li?.dataset?.currentBalance || li?.dataset?.displayAmount || li?.dataset?.openingBalance || 0) || 0;
+        const reminderDate = li?.dataset?.paymentReminderDate || new Date().toISOString().slice(0, 10);
+        const reminderEnabled = String(li?.dataset?.paymentReminderEnabled || '0') === '1';
+        const reminderMessage = li?.dataset?.paymentReminderMessage || reminderMessageFromSettings;
+
+        return {
+            partyName,
+            partyPhone,
+            amount,
+            reminderDate,
+            reminderEnabled,
+            reminderMessage,
+        };
+    }
+
+    function openPartyReminderModal() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        const defaults = getPartyReminderDefaultsFromItem(li);
+        if (partyReminderPartyName) partyReminderPartyName.textContent = defaults.partyName || '-';
+        if (partyReminderPartyPhone) partyReminderPartyPhone.textContent = defaults.partyPhone || '-';
+        if (partyReminderPartyAmount) partyReminderPartyAmount.textContent = `Rs ${defaults.amount.toFixed(2)}`;
+        if (partyReminderEnabled) partyReminderEnabled.checked = defaults.reminderEnabled;
+        if (partyReminderDate) partyReminderDate.value = defaults.reminderDate;
+
+        partyReminderModal?.show();
+    }
+
+    function openPartyReminderWhatsappModal() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        const defaults = getPartyReminderDefaultsFromItem(li);
+        if (partyReminderWhatsappPhone) partyReminderWhatsappPhone.value = defaults.partyPhone || '';
+        partyReminderWhatsappModal?.show();
+    }
+
+    function savePartyReminder() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        const defaults = getPartyReminderDefaultsFromItem(li);
+
+        const enabled = !!partyReminderEnabled?.checked;
+        const reminderDate = partyReminderDate?.value || '';
+        if (enabled && !reminderDate) {
+            alert('Please select reminder date.');
+            return;
+        }
+
+        const payload = {
+            enabled,
+            phone: defaults.partyPhone || '',
+            reminder_date: reminderDate || null,
+            message: defaults.reminderMessage || reminderMessageFromSettings || '',
+        };
+
+        fetch(`/dashboard/parties/${currentPartyId}/reminder`, {
+            method: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Unable to save reminder.');
+            return data;
+        })
+        .then((data) => {
+            const reminder = data.reminder || {};
+            li.dataset.paymentReminderEnabled = reminder.enabled ? '1' : '0';
+            li.dataset.paymentReminderPhone = reminder.phone || '';
+            li.dataset.paymentReminderDate = reminder.reminder_date || '';
+            li.dataset.paymentReminderMessage = reminder.message || '';
+            li.dataset.paymentReminderSentAt = '';
+            partyReminderModal?.hide();
+            alert('Payment reminder set successfully.');
+        })
+        .catch((error) => {
+            alert(error.message || 'Unable to save reminder.');
+        });
+    }
+
+    function deletePartyReminder() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        fetch(`/dashboard/parties/${currentPartyId}/reminder`, {
+            method: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({
+                enabled: false,
+                phone: '',
+                reminder_date: null,
+                message: '',
+            })
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Unable to delete reminder.');
+            return data;
+        })
+        .then((data) => {
+            const reminder = data.reminder || {};
+            li.dataset.paymentReminderEnabled = reminder.enabled ? '1' : '0';
+            li.dataset.paymentReminderPhone = reminder.phone || '';
+            li.dataset.paymentReminderDate = '';
+            li.dataset.paymentReminderMessage = '';
+            li.dataset.paymentReminderSentAt = '';
+            partyReminderModal?.hide();
+            alert('Payment reminder deleted successfully.');
+        })
+        .catch((error) => {
+            alert(error.message || 'Unable to delete reminder.');
+        });
+    }
+
+    function sendPartyReminderWhatsapp() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        const phone = String(partyReminderPhone?.value || '').replace(/\D+/g, '');
+        if (!phone) {
+            alert('Please enter WhatsApp phone number.');
+            return;
+        }
+
+        const defaults = getPartyReminderDefaultsFromItem(li);
+        const partyName = defaults.partyName || 'Party';
+        const amountText = `Rs ${defaults.amount.toFixed(2)}`;
+        const message = (partyReminderMessage?.value || defaults.reminderMessage || '')
+            .replace(/\[Party Name\]/g, partyName)
+            .replace(/\[Amount\]/g, amountText)
+            .replace(/\[Business Name\]/g, @json(config('app.name', 'My Company')))
+            .replace(/\[Additional Message\]/g, '');
+
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function sendPartyReminderWhatsappQuick() {
+        if (!currentPartyId) {
+            alert('Select Party First');
+            return;
+        }
+
+        const li = getPartyListItemById(currentPartyId);
+        if (!li) {
+            alert('Party not found.');
+            return;
+        }
+
+        const phone = String(partyReminderWhatsappPhone?.value || '').replace(/\D+/g, '');
+        if (!phone) {
+            alert('Please enter WhatsApp phone number.');
+            return;
+        }
+
+        const defaults = getPartyReminderDefaultsFromItem(li);
+        const partyName = defaults.partyName || 'Party';
+        const amountText = `Rs ${defaults.amount.toFixed(2)}`;
+        const message = (defaults.reminderMessage || reminderMessageFromSettings || '')
+            .replace(/\[Party Name\]/g, partyName)
+            .replace(/\[Amount\]/g, amountText)
+            .replace(/\[Business Name\]/g, @json(config('app.name', 'My Company')))
+            .replace(/\[Additional Message\]/g, '');
+
+        partyReminderWhatsappModal?.hide();
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
     function updatePartySidebarBalance(partyId, balanceValue) {
         const sidebarParty = document.querySelector(`.party-item[data-id="${partyId}"]`);
         if (!sidebarParty) return;
@@ -5636,6 +5959,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 li.dataset.salesTotal = Number(party.sales_total || 0).toFixed(2);
                 li.dataset.creditLimitEnabled = party.credit_limit_enabled || 0;
                 li.dataset.creditLimitAmount = partyData.credit_limit_amount || "";
+                li.dataset.paymentReminderEnabled = party.payment_reminder_enabled ? "1" : "0";
+                li.dataset.paymentReminderDate = party.payment_reminder_date || "";
+                li.dataset.paymentReminderMessage = party.payment_reminder_message || "";
+                li.dataset.paymentReminderSentAt = party.payment_reminder_sent_at || "";
                 li.dataset.customFields = JSON.stringify(party.custom_fields || []);
 
                 const displayAmount = getSidebarAmountValue(party, party.current_balance || 0);
@@ -5759,6 +6086,10 @@ document.addEventListener("DOMContentLoaded", function () {
         partyStatementPdfModal?.hide();
         openTxnPrintPreview();
     });
+    savePartyReminderBtn?.addEventListener('click', savePartyReminder);
+    deletePartyReminderBtn?.addEventListener('click', deletePartyReminder);
+    sendPartyReminderWhatsappBtn?.addEventListener('click', sendPartyReminderWhatsapp);
+    sendPartyReminderWhatsappQuickBtn?.addEventListener('click', sendPartyReminderWhatsappQuick);
     txnOptionCancel.addEventListener("click", closeTxnOptionModal);
     txnOptionConfirm.addEventListener("click", runPendingTxnAction);
     txnOptionModal.addEventListener("click", function (e) {
@@ -6209,6 +6540,13 @@ document.addEventListener("DOMContentLoaded", function () {
         populatePartyModal(party);
     });
 
+    document.getElementById("openPartyReminderBtn")?.addEventListener("click", function () {
+        openPartyReminderModal();
+    });
+    document.getElementById("openPartyReminderWhatsappBtn")?.addEventListener("click", function () {
+        openPartyReminderWhatsappModal();
+    });
+
     // ✅ UPDATE PARTY
     updateBtn.addEventListener("click", function (e) {
         e.preventDefault();
@@ -6274,6 +6612,9 @@ fetch(`/dashboard/parties/${currentPartyId}`, {
                 li.dataset.salesTotal = Number(data.party?.sales_total || li.dataset.salesTotal || 0).toFixed(2);
                 li.dataset.creditLimitEnabled = partyData.credit_limit_enabled;
                 li.dataset.creditLimitAmount = partyData.credit_limit_amount;
+                li.dataset.paymentReminderEnabled = partyData.payment_reminder_enabled ? "1" : "0";
+                li.dataset.paymentReminderDate = partyData.payment_reminder_date || "";
+                li.dataset.paymentReminderMessage = partyData.payment_reminder_message || "";
                 li.dataset.transactionType = partyData.transaction_type;
                 li.dataset.isActive = data.party?.is_active ? '1' : '0';
 

@@ -1501,12 +1501,14 @@ const extraComponentsHTML = `
         <b style="font-size:16px; color:#333;">Notifications</b>
         <button onclick="closeNotifications()" style="background:none; border:none; font-size:20px; color:#999; cursor:pointer;">&times;</button>
     </div>
-    <div style="padding:60px 20px; text-align:center;">
-        <div style="background:#f8f9fa; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-            <i class="fa-regular fa-bell" style="font-size:35px; color:#ccc;"></i>
+    <div id="notificationsPanelBody" style="padding:20px; max-height: 70vh; overflow-y: auto;">
+        <div style="padding:40px 20px; text-align:center;">
+            <div style="background:#f8f9fa; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <i class="fa-regular fa-bell" style="font-size:35px; color:#ccc;"></i>
+            </div>
+            <b style="display:block; margin-bottom:10px; color:#333;">No Notifications yet!</b>
+            <p style="color:#777; font-size:13px;">Stay tuned! Notifications about your activity will show up here.</p>
         </div>
-        <b style="display:block; margin-bottom:10px; color:#333;">No Notifications yet!</b>
-        <p style="color:#777; font-size:13px;">Stay tuned! Notifications about your activity will show up here.</p>
     </div>
 
 </div>
@@ -1558,7 +1560,65 @@ window.togglePrivacyMode = function(isEnabled) {
 
 window.openNotifications = function() {
     document.getElementById('threeDotsMenu').style.display = 'none';
-    document.getElementById('notificationsPanel').style.display = 'block';
+    const panel = document.getElementById('notificationsPanel');
+    const body = document.getElementById('notificationsPanelBody');
+    const escapeText = (value = '') => String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    if (panel) panel.style.display = 'block';
+    if (body) {
+      body.innerHTML = '<div style="padding:40px 20px; text-align:center; color:#777;">Loading reminders...</div>';
+    }
+
+    fetch('/dashboard/parties/reminders/notifications', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then((res) => res.ok ? res.json() : Promise.reject(new Error('Unable to load notifications.')))
+      .then((data) => {
+        const items = Array.isArray(data?.items) ? data.items : [];
+        if (!body) return;
+        if (!items.length) {
+          body.innerHTML = `
+            <div style="padding:40px 20px; text-align:center;">
+              <div style="background:#f8f9fa; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <i class="fa-regular fa-bell" style="font-size:35px; color:#ccc;"></i>
+              </div>
+              <b style="display:block; margin-bottom:10px; color:#333;">No Notifications yet!</b>
+              <p style="color:#777; font-size:13px;">Stay tuned! Notifications about your activity will show up here.</p>
+            </div>`;
+          return;
+        }
+
+        body.innerHTML = items.map((item) => {
+          const amount = Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const dueDate = item.reminder_date ? new Date(item.reminder_date).toLocaleDateString() : '-';
+          const waLink = item.whatsapp_url || '';
+          return `
+            <div style="border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:10px; background:#fff;">
+              <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                <div>
+                  <div style="font-weight:700; color:#111827;">${escapeText(item.name || 'Party')}</div>
+                  <div style="font-size:12px; color:#6b7280;">Due: ${escapeText(dueDate)}${item.sent_at ? ' • Sent' : ''}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-weight:700; color:#dc2626;">Rs ${amount}</div>
+                  ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" style="font-size:12px; color:#25D366; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> Send</a>` : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      })
+      .catch(() => {
+        if (body) {
+          body.innerHTML = '<div style="padding:40px 20px; text-align:center; color:#dc2626;">Unable to load notifications.</div>';
+        }
+      });
 };
 
 window.closeNotifications = function() {
