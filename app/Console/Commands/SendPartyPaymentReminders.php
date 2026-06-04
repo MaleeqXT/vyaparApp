@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AppSetting;
 use App\Models\PaymentReminderLog;
+use App\Models\Party;
 use App\Models\Sale;
 use App\Services\WhatsAppReminderService;
 use Illuminate\Console\Command;
@@ -131,6 +132,81 @@ class SendPartyPaymentReminders extends Command
                     $result = $this->whatsAppReminderService->send($phone, $message);
 
                     if (($result['ok'] ?? false) === true) {
+                        $log->update([
+                            'status' => 'sent',
+                            'provider_message_id' => $result['message_id'] ?? null,
+                            'provider_response' => json_encode($result['response'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                            'sent_at' => now(),
+                        ]);
+                        $sentCount++;
+                        continue;
+                    }
+
+                    $log->update([
+                        'status' => 'failed',
+                        'provider_response' => json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        'sent_at' => now(),
+                    ]);
+                    $failedCount++;
+                }
+            });
+
+        Party::query()
+            ->where('payment_reminder_enabled', true)
+            ->whereNotNull('payment_reminder_date')
+            ->whereDate('payment_reminder_date', '<=', today())
+            ->whereNull('payment_reminder_sent_at')
+            ->orderBy('payment_reminder_date')
+            ->chunkById(100, function ($parties) use (
+                $template,
+                $businessName,
+                &$sentCount,
+                &$skippedCount,
+                &$failedCount
+            ) {
+                foreach ($parties as $party) {
+                    $phone = trim((string) ($party->payment_reminder_phone ?: $party->phone ?: $party->phone_number_2 ?: ''));
+                    $partyName = trim((string) ($party->name ?: 'Party'));
+                    $amount = (float) $party->current_balance;
+                    $reminderDate = Carbon::parse($party->payment_reminder_date);
+
+                    $message = strtr((string) ($party->payment_reminder_message ?: $template), [
+                        '[Party Name]' => $partyName,
+                        '[Amount]' => 'Rs ' . number_format($amount, 2),
+                        '[Business Name]' => $businessName,
+                        '[Due Days]' => $reminderDate->isToday() ? 'Today' : $reminderDate->diffForHumans(now(), true),
+                        '[Invoice No]' => 'Reminder',
+                        '[Due Date]' => $reminderDate->format('d/m/Y'),
+                        '[Additional Message]' => '',
+                    ]);
+
+                    $log = PaymentReminderLog::create([
+                        'party_id' => $party->id,
+                        'party_name' => $partyName,
+                        'phone' => $phone,
+                        'due_date' => $party->payment_reminder_date,
+                        'overdue_days' => null,
+                        'balance' => $amount,
+                        'reminder_type' => 'manual_party_reminder',
+                        'status' => 'pending',
+                        'provider' => config('services.whatsapp.provider', 'cloud'),
+                        'message' => $message,
+                    ]);
+
+                    if ($phone === '') {
+                        $log->update([
+                            'status' => 'skipped',
+                            'provider_response' => 'Missing phone number.',
+                            'sent_at' => now(),
+                        ]);
+                        $skippedCount++;
+                        continue;
+                    }
+
+                    $result = $this->whatsAppReminderService->send($phone, $message);
+
+                    if (($result['ok'] ?? false) === true) {
+                        $party->forceFill(['payment_reminder_sent_at' => now()])->save();
                         $log->update([
                             'status' => 'sent',
                             'provider_message_id' => $result['message_id'] ?? null,

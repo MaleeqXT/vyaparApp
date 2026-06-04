@@ -492,10 +492,16 @@
         proformaPreviewFrame.dataset.previewUrl = previewUrl || '';
         proformaPreviewFrame.dataset.pdfUrl = pdfUrl || '';
         proformaPreviewFrame.dataset.printUrl = printUrl || '';
-        proformaPreviewFrame.dataset.partyEmail = partyEmail || '';
-        proformaPreviewFrame.dataset.partyName = partyName || '';
-        proformaPreviewFrame.dataset.saleNumber = saleNumber || '';
-        proformaPreviewFrame.dataset.emailUrl = resolveAction(trigger)?.emailUrl || '';
+        proformaPreviewFrame.dataset.downloadUrl = (() => {
+          if (!pdfUrl) return previewUrl || '';
+          try {
+            const download = new URL(pdfUrl, window.location.origin);
+            download.searchParams.set('download', '1');
+            return download.toString();
+          } catch (error) {
+            return pdfUrl + (String(pdfUrl).includes('?') ? '&' : '?') + 'download=1';
+          }
+        })();
         proformaPreviewModal.show();
       };
 
@@ -556,7 +562,7 @@
 
       if (proformaPreviewSavePdf) {
         proformaPreviewSavePdf.addEventListener('click', function () {
-          const url = proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
+          const url = proformaPreviewFrame?.dataset?.downloadUrl || proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
           if (!url) return;
           const a = document.createElement('a');
           a.href = url;
@@ -569,9 +575,35 @@
         });
       }
 
-      proformaPreviewEmailPdf?.addEventListener('click', function () {
-        window.openProformaEmail();
-      });
+      function openMailClient(subject, body) {
+        const mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject || 'Invoice Preview') +
+          '&body=' + encodeURIComponent(body || '');
+        try {
+          const opened = window.open(mailtoUrl, '_self');
+          if (opened !== null) {
+            return;
+          }
+        } catch (error) {
+          // fall through to anchor fallback
+        }
+        const link = document.createElement('a');
+        link.href = mailtoUrl;
+        link.target = '_self';
+        link.rel = 'noopener';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      if (proformaPreviewEmailPdf) {
+        proformaPreviewEmailPdf.addEventListener('click', function () {
+          const url = proformaPreviewFrame?.dataset?.downloadUrl || proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
+          if (!url) return;
+          const subject = 'Proforma Invoice';
+          const body = `Please find the proforma invoice here: ${url}`;
+          openMailClient(subject, body);
+        });
+      }
 
       proformaSearchToggle?.addEventListener('click', function () {
         if (!proformaSearchForm) return;

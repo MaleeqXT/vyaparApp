@@ -346,6 +346,38 @@ min-width:0;
 padding:8px;
 }
 
+.detail-panel-header {
+  padding: 18px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.detail-panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.detail-header-actions .btn-icon {
+  padding: 8px 10px;
+}
+
 /* FILTER WRAPPER */
 .filter-wrapper{
 display:flex;

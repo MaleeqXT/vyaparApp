@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -787,6 +788,59 @@ public function update(Request $request, $id)
             'additional_field_2_name' => (string) AppSetting::getValue('party_additional_field_2_name', ''),
             'additional_field_2_print' => AppSetting::getValue('party_additional_field_2_print', '0') === '1',
         ];
+    }
+
+    public function storeReminder(Request $request, Party $party)
+    {
+        $data = $request->validate([
+            'enabled' => 'required|boolean',
+            'phone' => 'nullable|string|max:30',
+            'reminder_date' => 'nullable|date',
+            'message' => 'nullable|string|max:5000',
+        ]);
+
+        $party->forceFill([
+            'payment_reminder_enabled' => (bool) $data['enabled'],
+            'payment_reminder_phone' => trim((string) ($data['phone'] ?? '')),
+            'payment_reminder_date' => $data['reminder_date'] ?? null,
+            'payment_reminder_message' => trim((string) ($data['message'] ?? '')),
+            'payment_reminder_sent_at' => null,
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'reminder' => [
+                'enabled' => (bool) $party->payment_reminder_enabled,
+                'phone' => (string) ($party->payment_reminder_phone ?? ''),
+                'reminder_date' => optional($party->payment_reminder_date)->format('Y-m-d'),
+                'message' => (string) ($party->payment_reminder_message ?? ''),
+            ],
+        ]);
+    }
+
+    public function reminderNotifications()
+    {
+        $reminders = Party::query()
+            ->where('payment_reminder_enabled', true)
+            ->whereNotNull('payment_reminder_date')
+            ->whereDate('payment_reminder_date', '<=', today())
+            ->orderBy('payment_reminder_date')
+            ->get(['id', 'name', 'phone', 'current_balance', 'payment_reminder_date', 'payment_reminder_sent_at']);
+
+        return response()->json([
+            'success' => true,
+            'items' => $reminders->map(function (Party $party) {
+                return [
+                    'id' => $party->id,
+                    'name' => $party->name,
+                    'phone' => $party->payment_reminder_phone ?: $party->phone,
+                    'amount' => (float) $party->current_balance,
+                    'reminder_date' => optional($party->payment_reminder_date)->format('Y-m-d'),
+                    'sent_at' => optional($party->payment_reminder_sent_at)->toDateTimeString(),
+                    'whatsapp_url' => ($party->payment_reminder_phone ?: $party->phone) ? 'https://wa.me/' . preg_replace('/\D+/', '', (string) ($party->payment_reminder_phone ?: $party->phone)) : '',
+                ];
+            })->values(),
+        ]);
     }
 
     public function statusList()
