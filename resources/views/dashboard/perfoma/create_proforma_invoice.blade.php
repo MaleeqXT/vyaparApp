@@ -33,6 +33,194 @@
     padding-top: 0 !important;
 }
 
+.header-section{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:6px;
+}
+
+.header-left{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:6px;
+    align-items:start;
+}
+
+/* =========================
+   COMMON FIELD SIZE
+
+.party-meta-field,
+.input-group,
+.floating-input-wrapper{
+    margin:0 !important;
+}
+
+.floating-input-wrapper .meta-control,
+.party-dropdown-wrapper .party-search-input,
+.party-dropdown-wrapper .btn.dropdown-toggle{
+    width:100%;
+    min-height:34px !important;
+    height:34px !important;
+    padding:10px 8px !important;
+    font-size:12px !important;
+    border-radius:6px !important;
+    border:1px solid #d7e0ea !important;
+    background:#fff !important;
+    box-shadow:none !important;
+}
+
+/* =========================
+   TEXTAREA COMPACT
+
+textarea.meta-control,
+.party-details .address-field textarea.meta-control{
+    min-height:86px !important;
+    height:86px !important;
+    resize:none;
+    padding:16px 10px 14px 10px !important;
+}
+
+textarea.meta-control[readonly]{
+    background:#f8fafc !important;
+    color:#475569 !important;
+    cursor:not-allowed;
+}
+
+/* =========================
+   LABELS SMALL
+
+.floating-input-wrapper label{
+    font-size:10px !important;
+    top:8px !important;
+    left:8px !important;
+    color:#64748b;
+    font-weight:600;
+}
+
+.floating-input-wrapper .meta-control:focus + label,
+.floating-input-wrapper .meta-control:not(:placeholder-shown) + label{
+    top:0 !important;
+    font-size:9px !important;
+}
+
+/* =========================
+   BALANCE TEXT
+
+#partyBalanceDisplay{
+    margin-top:2px !important;
+    font-size:11px !important;
+    line-height:1;
+}
+
+/* =========================
+   RIGHT SIDE SMALL FIELDS
+
+.header-aux-fields{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-top:0 !important;
+    align-items: stretch;
+}
+
+.header-mini-fields-grid{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    width:100%;
+    max-width:none;
+}
+
+/* =========================
+   REMOVE EXTRA WIDTHS
+
+.description-pane .floating-input-wrapper .meta-control,
+.description-side-fields .floating-input-wrapper .meta-control,
+.billing-name-field .floating-input-wrapper .meta-control,
+.party-details .floating-input-wrapper .meta-control{
+    max-width:100% !important;
+}
+
+/* =========================
+   ADDRESS WIDTH FIX
+
+.billing-address-field,
+.shipping-address-field{
+    width:100%;
+}
+
+.cash-mode .party-details .phone-field {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .description-side-fields .party-meta-field,
+    .description-pane,
+    .description-side-fields,
+    .action-fields-layout,
+    .header-mini-fields-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-left {
+        grid-template-columns: 1fr;
+    }
+
+    .header-aux-fields {
+        justify-items: stretch;
+    }
+}
+
+
+.item-picker-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 520px;
+    max-width: 100%;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1055;
+    display: none;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.item-picker-panel.open {
+    display: block !important;
+}
+
+.item-picker-head > span:first-child,
+.item-picker-row > .item-picker-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.item-picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.item-picker-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.item-picker-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.item-picker-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+
 #partyDropdownMenu::before {
     content: none !important;
 }
@@ -424,7 +612,6 @@ ul#partyDropdownMenu {
 
 /* =========================
    HEADER LAYOUT COMPACT
-========================= */
 
 .header-section{
     display:grid;
@@ -441,7 +628,6 @@ ul#partyDropdownMenu {
 
 /* =========================
    COMMON FIELD SIZE
-========================= */
 
 .party-meta-field,
 .input-group,
@@ -465,7 +651,6 @@ ul#partyDropdownMenu {
 
 /* =========================
    TEXTAREA COMPACT
-========================= */
 
 textarea.meta-control,
 .party-details .address-field textarea.meta-control{
@@ -483,7 +668,6 @@ textarea.meta-control[readonly]{
 
 /* =========================
    LABELS SMALL
-========================= */
 
 .floating-input-wrapper label{
     font-size:10px !important;
@@ -501,7 +685,6 @@ textarea.meta-control[readonly]{
 
 /* =========================
    BALANCE TEXT
-========================= */
 
 #partyBalanceDisplay{
     margin-top:2px !important;
@@ -511,7 +694,6 @@ textarea.meta-control[readonly]{
 
 /* =========================
    RIGHT SIDE SMALL FIELDS
-========================= */
 
 .header-aux-fields{
     display:flex;
@@ -531,7 +713,6 @@ textarea.meta-control[readonly]{
 
 /* =========================
    REMOVE EXTRA WIDTHS
-========================= */
 
 .description-pane .floating-input-wrapper .meta-control,
 .description-side-fields .floating-input-wrapper .meta-control,
@@ -542,7 +723,6 @@ textarea.meta-control[readonly]{
 
 /* =========================
    ADDRESS WIDTH FIX
-========================= */
 
 .billing-address-field,
 .shipping-address-field{

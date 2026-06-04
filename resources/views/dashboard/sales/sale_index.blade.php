@@ -676,6 +676,7 @@
                      data-convert-return-url="{{ route('sale-return.create', ['sale_id' => $sale->id]) }}"
                      data-cancel-url="{{ route('sale.cancel', $sale) }}"
                      data-is-cancelled="{{ strtolower((string) ($sale->status ?? '')) === 'cancelled' ? '1' : '0' }}"
+                     data-email-url="{{ route('sale.invoice-email', $sale) }}"
                      data-sale-number="{{ $sale->bill_number ?? $sale->id }}">
                   <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -745,6 +746,15 @@
       </div>
     </div>
   </div>
+
+  @include('dashboard.partials.document-email-modal', [
+    'modalId' => 'documentEmailModal',
+    'toId' => 'documentEmailTo',
+    'subjectId' => 'documentEmailSubject',
+    'messageId' => 'documentEmailMessage',
+    'viewPdfBtnId' => 'documentEmailViewPdfBtn',
+    'sendBtnId' => 'documentEmailSendBtn',
+  ])
 
   <div class="modal fade" id="saleHistoryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -844,6 +854,7 @@
   <script src="{{ asset('js/components.js') }}"></script>
   <script src="{{ asset('js/common.js') }}"></script>
   <script src="{{ asset('js/sale.js') }}"></script>
+  <script src="{{ asset('js/document-email-preview.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const agarriButton = document.getElementById('agarriListBtn');
@@ -856,6 +867,24 @@
       const tbody = table?.querySelector('tbody');
       const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
       const columnFilters = {};
+      const saleInvoiceEmailComposer = window.DocumentEmailPreview?.init({
+        name: 'sale-invoice-email-preview',
+        previewModalId: 'salePreviewModal',
+        previewFrameId: 'salePreviewFrame',
+        emailModalId: 'documentEmailModal',
+        emailToId: 'documentEmailTo',
+        emailSubjectId: 'documentEmailSubject',
+        emailMessageId: 'documentEmailMessage',
+        viewPdfBtnId: 'documentEmailViewPdfBtn',
+        sendBtnId: 'documentEmailSendBtn',
+        openButtonId: 'salePreviewEmailPdf',
+        toastId: 'documentEmailToast',
+        defaultSubject: (context) => `Sale Invoice PDF${context.saleNumber ? ' - ' + context.saleNumber : ''}`,
+        defaultMessage: (context) => {
+          const pdfLink = context.pdfUrl || context.previewUrl || '';
+          return `Dear ${context.partyName || 'Sir'},\n\nPlease find the sale invoice PDF attached below.\n${pdfLink ? 'PDF Link: ' + pdfLink + '\n' : ''}\nThank you for doing business with us.\nThanks and regards.`;
+        },
+      });
 
       function normalizeText(value) {
         return String(value || '').trim().toLowerCase();

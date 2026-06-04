@@ -140,6 +140,12 @@ $(document).ready(function () {
     salePreviewFrame.src = url;
     salePreviewFrame.dataset.pdfUrl = options.pdfUrl || '';
     salePreviewFrame.dataset.printUrl = options.printUrl || '';
+    salePreviewFrame.dataset.previewUrl = options.previewUrl || url || '';
+    salePreviewFrame.dataset.partyEmail = options.partyEmail || '';
+    salePreviewFrame.dataset.partyName = options.partyName || '';
+    salePreviewFrame.dataset.saleNumber = options.saleNumber || '';
+    salePreviewFrame.dataset.emailUrl = options.emailUrl || '';
+    salePreviewFrame.dataset.documentLabel = options.documentLabel || 'Sale Invoice';
     salePreviewModal.show();
   }
 
@@ -280,6 +286,12 @@ $(document).ready(function () {
       salePreviewFrame.src = 'about:blank';
       delete salePreviewFrame.dataset.pdfUrl;
       delete salePreviewFrame.dataset.printUrl;
+      delete salePreviewFrame.dataset.previewUrl;
+      delete salePreviewFrame.dataset.partyEmail;
+      delete salePreviewFrame.dataset.partyName;
+      delete salePreviewFrame.dataset.saleNumber;
+      delete salePreviewFrame.dataset.emailUrl;
+      delete salePreviewFrame.dataset.documentLabel;
     }
   });
 
@@ -731,6 +743,8 @@ $(document).ready(function () {
     const cancelUrl = $menu.data('cancel-url');
     const saleNumber = $menu.data('sale-number');
     const partyName = $menu.data('party-name');
+    const partyEmail = $menu.data('party-email');
+    const emailUrl = $menu.data('email-url');
 
     if (action === 'view') {
       if (isCancelled) {
@@ -750,7 +764,13 @@ $(document).ready(function () {
     } else if (action === 'preview-delivery') {
       openPreviewModal(deliveryPreviewUrl, `Delivery Challan - ${saleNumber}`, {
         pdfUrl: pdfUrl,
-        printUrl: printUrl
+        printUrl: printUrl,
+        previewUrl: deliveryPreviewUrl,
+        partyEmail: partyEmail,
+        partyName: partyName,
+        saleNumber: saleNumber,
+        emailUrl: emailUrl,
+        documentLabel: 'Delivery Challan',
       });
     } else if (action === 'payment-history') {
       if (!paymentHistoryUrl) return;
@@ -827,7 +847,13 @@ $(document).ready(function () {
       if (previewUrl) {
         openPreviewModal(previewUrl, `Invoice Preview - ${saleNumber}`, {
           pdfUrl: pdfUrl,
-          printUrl: printUrl
+          printUrl: printUrl,
+          previewUrl: previewUrl,
+          partyEmail: partyEmail,
+          partyName: partyName,
+          saleNumber: saleNumber,
+          emailUrl: emailUrl,
+          documentLabel: 'Sale Invoice',
         });
       }
     } else if (action === 'print') {

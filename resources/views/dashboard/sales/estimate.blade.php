@@ -263,6 +263,10 @@
                          data-preview-url="{{ route('sale.invoice-preview', $estimate) }}"
                          data-pdf-url="{{ route('sale.invoice-pdf', $estimate) }}"
                          data-print-url="{{ route('sale.invoice-preview', ['sale' => $estimate->id, 'print' => 1]) }}"
+                         data-party-name="{{ $estimate->party?->name ?? ($estimate->display_party_name ?? 'No Party Selected') }}"
+                         data-party-email="{{ $estimate->party?->email ?? '' }}"
+                         data-sale-number="{{ $estimate->bill_number ?? $estimate->id }}"
+                         data-email-url="{{ route('sale.invoice-email', $estimate) }}"
                          data-duplicate-url="{{ route('estimates.create', ['duplicate_sale_id' => $estimate->id]) }}">
                       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
@@ -320,6 +324,15 @@
       </div>
     </div>
   </div>
+
+  @include('dashboard.partials.document-email-modal', [
+    'modalId' => 'documentEmailModal',
+    'toId' => 'documentEmailTo',
+    'subjectId' => 'documentEmailSubject',
+    'messageId' => 'documentEmailMessage',
+    'viewPdfBtnId' => 'documentEmailViewPdfBtn',
+    'sendBtnId' => 'documentEmailSendBtn',
+  ])
 
   @include('dashboard.partials.transaction-passcode-guard')
 
@@ -457,6 +470,7 @@
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="{{ asset('js/document-email-preview.js') }}"></script>
 
 <script>
   const estimateState = {
@@ -485,6 +499,24 @@
   const estimatePreviewSavePdf = document.getElementById('estimatePreviewSavePdf');
   const estimatePreviewEmailPdf = document.getElementById('estimatePreviewEmailPdf');
   let estimatePreviewUrls = { preview: '', pdf: '', print: '' };
+  const estimateEmailComposer = window.DocumentEmailPreview?.init({
+    name: 'estimate-email-preview',
+    previewModalId: 'estimatePreviewModal',
+    previewFrameId: 'estimatePreviewFrame',
+    emailModalId: 'documentEmailModal',
+    emailToId: 'documentEmailTo',
+    emailSubjectId: 'documentEmailSubject',
+    emailMessageId: 'documentEmailMessage',
+    viewPdfBtnId: 'documentEmailViewPdfBtn',
+    sendBtnId: 'documentEmailSendBtn',
+    openButtonId: 'estimatePreviewEmailPdf',
+    toastId: 'documentEmailToast',
+    defaultSubject: (context) => `Estimate PDF${context.saleNumber ? ' - ' + context.saleNumber : ''}`,
+    defaultMessage: (context) => {
+      const pdfLink = context.pdfUrl || context.previewUrl || '';
+      return `Dear ${context.partyName || 'Sir'},\n\nPlease find the estimate PDF attached below.\n${pdfLink ? 'PDF Link: ' + pdfLink + '\n' : ''}\nThank you for doing business with us.\nThanks and regards.`;
+    },
+  });
 
   function parseDateDMY(value) {
     const parts = String(value || '').split('/');
@@ -581,7 +613,7 @@
     }
   }
 
-  function openEstimatePreviewModal(previewUrl, pdfUrl, printUrl) {
+  function openEstimatePreviewModal(previewUrl, pdfUrl, printUrl, extra = {}) {
     if (!estimatePreviewModal || !estimatePreviewFrame) {
       window.open(previewUrl || pdfUrl || printUrl, '_blank');
       return;
@@ -632,13 +664,23 @@
       previewUrl: menu?.dataset?.previewUrl || '',
       pdfUrl: menu?.dataset?.pdfUrl || '',
       printUrl: menu?.dataset?.printUrl || '',
+      partyName: menu?.dataset?.partyName || '',
+      partyEmail: menu?.dataset?.partyEmail || '',
+      saleNumber: menu?.dataset?.saleNumber || '',
+      emailUrl: menu?.dataset?.emailUrl || '',
       duplicateUrl: menu?.dataset?.duplicateUrl || '',
     };
   }
 
   window.previewEstimate = function (trigger) {
-    const { previewUrl, pdfUrl, printUrl } = resolveEstimateAction(trigger);
-    openEstimatePreviewModal(previewUrl, pdfUrl, printUrl);
+    const { previewUrl, pdfUrl, printUrl, partyName, partyEmail, saleNumber, emailUrl } = resolveEstimateAction(trigger);
+    openEstimatePreviewModal(previewUrl, pdfUrl, printUrl, {
+      partyName,
+      partyEmail,
+      saleNumber,
+      emailUrl,
+      documentLabel: 'Estimate',
+    });
   };
 
   window.printEstimate = function (trigger) {
