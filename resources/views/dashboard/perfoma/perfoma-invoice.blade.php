@@ -483,7 +483,7 @@
       }
 
       window.previewProforma = function (trigger) {
-        const { previewUrl, pdfUrl, printUrl, partyEmail, partyName, saleNumber } = resolveAction(trigger);
+        const { previewUrl, pdfUrl, printUrl, partyEmail, partyName, saleNumber, emailUrl } = resolveAction(trigger);
         if (!proformaPreviewModal || !proformaPreviewFrame) {
           window.open(previewUrl || pdfUrl || printUrl, '_blank');
           return;
@@ -492,6 +492,11 @@
         proformaPreviewFrame.dataset.previewUrl = previewUrl || '';
         proformaPreviewFrame.dataset.pdfUrl = pdfUrl || '';
         proformaPreviewFrame.dataset.printUrl = printUrl || '';
+        proformaPreviewFrame.dataset.partyEmail = partyEmail || '';
+        proformaPreviewFrame.dataset.partyName = partyName || '';
+        proformaPreviewFrame.dataset.saleNumber = saleNumber || '';
+        proformaPreviewFrame.dataset.emailUrl = emailUrl || '';
+        proformaPreviewFrame.dataset.documentLabel = 'Proforma Invoice';
         proformaPreviewFrame.dataset.downloadUrl = (() => {
           if (!pdfUrl) return previewUrl || '';
           try {
@@ -597,11 +602,8 @@
 
       if (proformaPreviewEmailPdf) {
         proformaPreviewEmailPdf.addEventListener('click', function () {
-          const url = proformaPreviewFrame?.dataset?.downloadUrl || proformaPreviewFrame?.dataset?.pdfUrl || proformaPreviewFrame?.dataset?.previewUrl || proformaPreviewFrame?.src || '';
-          if (!url) return;
-          const subject = 'Proforma Invoice';
-          const body = `Please find the proforma invoice here: ${url}`;
-          openMailClient(subject, body);
+          const composer = proformaEmailComposer || window.DocumentEmailPreview?.get('proforma-email-preview');
+          composer?.open();
         });
       }
 

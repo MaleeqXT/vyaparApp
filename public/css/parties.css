@@ -568,6 +568,95 @@ border-collapse:collapse;
 table-layout:fixed;
 }
 
+.party-transactions-panel .table-responsive {
+  overflow-x: auto;
+}
+
+.party-transactions-panel .txn-table {
+  min-width: 760px;
+}
+
+.party-transactions-panel .txn-table th,
+.party-transactions-panel .txn-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.party-transactions-panel .txn-table thead th {
+  position: relative;
+}
+
+.txn-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  background: transparent;
+  z-index: 3;
+}
+
+.txn-col-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.party-transactions-panel .txn-table thead th:hover .txn-col-resize-handle::after,
+.txn-col-resize-handle.is-resizing::after {
+  opacity: 1;
+}
+
+.party-transactions-panel .txn-table th:nth-child(1),
+.party-transactions-panel .txn-table td:nth-child(1) {
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+}
+
+.party-transactions-panel .txn-table th:nth-child(2),
+.party-transactions-panel .txn-table td:nth-child(2) {
+  width: 122px;
+  min-width: 122px;
+}
+
+.party-transactions-panel .txn-table th:nth-child(3),
+.party-transactions-panel .txn-table td:nth-child(3) {
+  width: 128px;
+  min-width: 128px;
+}
+
+.party-transactions-panel .txn-table th:nth-child(4),
+.party-transactions-panel .txn-table td:nth-child(4),
+.party-transactions-panel .txn-table th:nth-child(5),
+.party-transactions-panel .txn-table td:nth-child(5) {
+  width: 112px;
+  min-width: 112px;
+}
+
+.party-transactions-panel .txn-table th:nth-child(6),
+.party-transactions-panel .txn-table td:nth-child(6) {
+  width: 146px;
+  min-width: 146px;
+}
+
+.party-transactions-panel .txn-table th:nth-child(7),
+.party-transactions-panel .txn-table td:nth-child(7) {
+  width: 74px;
+  min-width: 74px;
+}
+
 /* table heads */
 .txn-table th{
 padding:10px 12px;

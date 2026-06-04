@@ -905,6 +905,15 @@
   </div>
 </div>
 
+@include('dashboard.partials.document-email-modal', [
+  'modalId' => 'documentEmailModal',
+  'toId' => 'documentEmailTo',
+  'subjectId' => 'documentEmailSubject',
+  'messageId' => 'documentEmailMessage',
+  'viewPdfBtnId' => 'documentEmailViewPdfBtn',
+  'sendBtnId' => 'documentEmailSendBtn',
+])
+
 <div class="modal fade" id="partyTxnHistoryModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -2445,6 +2454,7 @@
 </style>
 @endpush
 @push('scripts')
+<script src="{{ asset('js/document-email-preview.js') }}"></script>
 <script>
 // ============ GLOBAL FUNCTIONS (filter, sort, dropdown) ============
 function toggleFilter(){
@@ -2647,6 +2657,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const partyStatementPdfPaymentStatus = document.getElementById("partyStatementPdfPaymentStatus");
     const partyStatementPdfPaymentInfo = document.getElementById("partyStatementPdfPaymentInfo");
     const partyStatementPdfApply = document.getElementById("partyStatementPdfApply");
+    const partyStatementEmailComposer = window.DocumentEmailPreview?.init({
+        name: 'party-statement-email-preview',
+        previewModalId: 'partyTxnPreviewModal',
+        previewFrameId: 'partyTxnPreviewFrame',
+        emailModalId: 'documentEmailModal',
+        emailToId: 'documentEmailTo',
+        emailSubjectId: 'documentEmailSubject',
+        emailMessageId: 'documentEmailMessage',
+        viewPdfBtnId: 'documentEmailViewPdfBtn',
+        sendBtnId: 'documentEmailSendBtn',
+        openButtonId: 'partyTxnPreviewEmailPdf',
+        toastId: 'documentEmailToast',
+        defaultSubject: (context) => `Party Statement PDF${context.partyName ? ' - ' + context.partyName : ''}`,
+        defaultMessage: (context) => {
+            const pdfLink = context.pdfUrl || context.previewUrl || '';
+            return `Dear ${context.partyName || 'Sir'},\n\nPlease find the party statement PDF attached below.\n${pdfLink ? 'PDF Link: ' + pdfLink + '\n' : ''}\nThank you for doing business with us.\nThanks and regards.`;
+        },
+    });
     const partyReminderModalEl = document.getElementById("partyReminderModal");
     const partyReminderModal = partyReminderModalEl ? bootstrap.Modal.getOrCreateInstance(partyReminderModalEl) : null;
     const partyReminderPartyName = document.getElementById("partyReminderPartyName");
@@ -3587,27 +3615,6 @@ document.addEventListener("DOMContentLoaded", function () {
         link.remove();
     });
 
-    partyTxnPreviewEmailPdfBtn?.addEventListener('click', function () {
-        const partyName = document.getElementById("partyDetailName")?.textContent?.trim() || 'Party Statement';
-        const downloadUrl = partyTxnPreviewFrame?.dataset?.downloadUrl || partyTxnPreviewFrame?.dataset?.pdfUrl || partyTxnPreviewFrame?.src;
-        const subject = `Party Statement - ${partyName}`;
-        const body = `Please find the party statement here: ${downloadUrl}`;
-        const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        try {
-          const opened = window.open(mailtoUrl, '_self');
-          if (opened !== null) return;
-        } catch (error) {
-          // fallback to anchor click below
-        }
-        const link = document.createElement('a');
-        link.href = mailtoUrl;
-        link.target = '_self';
-        link.rel = 'noopener';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    });
-
     partyTxnPreviewModalEl?.addEventListener('hidden.bs.modal', function () {
         if (partyTxnPreviewFrame) {
             partyTxnPreviewFrame.removeAttribute('srcdoc');
@@ -3615,6 +3622,12 @@ document.addEventListener("DOMContentLoaded", function () {
             delete partyTxnPreviewFrame.dataset.pdfUrl;
             delete partyTxnPreviewFrame.dataset.downloadUrl;
             delete partyTxnPreviewFrame.dataset.printUrl;
+            delete partyTxnPreviewFrame.dataset.previewUrl;
+            delete partyTxnPreviewFrame.dataset.emailUrl;
+            delete partyTxnPreviewFrame.dataset.partyEmail;
+            delete partyTxnPreviewFrame.dataset.partyName;
+            delete partyTxnPreviewFrame.dataset.saleNumber;
+            delete partyTxnPreviewFrame.dataset.documentLabel;
             delete partyTxnPreviewFrame.dataset.previewMode;
         }
     });
@@ -3795,6 +3808,20 @@ document.addEventListener("DOMContentLoaded", function () {
         if (download) params.set('download', '1');
 
         return `/dashboard/parties/${currentPartyId}/statement-pdf?${params.toString()}`;
+    }
+
+    function buildPartyStatementEmailUrl() {
+        if (!currentPartyId) return null;
+
+        const params = new URLSearchParams();
+        if (transactionDateRange.from) params.set('from', transactionDateRange.from);
+        if (transactionDateRange.to) params.set('to', transactionDateRange.to);
+        if (partyStatementPdfItems?.checked) params.set('item_details', '1');
+        if (partyStatementPdfDescription?.checked) params.set('description', '1');
+        if (partyStatementPdfPaymentStatus?.checked) params.set('payment_status', '1');
+        if (partyStatementPdfPaymentInfo?.checked) params.set('payment_information', '1');
+
+        return `/dashboard/parties/${currentPartyId}/statement-email?${params.toString()}`;
     }
 
     function parseTxnNumber(value) {
@@ -4038,6 +4065,78 @@ document.addEventListener("DOMContentLoaded", function () {
                     applyTransactionSearch();
                 });
             }
+        });
+    }
+
+    function initializePartyTxnColumnResize() {
+        const table = document.getElementById('partyTxnTable');
+        if (!table || table.dataset.resizeBound === '1') {
+            return;
+        }
+
+        const headers = Array.from(table.querySelectorAll('thead th'));
+        if (!headers.length) {
+            return;
+        }
+
+        table.dataset.resizeBound = '1';
+
+        const minWidths = [84, 108, 112, 92, 92, 122, 68];
+
+        const applyWidthToColumn = (columnIndex, width) => {
+            table.querySelectorAll(`tr > *:nth-child(${columnIndex + 1})`).forEach((cell) => {
+                cell.style.width = `${width}px`;
+                cell.style.minWidth = `${width}px`;
+                cell.style.maxWidth = `${width}px`;
+            });
+        };
+
+        headers.forEach((th, index) => {
+            if (index >= headers.length - 1) {
+                return;
+            }
+
+            let handle = th.querySelector('.txn-col-resize-handle');
+            if (!handle) {
+                handle = document.createElement('div');
+                handle.className = 'txn-col-resize-handle';
+                th.appendChild(handle);
+            }
+
+            const existingWidth = parseFloat(window.getComputedStyle(th).width) || th.getBoundingClientRect().width || minWidths[index] || 80;
+            const baseWidth = Math.max(minWidths[index] || 80, Math.round(existingWidth));
+            applyWidthToColumn(index, baseWidth);
+
+            let startX = 0;
+            let startWidth = 0;
+            let resizing = false;
+
+            const onMouseMove = (event) => {
+                if (!resizing) return;
+                const nextWidth = Math.max(minWidths[index] || 80, startWidth + (event.clientX - startX));
+                applyWidthToColumn(index, nextWidth);
+            };
+
+            const stopResize = () => {
+                if (!resizing) return;
+                resizing = false;
+                handle.classList.remove('is-resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', stopResize);
+            };
+
+            handle.addEventListener('mousedown', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                resizing = true;
+                handle.classList.add('is-resizing');
+                startX = event.clientX;
+                startWidth = th.getBoundingClientRect().width || baseWidth;
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', stopResize);
+            });
         });
     }
 
@@ -4657,6 +4756,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const previewHtml = buildTxnPrintPreviewHtml(options);
         const pdfUrl = buildPartyStatementPdfUrl(false);
         const downloadUrl = buildPartyStatementPdfUrl(true);
+        const emailUrl = buildPartyStatementEmailUrl();
+        const partyName = document.getElementById("partyDetailName")?.textContent?.trim() || 'Party Statement';
+        const partyEmail = document.getElementById("partyEmail")?.textContent?.trim() || '';
 
         if (!partyTxnPreviewModal || !partyTxnPreviewFrame) {
             window.open(pdfUrl || 'about:blank', '_blank');
@@ -4669,6 +4771,12 @@ document.addEventListener("DOMContentLoaded", function () {
         partyTxnPreviewFrame.dataset.pdfUrl = pdfUrl || '';
         partyTxnPreviewFrame.dataset.downloadUrl = downloadUrl || '';
         partyTxnPreviewFrame.dataset.printUrl = pdfUrl || '';
+        partyTxnPreviewFrame.dataset.previewUrl = pdfUrl || '';
+        partyTxnPreviewFrame.dataset.emailUrl = emailUrl || '';
+        partyTxnPreviewFrame.dataset.partyEmail = partyEmail || '';
+        partyTxnPreviewFrame.dataset.partyName = partyName || '';
+        partyTxnPreviewFrame.dataset.saleNumber = partyName || '';
+        partyTxnPreviewFrame.dataset.documentLabel = 'Party Statement';
         partyTxnPreviewFrame.dataset.previewMode = 'party-statement';
         if (partyTxnPreviewOpenPdfBtn) {
             partyTxnPreviewOpenPdfBtn.disabled = !pdfUrl;
@@ -6006,6 +6114,7 @@ document.addEventListener("DOMContentLoaded", function () {
     txnSearchToggle?.addEventListener("click", toggleTransactionSearch);
     txnSearchInput?.addEventListener("input", applyTransactionSearch);
     initializeTransactionFilterControls();
+    initializePartyTxnColumnResize();
     document.addEventListener('click', function (e) {
         const filterDropdown = e.target.closest('#partyTxnTable thead .filter-dropdown');
         if (filterDropdown) {

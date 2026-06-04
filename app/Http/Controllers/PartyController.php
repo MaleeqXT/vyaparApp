@@ -10,6 +10,7 @@ use App\Models\Purchase;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -968,6 +969,83 @@ public function statementPdf(Request $request, Party $party)
     }
 
     return $pdf->stream($fileName);
+}
+
+public function statementEmail(Request $request, Party $party)
+{
+    if (!$party->is_active) {
+        abort(423, 'Inactive party statement is not available.');
+    }
+
+    $data = $request->validate([
+        'email' => 'required|email',
+        'subject' => 'nullable|string|max:255',
+        'message' => 'nullable|string|max:5000',
+    ]);
+
+    $statement = $this->buildPartyStatementData(
+        $party,
+        $request->query('from'),
+        $request->query('to')
+    );
+
+    $options = [
+        'item_details' => $request->boolean('item_details'),
+        'description' => $request->boolean('description'),
+        'payment_status' => $request->boolean('payment_status'),
+        'payment_information' => $request->boolean('payment_information'),
+    ];
+
+    $pdf = Pdf::loadView('parties.statement-pdf', [
+        'party' => $party->fresh(),
+        'transactions' => $statement['transactions'],
+        'dateFrom' => $request->query('from'),
+        'dateTo' => $request->query('to'),
+        'options' => $options,
+        'summary' => $statement['summary'],
+    ])->setPaper('a4', 'portrait');
+
+    $subject = trim((string) ($data['subject'] ?? ''));
+    if ($subject === '') {
+        $subject = 'Party Statement - ' . ($party->name ?: 'Party');
+    }
+
+    $message = trim((string) ($data['message'] ?? ''));
+    if ($message === '') {
+        $statementUrl = route('parties.statement-pdf', array_filter([
+            'party' => $party->id,
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+        ]));
+        $message = "Dear {$party->name},\n\nPlease find the party statement attached below.\nPDF Link: {$statementUrl}\n\nThank you for doing business with us.\nThanks and regards.";
+    }
+
+    $fileName = Str::slug($party->name ?: 'party') . '_statement.pdf';
+
+    try {
+        Mail::raw($message, function ($mail) use ($data, $subject, $pdf, $fileName) {
+            $mail->to($data['email'])
+                ->subject($subject)
+                ->attachData($pdf->output(), $fileName, ['mime' => 'application/pdf']);
+
+            $fromAddress = config('mail.from.address');
+            if (!empty($fromAddress)) {
+                $mail->from($fromAddress, config('mail.from.name'));
+            }
+        });
+    } catch (\Throwable $e) {
+        report($e);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Unable to send email right now.',
+        ], 500);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Email sent successfully.',
+    ]);
 }
 
 private function buildPartyStatementData(Party $party, ?string $from = null, ?string $to = null): array
