@@ -376,6 +376,7 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('/reports/expense-item-report/export', [ReportController::class, 'expenseItemReportExport']);
     Route::get('/reports/sale-order-items', [ReportController::class, 'saleOrderItems'])->name('reports.sale-order-items');
     Route::get('/reports/unreceived-invoices/pdf', [ReportController::class, 'unreceivedInvoicePdf'])->name('reports.unreceived-invoices.pdf');
+    Route::get('/reports/daybook', [ReportController::class, 'dayBook'])->name('reports.daybook');
 
     // Loan Statement JSON
     Route::get('/loan-accounts-json', [LoanAccountController::class, 'allJson'])->name('loan-accounts.json');
