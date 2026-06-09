@@ -393,11 +393,13 @@
     </div>
 
     {{-- Table --}}
-    <div class="flex-grow-1 overflow-auto">
+        <div class="flex-grow-1 overflow-auto">
         <table class="table table-hover mb-0 w-100" id="pri-table">
             <thead class="table-light" style="font-size:12px; text-transform:uppercase; position:sticky; top:0; z-index:1;">
                 <tr>
                     <th>Party Name</th>
+                    <th>Category</th>
+                    <th>Item</th>
                     <th class="text-end">Sale Qty</th>
                     <th class="text-end">Sale Amount</th>
                     <th class="text-end">Purchase Qty</th>
@@ -405,11 +407,13 @@
                 </tr>
             </thead>
             <tbody id="pri-tbody">
-                <tr><td colspan="5" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin me-2"></i>Loading...</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin me-2"></i>Loading...</td></tr>
             </tbody>
             <tfoot class="table-light fw-bold" id="pri-tfoot" style="position:sticky; bottom:0;">
                 <tr>
                     <td>Total:</td>
+                    <td></td>
+                    <td></td>
                     <td class="text-end" id="pri-total-sale-qty">0</td>
                     <td class="text-end" id="pri-total-sale-amt">Rs 0.00</td>
                     <td class="text-end" id="pri-total-pur-qty">0</td>

@@ -14,6 +14,13 @@
   <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
   @endif
 
+  @if(!empty($startInCreate))
+  <style>
+    #emptyState,
+    #splitPane { display: none !important; }
+  </style>
+  @endif
+
   <script>
     function removePaymentRow(i) {
   paymentRows.splice(i, 1);
@@ -149,8 +156,18 @@ function saveAddBank() {
       itemUpdate:      "{{ url('dashboard/expense/items') }}",
       itemDestroy:     "{{ url('dashboard/expense/items') }}",
       expenseSave:     "{{ route('expense.save') }}",
+      expense:         "{{ route('expense') }}",
+      expenseCreate:   "{{ route('expense.create') }}",
       expenseDestroy:  "{{ url('dashboard/expense') }}",
     };
+    window.expenseBootstrap = {!! json_encode([
+      'parties' => $parties ?? [],
+      'bankAccounts' => $bankAccounts ?? [],
+      'taxRates' => $taxRates ?? [],
+      'transactionSettings' => $transactionSettings ?? [],
+      'hasTaxRates' => !empty($taxRates ?? []),
+    ]) !!};
+    window.expenseStartInCreate = @json(!empty($startInCreate));
   </script>
 
   <style>
@@ -498,6 +515,456 @@ function saveAddBank() {
     .share-dropdown.open { display: block; }
     .share-dd-item { padding: 11px 16px; cursor: pointer; font-size: 13px; color: #333; display: flex; align-items: center; gap: 10px; }
     .share-dd-item:hover { background: #f5f5f5; }
+
+    /* ── CREATE EXPENSE SCREENSHOT OVERRIDES ── */
+    #expenseFormPage {
+      background: #f7f7f7 !important;
+    }
+    #expenseFormPage > div:first-child {
+      min-height: 42px !important;
+      border-bottom: 1px solid #e6e6e6 !important;
+    }
+    #expenseFormPage .form-body {
+      padding: 14px 28px 0 !important;
+      background: #f7f7f7 !important;
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1.05fr) minmax(280px, .95fr) minmax(300px, 1fr) !important;
+      column-gap: 24px !important;
+      row-gap: 16px !important;
+      align-content: start !important;
+    }
+    #expenseFormPage .form-title {
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      color: #1f2937 !important;
+      margin-bottom: 0 !important;
+      line-height: 1.1 !important;
+    }
+    #expenseFormPage #expenseTaxSwitchWrap {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      margin-left: 6px !important;
+      transform: translateY(-1px);
+    }
+    #expenseFormPage #expenseTaxSwitchWrap span {
+      font-size: 12px !important;
+      letter-spacing: .2px;
+    }
+    #expenseFormPage .form-top-row {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 300px !important;
+      gap: 26px !important;
+      align-items: start !important;
+      margin-bottom: 12px !important;
+      grid-column: 1 / -1 !important;
+    }
+    #expenseFormPage .form-body > div:first-child {
+      grid-column: 1 / -1 !important;
+    }
+    #expenseFormPage #expensePartyWrap {
+      margin-top: 2px !important;
+      max-width: 260px !important;
+    }
+    #expenseFormPage #expensePartyWrap label {
+      margin-bottom: 4px !important;
+      font-size: 11px !important;
+      color: #8b95a7 !important;
+      font-weight: 600 !important;
+    }
+    #expenseFormPage #expensePartySearch {
+      min-height: 42px !important;
+      height: 42px !important;
+      border-radius: 4px !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: none !important;
+    }
+    #expenseFormPage #expensePartyMenu {
+      border-radius: 4px !important;
+      border-color: #d7e0ea !important;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .12) !important;
+      max-height: 260px !important;
+      overflow: auto !important;
+    }
+    #expenseFormPage .expense-party-option > div {
+      padding: 10px 12px !important;
+    }
+    #expenseFormPage .expense-party-option:hover > div {
+      background: #f8fafc !important;
+    }
+    #expenseFormPage #expensePartyMenu > div:first-child {
+      font-size: 11px !important;
+      color: #64748b !important;
+      font-weight: 700 !important;
+      padding: 10px 12px 8px !important;
+    }
+    #expenseFormPage #expensePartyMenu button {
+      line-height: 1.1 !important;
+    }
+    #expenseFormPage #expensePartyBalance {
+      margin-top: 2px !important;
+      font-size: 11px !important;
+    }
+    #expenseFormPage .form-cat-wrap {
+      width: 20% !important;
+      max-width: 100% !important;
+    }
+    #expenseFormPage .form-cat-select {
+      min-height: 48px !important;
+      border-radius: 4px !important;
+      border-color: #aeb6c4 !important;
+      padding: 18px 14px 8px !important;
+      width: 100% !important;
+      background: #fff !important;
+    }
+    #expenseFormPage .form-cat-select .form-cat-label {
+      font-size: 11px !important;
+      color: #e53935 !important;
+      margin-bottom: 0 !important;
+      top: 6px !important;
+      left: 12px !important;
+    }
+    #expenseFormPage .form-cat-select #formCatLabel {
+      font-size: 13px !important;
+      font-weight: 400 !important;
+      color: #1f2937 !important;
+    }
+    #expenseFormPage .form-date-wrap {
+      width: 100% !important;
+      padding-top: 0 !important;
+      text-align: right !important;
+    }
+    #expenseFormPage .form-exp-no-row {
+      justify-content: flex-end !important;
+      gap: 12px !important;
+      margin-bottom: 12px !important;
+    }
+    #expenseFormPage .form-exp-no-label {
+      font-size: 12px !important;
+      color: #8b95a7 !important;
+    }
+    #expenseFormPage .form-exp-no-input {
+      width: 240px !important;
+      height: 38px !important;
+      border-radius: 4px !important;
+      border-color: #aeb6c4 !important;
+      padding: 7px 10px !important;
+      font-size: 13px !important;
+    }
+    #expenseFormPage .form-date-row {
+      justify-content: flex-end !important;
+      gap: 12px !important;
+      margin-top: 6px !important;
+      font-size: 13px !important;
+    }
+    #expenseFormPage .form-date-row > span:first-child,
+    #expenseFormPage .form-date-row > span:nth-child(2) {
+      color: #8b95a7 !important;
+    }
+    #expenseFormPage .form-date-val {
+      font-weight: 500 !important;
+      color: #1f2937 !important;
+      min-width: 92px !important;
+      text-align: left !important;
+    }
+    #expenseFormPage .form-date-icon {
+      color: #1e88e5 !important;
+      font-size: 18px !important;
+      transform: translateY(1px);
+    }
+    #expenseFormPage .form-items-wrap {
+      margin-top: 14px !important;
+      border: 1px solid #d8dde6 !important;
+      border-radius: 4px 4px 0 0 !important;
+      background: #fff !important;
+      grid-column: 1 / -1 !important;
+      margin-top: 4px !important;
+    }
+    #expenseFormPage .form-items-table {
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    #expenseFormPage .form-items-table thead th {
+      height: 32px !important;
+      padding: 6px 10px !important;
+      background: #fff !important;
+      font-size: 12px !important;
+      color: #4b5563 !important;
+      border-bottom: 1px solid #d8dde6 !important;
+    }
+    #expenseFormPage .form-items-table td {
+      height: 44px !important;
+      padding: 0 8px !important;
+      background: #fff !important;
+    }
+    #expenseFormPage .form-items-table td input,
+    #expenseFormPage .form-items-table td select {
+      height: 34px !important;
+      min-height: 34px !important;
+      padding: 6px 8px !important;
+      font-size: 13px !important;
+    }
+    #expenseFormPage .col-hash { width: 54px !important; }
+    #expenseFormPage .col-item { width: auto !important; }
+    #expenseFormPage .col-qty { width: 130px !important; }
+    #expenseFormPage .col-price { width: 170px !important; }
+    #expenseFormPage .col-tax { width: 210px !important; }
+    #expenseFormPage .col-amount { width: 150px !important; }
+    #expenseFormPage .items-footer-bar {
+      min-height: 40px !important;
+      padding: 8px 20px !important;
+      border-radius: 0 0 4px 4px !important;
+      grid-column: 1 / -1 !important;
+    }
+    #expenseFormPage .items-total-label {
+      font-size: 13px !important;
+      color: #475569 !important;
+      letter-spacing: .1px;
+    }
+    #expenseFormPage .payment-section {
+      display: contents !important;
+    }
+    #expenseFormPage #paymentCard {
+      grid-column: 2 !important;
+      grid-row: 5 !important;
+      margin-top: 0 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      align-self: start !important;
+    }
+    #expenseFormPage .payment-card {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+    #expenseFormPage .payment-row-wrap {
+      margin-bottom: 10px !important;
+    }
+    #expenseFormPage .payment-row {
+      gap: 10px !important;
+      align-items: flex-start !important;
+    }
+    #expenseFormPage .payment-field {
+      min-width: 0 !important;
+    }
+    #expenseFormPage .payment-type-select {
+      min-width: 190px !important;
+      width: 190px !important;
+      min-height: 50px !important;
+      border-radius: 4px !important;
+      border-color: #aeb6c4 !important;
+      padding-top: 18px !important;
+      padding-bottom: 8px !important;
+      box-shadow: none !important;
+    }
+    #expenseFormPage .payment-field input[type="number"] {
+      width: 120px !important;
+      min-height: 50px !important;
+      border-radius: 4px !important;
+      border-color: #aeb6c4 !important;
+      padding-top: 18px !important;
+      padding-bottom: 8px !important;
+    }
+    #expenseFormPage .payment-field-label {
+      top: 5px !important;
+      left: 11px !important;
+      font-size: 10px !important;
+      color: #8b95a7 !important;
+    }
+    #expenseFormPage .total-block {
+      grid-column: 3 !important;
+      grid-row: 6 !important;
+      gap: 16px !important;
+      justify-content: flex-end !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      align-self: start !important;
+    }
+    #expenseFormPage .round-off-wrap {
+      gap: 6px !important;
+      color: #475569 !important;
+    }
+    #expenseFormPage .round-off-wrap label {
+      font-size: 12px !important;
+      color: #6b7280 !important;
+      margin: 0 !important;
+    }
+    #expenseFormPage .round-val {
+      width: 74px !important;
+      height: 34px !important;
+      border-radius: 4px !important;
+    }
+    #expenseFormPage .total-field-label {
+      font-size: 14px !important;
+      color: #475569 !important;
+    }
+    #expenseFormPage .form-extra-btns {
+      margin-top: 0 !important;
+      gap: 10px !important;
+      grid-column: 2 !important;
+      grid-row: 6 !important;
+      align-self: start !important;
+    }
+    #expenseFormPage .form-extra-btn {
+      font-size: 13px !important;
+      color: #7c8695 !important;
+      letter-spacing: .2px;
+    }
+    #expenseFormPage .form-extra-btn i {
+      font-size: 14px !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection,
+    #expenseFormPage #expenseTransportationSection {
+      margin-top: 0 !important;
+      align-self: start !important;
+    }
+    #expenseFormPage #expenseTransportationSection {
+      grid-column: 1 !important;
+      grid-row: 5 !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection {
+      grid-column: 3 !important;
+      grid-row: 5 !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection > div,
+    #expenseFormPage #expenseTransportationSection > div {
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+    }
+    #expenseFormPage .expense-floating-wrapper {
+      margin-bottom: 14px !important;
+    }
+    #expenseFormPage .expense-floating-wrapper .meta-control {
+      border: 1px solid #cfd6e2 !important;
+      border-radius: 4px !important;
+      min-height: 38px !important;
+      background: #fff !important;
+      padding-top: 18px !important;
+      padding-bottom: 8px !important;
+      font-size: 13px !important;
+      box-shadow: none !important;
+    }
+    #expenseFormPage .expense-floating-wrapper textarea.meta-control {
+      min-height: 86px !important;
+      resize: vertical !important;
+    }
+    #expenseFormPage .expense-floating-wrapper label {
+      position: absolute !important;
+      top: 5px !important;
+      left: 12px !important;
+      background: #fff !important;
+      font-size: 10px !important;
+      color: #8b95a7 !important;
+      padding: 0 4px !important;
+      pointer-events: none !important;
+    }
+    #expenseFormPage .expense-attachment-actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+      margin-top: 12px !important;
+    }
+    #expenseFormPage .expense-attachment-actions .action-btn {
+      height: 38px !important;
+      padding: 0 14px !important;
+      border-radius: 4px !important;
+    }
+    #expenseFormPage .expense-attachment-preview-wrap {
+      margin-top: 8px !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection > div > div:last-child {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 12px !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection > div > div:last-child > div {
+      display: block !important;
+      width: 100% !important;
+      font-size: 13px !important;
+      color: #334155 !important;
+      margin-bottom: 2px !important;
+    }
+    #expenseFormPage #expenseAdditionalChargesSection input[type="number"] {
+      width: 100% !important;
+      max-width: none !important;
+      height: 38px !important;
+      border-radius: 4px !important;
+      border-color: #cfd6e2 !important;
+      box-shadow: none !important;
+      background: #fff !important;
+    }
+    #expenseFormPage #expenseTransportationSection > div > div:last-child {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px 16px !important;
+      justify-content: start !important;
+      align-items: start !important;
+    }
+    #expenseFormPage #expenseTransportationSection .expense-floating-wrapper {
+      margin-bottom: 0 !important;
+    }
+    #expenseFormPage #expenseTransportationSection .expense-floating-wrapper .meta-control {
+      width: 100% !important;
+    }
+    #expenseFormPage .expense-tax-cell > div {
+      min-width: 0 !important;
+      width: 100% !important;
+      gap: 6px !important;
+    }
+    #expenseFormPage .expense-tax-cell select,
+    #expenseFormPage .expense-tax-cell input {
+      min-width: 0 !important;
+      width: 100% !important;
+      height: 30px !important;
+      border-radius: 4px !important;
+      font-size: 12px !important;
+      padding: 5px 8px !important;
+    }
+    #expenseFormPage .form-footer {
+      grid-column: 1 / -1 !important;
+      grid-row: 7 !important;
+    }
+    @media (max-width: 1199px) {
+      #expenseFormPage .form-body {
+        display: block !important;
+      }
+      #expenseFormPage .form-top-row,
+      #expenseFormPage .form-items-wrap,
+      #expenseFormPage .items-footer-bar,
+      #expenseFormPage .payment-section,
+      #expenseFormPage #expenseAdditionalChargesSection,
+      #expenseFormPage #expenseTransportationSection,
+      #expenseFormPage .form-extra-btns,
+      #expenseFormPage .form-footer {
+        grid-column: auto !important;
+        grid-row: auto !important;
+      }
+      #expenseFormPage .payment-section {
+        display: grid !important;
+      }
+    }
+    #expenseFormPage .form-footer {
+      padding: 10px 22px !important;
+    }
+    #expenseFormPage .btn-save {
+      min-width: 96px !important;
+      height: 40px !important;
+      border-radius: 4px !important;
+    }
+    #expenseFormPage .share-btn {
+      height: 40px !important;
+      border-radius: 4px !important;
+    }
+    #expenseFormPage .share-btn-group {
+      align-items: center !important;
+    }
+    #expenseFormPage .link-payment-btn {
+      height: 40px !important;
+      border-radius: 4px !important;
+      min-width: 150px !important;
+    }
 
     /* MODALS */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1100; align-items: center; justify-content: center; }
@@ -913,99 +1380,8 @@ function saveAddBank() {
       </div>
     </div>
 
-    {{-- EXPENSE FORM — now full-screen fixed overlay --}}
-    <div id="expenseFormPage">
-      <div style="display:flex; align-items:center; background:#fff; border-bottom:1px solid #e0e0e0; flex-shrink:0;">
-        <div class="form-tabs-bar" id="formTabsBar" style="flex:1; border-bottom:none;"></div>
-        <button onclick="tryCloseEntireForm()" style="background:none; border:none; cursor:pointer; color:#555; font-size:20px; padding:0 16px; line-height:1; flex-shrink:0; margin-left:auto;" title="Close">&#x2715;</button>
-      </div>
-      <div class="form-body">
-        <div class="form-title">Expense</div>
-        <div class="form-top-row">
-          <div class="form-cat-wrap" id="formCatWrap">
-            <div class="form-cat-select" id="formCatSelectBtn" onclick="toggleCatDropdown(event)">
-              <span class="form-cat-label">Expense Category*</span>
-              <span id="formCatLabel"></span>
-              <i class="bi bi-chevron-down" style="font-size:11px;color:#555;"></i>
-            </div>
-            <div class="form-cat-dropdown" id="formCatDropdown">
-              <div class="cat-dd-add-row" onclick="openAddCatModal()">
-                <i class="bi bi-plus-circle-fill text-primary"></i> Add Expense Category
-              </div>
-              <div id="formCatOptions"></div>
-            </div>
-          </div>
-          <div class="form-date-wrap" id="formDateWrap">
-            <div class="form-exp-no-row">
-              <span class="form-exp-no-label">Expense No</span>
-              <input type="text" class="form-exp-no-input" id="formExpNoInput" placeholder="">
-            </div>
-            <div class="form-date-row">
-              <span>Date</span>
-              <span class="form-date-val" id="formDateVal"></span>
-              <span class="form-date-icon" onclick="toggleCalendar(event)"><i class="bi bi-calendar3"></i></span>
-            </div>
-            <div class="calendar-popup" id="calendarPopup">
-              <div class="cal-header">
-                <button class="cal-nav" onclick="calNav(-1)">&#9664;</button>
-                <span id="calMonthLabel"></span>
-                <button class="cal-nav" onclick="calNav(1)">&#9654;</button>
-              </div>
-              <div class="cal-grid" id="calGrid"></div>
-            </div>
-          </div>
-        </div>
-        <div class="form-items-wrap">
-          <table class="form-items-table">
-            <thead><tr>
-              <th class="col-hash">#</th>
-              <th class="col-item">ITEM</th>
-              <th class="col-qty">QTY</th>
-              <th class="col-price">PRICE/UNIT</th>
-              <th class="col-amount">AMOUNT</th>
-            </tr></thead>
-            <tbody id="formItemsBody"></tbody>
-          </table>
-        </div>
-        <div class="items-footer-bar">
-          <button class="btn-add-row" onclick="addItemRow()">ADD ROW</button>
-          <div class="items-total-label">
-            TOTAL &nbsp;&nbsp; <span id="formQtyTotal">0</span>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <span id="formAmtTotal">0</span>
-          </div>
-        </div>
-        <div class="payment-section">
-          <div id="paymentCard"></div>
-          <div class="total-block">
-            <div class="round-off-wrap">
-              <input type="checkbox" id="roundOffChk" onchange="calcTotals()">
-              <label for="roundOffChk" style="font-size:13px;cursor:pointer;">Round Off</label>
-              <input type="text" class="round-val" id="roundOffVal" value="0" readonly>
-            </div>
-            <div class="total-field-wrap">
-              <span class="total-field-label">Total</span>
-              <div class="total-box" id="formTotalBox"></div>
-            </div>
-          </div>
-        </div>
-        <div class="form-extra-btns">
-          <button class="form-extra-btn"><i class="bi bi-file-earmark-text"></i> ADD DESCRIPTION</button>
-        </div>
-      </div>
-      <div class="form-footer">
-        <div class="share-btn-group">
-          <button class="btn-share-main" onclick="toggleShareDropdown()">Share</button>
-          <button class="btn-share-caret" onclick="toggleShareDropdown()"><i class="bi bi-chevron-down"></i></button>
-        </div>
-        <button class="btn-save" id="btnSaveExpense" onclick="saveExpense()">Save</button>
-        <div class="share-dropdown" id="shareDropdown">
-          <div class="share-dd-item"><i class="bi bi-share"></i> Share</div>
-          <div class="share-dd-item"><i class="bi bi-printer"></i> Print</div>
-          <div class="share-dd-item"><i class="bi bi-plus-square"></i> Save &amp; New</div>
-        </div>
-      </div>
-    </div>
+    {{-- EXPENSE FORM — now full-screen fixed overlay (moved to partial) --}}
+    @include('dashboard.expense.create-expense')
 
   </main>
 
@@ -1193,6 +1569,12 @@ function saveAddBank() {
   // ═══════════════════════════════════════════════════════
   let categories   = @json($categories   ?? []);
   let expenseItems = @json($expenseItems ?? []);
+  const expenseBoot = window.expenseBootstrap || {};
+  const expenseParties = Array.isArray(expenseBoot.parties) ? expenseBoot.parties : [];
+  const expenseBankAccounts = Array.isArray(expenseBoot.bankAccounts) ? expenseBoot.bankAccounts : [];
+  const expenseTaxRates = Array.isArray(expenseBoot.taxRates) ? expenseBoot.taxRates : [];
+  const expenseTransactionSettings = expenseBoot.transactionSettings || {};
+  const expenseHasTaxRates = !!expenseBoot.hasTaxRates;
   let selectedCatIdx  = 0;
   let selectedItemIdx = 0;
   let editingItemIdx  = -1;
@@ -1212,10 +1594,16 @@ function saveAddBank() {
   function defaultTabState() {
     return {
       catName  : '',
+      partyId  : '',
+      partyName: '',
+      taxEnabled: false,
       expNo    : '',
       date     : new Date(),
       items    : [],
       payments : [{ type: 'Cheque', ref: '' }],
+      description: '',
+      additionalCharges: {},
+      transportationDetails: {},
       roundOff : false,
       editingExpenseId : null,
       editingCatIdx    : null,
@@ -1243,7 +1631,245 @@ function saveAddBank() {
     }).then(r => r.json());
   }
 
+  function getExpenseTaxRateById(rateId) {
+    return expenseTaxRates.find(rate => String(rate.id) === String(rateId)) || null;
+  }
+
+  function isExpenseTaxOn() {
+    return !!document.getElementById('expenseTaxSwitch')?.checked;
+  }
+
+  function getExpensePartyById(partyId) {
+    return expenseParties.find(p => String(p.id) === String(partyId)) || null;
+  }
+
+  function formatExpenseMoney(value) {
+    const num = parseFloat(value) || 0;
+    return num.toFixed(2);
+  }
+
+  function renderExpenseTaxRateOptions(selectedId = '') {
+    return expenseTaxRates.map(rate => {
+      const id = String(rate.id);
+      const selected = String(selectedId) === id ? 'selected' : '';
+      const label = `${rate.name || 'Tax'} (${parseFloat(rate.rate || 0)}%)`;
+      return `<option value="${id}" ${selected}>${escHtml(label)}</option>`;
+    }).join('');
+  }
+
+  function renderExpensePartyOptions(filterText = '') {
+    const box = document.getElementById('expensePartyOptions');
+    if (!box) return;
+    const query = String(filterText || '').trim().toLowerCase();
+    const rows = expenseParties.filter(party => {
+      const haystack = [party.name, party.phone, party.phone_number_2, party.ptcl_number, party.email]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return !query || haystack.includes(query);
+    });
+
+    box.innerHTML = rows.length ? rows.map(party => {
+      const balance = parseFloat(party.current_balance || party.opening_balance || 0);
+      const sign = party.transaction_type === 'pay' ? '-' : '';
+      return `
+        <div class="expense-party-option" data-id="${party.id}" data-name="${String(party.name || '').replace(/"/g, '&quot;')}"
+             data-balance="${balance}" data-phone="${String(party.phone || '').replace(/"/g, '&quot;')}">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid #eef2f7; cursor:pointer;">
+            <div style="min-width:0; flex:1;">
+              <div style="font-size:13px; font-weight:700; color:#1a1f36;">${party.name || ''}</div>
+              <div style="font-size:11px; color:#64748b;">${party.phone || '-'}</div>
+            </div>
+            <div style="font-size:12px; font-weight:700; color:${party.transaction_type === 'pay' ? '#dc2626' : '#059669'};">
+              ${sign}Rs ${balance.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('') : '<div style="padding:14px 12px; font-size:12px; color:#94a3b8;">No parties found.</div>';
+
+    box.innerHTML += `
+      <div style="border-top:1px solid #eef2f7; padding:10px 12px;">
+        <button type="button" onclick="openExpensePartyCreate()" style="display:flex; align-items:center; gap:8px; border:none; background:none; color:#2563eb; font-size:13px; font-weight:600; cursor:pointer; padding:0;">
+          <i class="fa-solid fa-user-plus"></i>
+          Add Party
+        </button>
+      </div>
+    `;
+
+    box.querySelectorAll('.expense-party-option').forEach(option => {
+      option.addEventListener('click', () => selectExpenseParty({
+        id: option.dataset.id,
+        name: option.dataset.name,
+        balance: option.dataset.balance,
+      }));
+    });
+  }
+
+  function openExpensePartyDropdown() {
+    const menu = document.getElementById('expensePartyMenu');
+    if (!menu) return;
+    menu.style.display = 'block';
+    renderExpensePartyOptions(document.getElementById('expensePartySearch')?.value || '');
+  }
+
+  function closeExpensePartyDropdown() {
+    const menu = document.getElementById('expensePartyMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  function filterExpensePartyDropdown() {
+    openExpensePartyDropdown();
+  }
+
+  function selectExpenseParty(party) {
+    const idEl = document.getElementById('expensePartyId');
+    const searchEl = document.getElementById('expensePartySearch');
+    const balanceEl = document.getElementById('expensePartyBalance');
+    if (idEl) idEl.value = party.id || '';
+    if (searchEl) searchEl.value = party.name || '';
+    if (balanceEl) balanceEl.textContent = party.balance ? `Balance: Rs ${formatExpenseMoney(party.balance)}` : '';
+    closeExpensePartyDropdown();
+  }
+
+  function clearExpenseParty() {
+    const idEl = document.getElementById('expensePartyId');
+    const searchEl = document.getElementById('expensePartySearch');
+    const balanceEl = document.getElementById('expensePartyBalance');
+    if (idEl) idEl.value = '';
+    if (searchEl) searchEl.value = '';
+    if (balanceEl) balanceEl.textContent = '';
+    closeExpensePartyDropdown();
+  }
+
+  function openExpensePartyCreate() {
+    const route = "{{ route('parties.create') }}";
+    if (route) window.location.href = route;
+  }
+
+  function toggleExpenseTax(enabled) {
+    const taxHead = document.getElementById('expenseTaxHead');
+    document.querySelectorAll('.expense-tax-cell').forEach(el => el.classList.toggle('d-none', !enabled));
+    if (taxHead) taxHead.classList.toggle('d-none', !enabled);
+    const partyWrap = document.getElementById('expensePartyWrap');
+    if (partyWrap) partyWrap.style.display = enabled ? '' : 'none';
+    const switchWrap = document.getElementById('expenseTaxSwitchWrap');
+    if (switchWrap) switchWrap.style.display = expenseHasTaxRates ? 'flex' : 'none';
+    renderExpenseAdditionalCharges();
+    renderExpenseTransportationSection();
+    document.querySelectorAll('[id^="itemTaxRate_"]').forEach(sel => {
+      if (sel.closest('td')) sel.closest('td').classList.toggle('d-none', !enabled);
+    });
+    calcTotals();
+  }
+
+  function toggleExpenseDescription() {
+    const wrap = document.getElementById('expenseDescriptionWrap');
+    if (!wrap) return;
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function getExpenseTransactionSettings() {
+    return expenseTransactionSettings || {};
+  }
+
+  function renderExpenseAdditionalCharges() {
+    const section = document.getElementById('expenseAdditionalChargesSection');
+    if (!section) return;
+    const settings = getExpenseTransactionSettings();
+    const items = Array.isArray(settings.additional_charges_items) ? settings.additional_charges_items : [];
+    const shouldShow = isExpenseTaxOn() && !!settings.additional_charges_enabled;
+    section.style.display = shouldShow ? 'block' : 'none';
+    if (!shouldShow) {
+      section.innerHTML = '';
+      return;
+    }
+
+    const saved = currentExpenseState().additionalCharges || {};
+    section.innerHTML = `
+      <div style="border:1px solid #e0e0e0; border-radius:10px; background:#fff; padding:14px 16px;">
+        <div style="font-size:13px; font-weight:700; color:#1a1f36; margin-bottom:10px;">Additional Charges</div>
+        <div style="display:grid; grid-template-columns:1fr 140px; gap:10px; align-items:center;">
+          ${items.filter(item => item && item.enabled).map(item => `
+            <div style="font-size:13px; color:#334155;">${item.label || item.key}</div>
+            <input type="number" min="0" step="0.01" value="${parseFloat(saved[item.key] || 0) || 0}"
+              data-add-charge="${item.key}" oninput="updateExpenseAdditionalCharges()" style="border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-size:13px; outline:none; width:100%;">
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderExpenseTransportationSection() {
+    const section = document.getElementById('expenseTransportationSection');
+    if (!section) return;
+    const settings = getExpenseTransactionSettings();
+    const fields = Array.isArray(settings.transportation_details_fields) ? settings.transportation_details_fields : [];
+    const shouldShow = isExpenseTaxOn() && !!settings.transportation_details_enabled;
+    section.style.display = shouldShow ? 'block' : 'none';
+    if (!shouldShow) {
+      section.innerHTML = '';
+      return;
+    }
+
+    const saved = currentExpenseState().transportationDetails || {};
+    section.innerHTML = `
+      <div style="border:1px solid #e0e0e0; border-radius:10px; background:#fff; padding:14px 16px;">
+        <div style="font-size:13px; font-weight:700; color:#1a1f36; margin-bottom:10px;">Transportation Details</div>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px;">
+          ${fields.filter(field => field && field.enabled).map(field => `
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase;">${field.label || field.key}</label>
+              <input type="text" data-transport-field="${field.key}" value="${String(saved[field.key] || '').replace(/"/g, '&quot;')}"
+                oninput="updateExpenseTransportationDetails()" style="border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-size:13px; outline:none;">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function currentExpenseState() {
+    const state = tabStates[activeTabN] || defaultTabState();
+    state.additionalCharges = state.additionalCharges || {};
+    state.transportationDetails = state.transportationDetails || {};
+    return state;
+  }
+
+  function updateExpenseAdditionalCharges() {
+    const state = currentExpenseState();
+    state.additionalCharges = {};
+    document.querySelectorAll('[data-add-charge]').forEach(input => {
+      state.additionalCharges[input.dataset.addCharge] = parseFloat(input.value) || 0;
+    });
+    calcTotals();
+  }
+
+  function updateExpenseTransportationDetails() {
+    const state = currentExpenseState();
+    state.transportationDetails = {};
+    document.querySelectorAll('[data-transport-field]').forEach(input => {
+      state.transportationDetails[input.dataset.transportField] = input.value || '';
+    });
+  }
+
+  function applyExpenseFeatureVisibility() {
+    const taxWrap = document.getElementById('expenseTaxSwitchWrap');
+    if (taxWrap) taxWrap.style.display = expenseHasTaxRates ? 'flex' : 'none';
+    const taxEnabled = isExpenseTaxOn() && expenseHasTaxRates;
+    const partyWrap = document.getElementById('expensePartyWrap');
+    if (partyWrap) partyWrap.style.display = taxEnabled ? '' : 'none';
+    document.getElementById('expenseTaxHead')?.classList.toggle('d-none', !taxEnabled);
+    document.querySelectorAll('.expense-tax-cell').forEach(cell => cell.classList.toggle('d-none', !taxEnabled));
+    renderExpenseAdditionalCharges();
+    renderExpenseTransportationSection();
+  }
+
   function tryCloseEntireForm() {
+    if (window.expenseStartInCreate) {
+      window.location.href = window.expenseRoutes?.expense || "{{ route('expense') }}";
+      return;
+    }
     closingTabN = 'all';
     document.getElementById('closeExpenseOverlay').classList.add('open');
   }
@@ -1254,6 +1880,12 @@ function saveAddBank() {
   document.addEventListener('DOMContentLoaded', function () {
     setDateDisplay(calSelDate);
     buildCalendar();
+    if (window.expenseStartInCreate) {
+      resetForm();
+      showPage('expenseFormPage');
+      applyExpenseFeatureVisibility();
+      return;
+    }
     if (categories.length > 0) showPage('splitPane');
     else                        showPage('emptyState');
   });
@@ -1550,19 +2182,13 @@ function saveAddBank() {
     const entry = cat ? cat.entries.find(e => e.id === expId) : null;
     if (!entry) return;
 
-    // Open the expense form pre-filled with the entry data
-    // but WITHOUT _editingExpenseId so Save creates a new record
     resetForm();
     showPage('expenseFormPage');
 
-    // Pre-fill category
     document.getElementById('formCatLabel').textContent = cat.name;
     document.getElementById('formCatSelectBtn').classList.add('filled');
-
-    // Pre-fill expense no (blank — user can set their own)
     document.getElementById('formExpNoInput').value = '';
 
-    // Pre-fill date from original entry
     if (entry.date) {
       const parts = entry.date.split('-');
       if (parts.length === 3) {
@@ -1573,23 +2199,88 @@ function saveAddBank() {
       }
     }
 
-    // Pre-fill payment
-    paymentRows = [{ type: entry.paymentType || 'Cheque', amount: '', ref: entry.reference_no || '' }];}
+    const partyIdEl = document.getElementById('expensePartyId');
+    const partySearchEl = document.getElementById('expensePartySearch');
+    const partyBalanceEl = document.getElementById('expensePartyBalance');
+    if (partyIdEl) partyIdEl.value = entry.party_id || '';
+    if (partySearchEl) partySearchEl.value = entry.party || '';
+    if (partyBalanceEl && entry.party_id) {
+      const party = getExpensePartyById(entry.party_id);
+      const balance = parseFloat(party?.current_balance || party?.opening_balance || 0);
+      partyBalanceEl.textContent = `Balance: Rs ${formatExpenseMoney(balance)}`;
+    }
+
+    const taxSwitch = document.getElementById('expenseTaxSwitch');
+    if (taxSwitch) taxSwitch.checked = !!entry.taxEnabled;
+
+    const descEl = document.getElementById('expenseDescriptionInput');
+    const descWrap = document.getElementById('expenseDescriptionWrap');
+    if (descEl) descEl.value = entry.description || '';
+    if (descWrap) descWrap.style.display = entry.description ? 'block' : 'none';
+
+    document.getElementById('formItemsBody').innerHTML = '';
+    rowKey = 0;
+    if (entry.items && entry.items.length) {
+      entry.items.forEach(it => {
+        addItemRow();
+        const rk = rowKey;
+        document.getElementById('itemName_' + rk).value = it.name || '';
+        document.getElementById('itemQty_' + rk).value = it.qty || '';
+        document.getElementById('itemPrice_' + rk).value = it.price || '';
+        const taxSel = document.getElementById('itemTaxRate_' + rk);
+        if (taxSel) taxSel.value = it.taxRateId || '';
+        calcRow(rk);
+      });
+    } else {
+      addItemRow();
+    }
+    appendStaticRow();
+
+    paymentRows = [{
+      type: entry.bankAccountId ? `bank:${entry.bankAccountId}` : (entry.paymentType || 'Cheque'),
+      amount: entry.amount || '',
+      ref: entry.reference_no || ''
+    }];
+    renderPaymentCard();
+
+    updateExpenseAdditionalCharges();
+    updateExpenseTransportationDetails();
+    applyExpenseFeatureVisibility();
+    calcTotals();
+
+    window._editingExpenseId = null;
+    window._editingCatIdx = null;
+  }
   function renderPaymentCard() {
-    const card = document.getElementById('paymentCard'); card.innerHTML = '';
+    const card = document.getElementById('paymentCard');
+    if (!card) return;
+    card.innerHTML = '';
+
     paymentRows.forEach((row, i) => {
-      const wrap = document.createElement('div'); wrap.className = 'payment-row-wrap';
-      const pr = document.createElement('div'); pr.className = 'payment-row';
+      const wrap = document.createElement('div');
+      wrap.className = 'payment-row-wrap';
+
+      const selectedType = row.type || '';
+      const isBank = String(selectedType).startsWith('bank:');
+      const bankSelectValue = isBank ? selectedType : '';
+      const bankOptions = expenseBankAccounts.map(bank => {
+        const label = bank.display_with_account || bank.display_name || bank.bank_name || `Bank ${bank.id}`;
+        const value = `bank:${bank.id}`;
+        return `<option value="${value}" ${bankSelectValue === value ? 'selected' : ''}>${String(label).replace(/"/g, '&quot;')}</option>`;
+      }).join('');
+
+      const pr = document.createElement('div');
+      pr.className = 'payment-row';
       pr.innerHTML = `
         <div class="payment-field" style="position:relative;">
           <span class="payment-field-label" style="position:absolute;top:6px;left:12px;font-size:10px;color:#555;z-index:1;">Payment Type</span>
-          <select class="payment-type-select" onchange="payRowChange(${i},'type',this.value)" style="border:1px solid #aaa;border-radius:6px;padding:20px 30px 8px 12px;font-size:13px;min-width:200px;min-height:54px;cursor:pointer;color:#1a1f36;background:#fff;outline:none;appearance:none;width:100%;">
-            <option value="add_bank" style="color:#2563eb;">+ Add Bank A/C</option>
-            <option value="" ${!row.type?'selected':''}>Select Type</option>
-            <option value="Cash" ${row.type==='Cash'?'selected':''}>Cash</option>
-            <option value="Cheque" ${row.type==='Cheque'?'selected':''}>Cheque</option>
-            <option value="UPI" ${row.type==='UPI'?'selected':''}>UPI</option>
-            <option value="Card" ${row.type==='Card'?'selected':''}>Card</option>
+          <select class="payment-type-select" onchange="payRowChange(${i},'type',this.value)" style="border:1px solid #aaa;border-radius:6px;padding:20px 30px 8px 12px;font-size:13px;min-width:210px;min-height:54px;cursor:pointer;color:#1a1f36;background:#fff;outline:none;appearance:none;width:100%;">
+            <option value="" ${!selectedType ? 'selected' : ''}>Select Type</option>
+            <option value="Cash" ${selectedType === 'Cash' ? 'selected' : ''}>Cash</option>
+            <option value="Cheque" ${selectedType === 'Cheque' ? 'selected' : ''}>Cheque</option>
+            <optgroup label="Bank Accounts">
+              ${bankOptions}
+            </optgroup>
             <option value="add_bank" style="color:#2563eb;">+ Add Bank A/C</option>
           </select>
         </div>
@@ -1598,27 +2289,36 @@ function saveAddBank() {
           <input type="number" value="${row.amount||0}" oninput="payRowChange(${i},'amount',this.value)" style="border:1px solid #aaa;border-radius:6px;padding:20px 12px 8px 12px;font-size:13px;width:120px;min-height:54px;outline:none;color:#1a1f36;background:#fff;">
         </div>
         ${i > 0 ? `<button onclick="removePaymentRow(${i})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:18px;padding:4px 8px;" title="Delete">🗑</button>` : '<div style="width:34px;"></div>'}`;
+
       wrap.appendChild(pr);
+
       const ref = document.createElement('input');
-      ref.type='text'; ref.placeholder='Reference No.'; ref.value=row.ref||'';
-      ref.style.cssText='border:1px solid #bbb;border-radius:6px;padding:10px 12px;font-size:13px;width:200px;outline:none;margin-top:8px;display:block;background:#fff;';
+      ref.type = 'text';
+      ref.placeholder = 'Reference No.';
+      ref.value = row.ref || '';
+      ref.style.cssText = 'display:none;';
       ref.oninput = ev => payRowChange(i, 'ref', ev.target.value);
       wrap.appendChild(ref);
+
       card.appendChild(wrap);
 
-      // detect "Add Bank A/C" selection
       const sel = pr.querySelector('select');
-      sel.addEventListener('change', function() {
-        if (this.value === 'add_bank') {
-          this.value = row.type || '';
-          openAddBankModal();
-        }
-      });
+      if (sel) {
+        sel.addEventListener('change', function() {
+          if (this.value === 'add_bank') {
+            this.value = row.type || '';
+            openAddBankModal();
+            return;
+          }
+          payRowChange(i, 'type', this.value);
+          calcTotals();
+        });
+      }
     });
 
     const footer = document.createElement('div');
     footer.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-top:10px;';
-    const total = paymentRows.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+    const total = paymentRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
     const grandTotal = parseFloat(document.getElementById('formAmtTotal')?.textContent) || 0;
     footer.innerHTML = `
       <button onclick="addPaymentRow()" style="background:none;border:none;color:#2563eb;font-size:13px;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;">+ Add Payment type</button>
@@ -2078,13 +2778,24 @@ function saveAddBank() {
   //  EXPENSE FORM
   // ═══════════════════════════════════════════════════════
   document.getElementById('splitAddBtn').addEventListener('click', openExpenseForm);
-  function openExpenseForm() { resetForm(); showPage('expenseFormPage'); }
+  function openExpenseForm() {
+    if (!window.expenseStartInCreate && window.expenseRoutes?.expenseCreate) {
+      window.location.href = window.expenseRoutes.expenseCreate;
+      return;
+    }
+    resetForm();
+    showPage('expenseFormPage');
+  }
 
   function resetForm() {
     document.getElementById('formCatLabel').textContent = '';
     document.getElementById('formCatSelectBtn').classList.remove('filled');
     calSelDate = new Date(); setDateDisplay(calSelDate); calViewDate = new Date(); buildCalendar();
     document.getElementById('formExpNoInput').value = '';
+    document.getElementById('expenseDescriptionInput').value = '';
+    document.getElementById('expenseDescriptionWrap').style.display = 'none';
+    document.getElementById('expenseTaxSwitch').checked = false;
+    clearExpenseParty();
     rowKey = 0;
     document.getElementById('formItemsBody').innerHTML = '';
     addItemRow(); appendStaticRow(); calcTotals();
@@ -2093,28 +2804,52 @@ function saveAddBank() {
     tabCounter = 1; renderFormTabs(1); renderFormCatOptions();
     window._editingExpenseId = null;
     window._editingCatIdx    = null;
+    applyExpenseFeatureVisibility();
+    renderExpensePartyOptions('');
   }
 
   function saveTabState() {
     if (!activeTabN) return;
     const s = tabStates[activeTabN] || defaultTabState();
     s.catName  = document.getElementById('formCatLabel')?.textContent?.trim() || '';
+    s.partyId  = document.getElementById('expensePartyId')?.value || '';
+    s.partyName = document.getElementById('expensePartySearch')?.value || '';
+    s.taxEnabled = !!document.getElementById('expenseTaxSwitch')?.checked;
     s.expNo    = document.getElementById('formExpNoInput')?.value || '';
     s.date     = calSelDate ? new Date(calSelDate) : new Date();
     s.roundOff = document.getElementById('roundOffChk')?.checked || false;
+    s.description = document.getElementById('expenseDescriptionInput')?.value || '';
     s.editingExpenseId = window._editingExpenseId || null;
     s.editingCatIdx    = window._editingCatIdx    || null;
     s.items = [];
     document.querySelectorAll('[id^="itemRow_"]').forEach(tr => {
       const rk = tr.id.replace('itemRow_', '');
+      const taxSel = document.getElementById('itemTaxRate_' + rk);
+      const taxRate = taxSel ? getExpenseTaxRateById(taxSel.value) : null;
+      const baseAmount = (parseFloat(document.getElementById('itemQty_' + rk)?.value) || 0) * (parseFloat(document.getElementById('itemPrice_' + rk)?.value) || 0);
+      const taxAmount = parseFloat(document.getElementById('itemTaxAmt_' + rk)?.value) || 0;
       s.items.push({
         rk,
         name  : document.getElementById('itemName_'  + rk)?.value || '',
         qty   : document.getElementById('itemQty_'   + rk)?.value || '',
         price : document.getElementById('itemPrice_' + rk)?.value || '',
+        taxRateId: taxSel?.value || '',
+        taxRateName: taxRate?.name || '',
+        taxRateValue: taxRate?.rate || 0,
+        taxAmount: taxAmount,
+        baseAmount: baseAmount,
+        amount: parseFloat(document.getElementById('itemAmt_' + rk)?.value) || 0,
       });
     });
-    s.payments = paymentRows.map(p => ({ type: p.type || '', ref: p.ref || '' }));
+    s.payments = paymentRows.map(p => ({ type: p.type || '', ref: p.ref || '', amount: p.amount || 0 }));
+    s.additionalCharges = {};
+    document.querySelectorAll('[data-add-charge]').forEach(input => {
+      s.additionalCharges[input.dataset.addCharge] = parseFloat(input.value) || 0;
+    });
+    s.transportationDetails = {};
+    document.querySelectorAll('[data-transport-field]').forEach(input => {
+      s.transportationDetails[input.dataset.transportField] = input.value || '';
+    });
     tabStates[activeTabN] = s;
   }
 
@@ -2124,6 +2859,18 @@ function saveAddBank() {
     const catBtn = document.getElementById('formCatSelectBtn');
     if (catLbl) catLbl.textContent = s.catName || '';
     if (catBtn) catBtn.classList.toggle('filled', !!(s.catName));
+    const partyIdEl = document.getElementById('expensePartyId');
+    const partySearchEl = document.getElementById('expensePartySearch');
+    if (partyIdEl) partyIdEl.value = s.partyId || '';
+    if (partySearchEl) partySearchEl.value = s.partyName || '';
+    const selectedParty = getExpensePartyById(s.partyId);
+    if (selectedParty) {
+      const balanceEl = document.getElementById('expensePartyBalance');
+      const balance = parseFloat(selectedParty.current_balance || selectedParty.opening_balance || 0);
+      if (balanceEl) balanceEl.textContent = `Balance: Rs ${formatExpenseMoney(balance)}`;
+    }
+    const taxSwitch = document.getElementById('expenseTaxSwitch');
+    if (taxSwitch) taxSwitch.checked = !!s.taxEnabled;
     const expNoEl = document.getElementById('formExpNoInput');
     if (expNoEl) expNoEl.value = s.expNo || '';
     calSelDate  = s.date ? new Date(s.date) : new Date();
@@ -2132,6 +2879,10 @@ function saveAddBank() {
     buildCalendar();
     const chkEl = document.getElementById('roundOffChk');
     if (chkEl) chkEl.checked = !!s.roundOff;
+    const descEl = document.getElementById('expenseDescriptionInput');
+    if (descEl) descEl.value = s.description || '';
+    const descWrap = document.getElementById('expenseDescriptionWrap');
+    if (descWrap) descWrap.style.display = s.description ? 'block' : 'none';
     rowKey = 0;
     document.getElementById('formItemsBody').innerHTML = '';
     if (s.items && s.items.length > 0) {
@@ -2141,21 +2892,28 @@ function saveAddBank() {
         const nameEl  = document.getElementById('itemName_'  + rk);
         const qtyEl   = document.getElementById('itemQty_'   + rk);
         const priceEl = document.getElementById('itemPrice_' + rk);
+        const taxSel  = document.getElementById('itemTaxRate_' + rk);
+        const taxAmt  = document.getElementById('itemTaxAmt_' + rk);
         if (nameEl)  nameEl.value  = it.name  || '';
         if (qtyEl)   qtyEl.value   = it.qty   || '';
         if (priceEl) priceEl.value = it.price || '';
+        if (taxSel)  taxSel.value  = it.taxRateId || '';
         calcRow(rk);
+        if (taxAmt) taxAmt.value = it.taxAmount || 0;
       });
     } else {
       addItemRow();
     }
     appendStaticRow();
     paymentRows = (s.payments && s.payments.length)
-      ? s.payments.map(p => ({ type: p.type || 'Cheque', ref: p.ref || '', amount: '' }))
+      ? s.payments.map(p => ({ type: p.type || 'Cheque', ref: p.ref || '', amount: p.amount || '' }))
       : [{ type: 'Cheque', ref: '', amount: '' }];
     renderPaymentCard();
     window._editingExpenseId = s.editingExpenseId || null;
     window._editingCatIdx    = s.editingCatIdx    || null;
+    updateExpenseAdditionalCharges();
+    updateExpenseTransportationDetails();
+    applyExpenseFeatureVisibility();
     calcTotals();
     activeTabN = tabN;
   }
@@ -2287,16 +3045,25 @@ function saveAddBank() {
   function appendStaticRow() {
     const body = document.getElementById('formItemsBody');
     document.getElementById('staticRow2')?.remove();
-    const tr2 = document.createElement('tr'); tr2.id = 'staticRow2';
-    tr2.innerHTML = '<td style="text-align:center;color:#555;font-size:13px;">2</td><td></td><td></td><td></td><td></td>';
+    const tr2 = document.createElement('tr');
+    tr2.id = 'staticRow2';
+    tr2.innerHTML = `
+      <td style="text-align:center;color:#555;font-size:13px;">2</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td class="expense-tax-cell d-none"></td>
+      <td></td>`;
     body.appendChild(tr2);
   }
   function addItemRow() {
     rowKey++;
     const body = document.getElementById('formItemsBody');
     document.getElementById('staticRow2')?.remove();
-    const tr = document.createElement('tr'); tr.id = 'itemRow_' + rowKey;
+    const tr = document.createElement('tr');
+    tr.id = 'itemRow_' + rowKey;
     const rk = rowKey;
+    const taxOptions = renderExpenseTaxRateOptions();
     tr.innerHTML = `
       <td style="text-align:center;color:#555;font-size:13px;padding:6px 8px;">${rowKey}</td>
       <td class="item-dd-wrap">
@@ -2308,9 +3075,19 @@ function saveAddBank() {
       </td>
       <td><input type="number" id="itemQty_${rk}" min="0" oninput="calcRow(${rk})"></td>
       <td><input type="number" id="itemPrice_${rk}" min="0" oninput="calcRow(${rk})"></td>
+      <td class="expense-tax-cell d-none">
+        <div style="display:flex; flex-direction:column; gap:6px; min-width:150px;">
+          <select id="itemTaxRate_${rk}" oninput="calcRow(${rk})" style="border:1px solid #cbd5e1; border-radius:6px; padding:7px 8px; font-size:12px; outline:none; background:#fff; min-width:120px;">
+            <option value="">Select</option>
+            ${taxOptions}
+          </select>
+          <input type="number" id="itemTaxAmt_${rk}" readonly style="border:1px solid #cbd5e1; border-radius:6px; padding:7px 8px; font-size:12px; background:#f8fafc; outline:none; min-width:120px;" placeholder="0.00">
+        </div>
+      </td>
       <td><input type="number" id="itemAmt_${rk}" readonly></td>`;
     body.appendChild(tr);
     renderItemDdOptions(rk);
+    applyExpenseFeatureVisibility();
   }
   function showItemDropdown(rk) { renderItemDdOptions(rk); document.querySelectorAll('.item-dd-list').forEach(d => d.classList.remove('open')); document.getElementById('itemDd_'+rk)?.classList.add('open'); }
   function filterItemDropdown(rk) { showItemDropdown(rk); }
@@ -2326,35 +3103,40 @@ function saveAddBank() {
     });
   }
   function calcRow(rk) {
-    const qty   = parseFloat(document.getElementById('itemQty_'+rk)?.value)||0;
-    const price = parseFloat(document.getElementById('itemPrice_'+rk)?.value)||0;
+    const qty   = parseFloat(document.getElementById('itemQty_'+rk)?.value) || 0;
+    const price = parseFloat(document.getElementById('itemPrice_'+rk)?.value) || 0;
+    const taxSel = document.getElementById('itemTaxRate_'+rk);
+    const taxAmtEl = document.getElementById('itemTaxAmt_'+rk);
     const amtEl = document.getElementById('itemAmt_'+rk);
-    if (amtEl) amtEl.value = (qty && price) ? (qty*price) : '';
+    const baseAmount = qty * price;
+    let taxAmount = 0;
+    if (isExpenseTaxOn() && taxSel && taxSel.value) {
+      const taxRate = getExpenseTaxRateById(taxSel.value);
+      taxAmount = baseAmount * ((parseFloat(taxRate?.rate) || 0) / 100);
+    }
+    if (taxAmtEl) taxAmtEl.value = taxAmount ? taxAmount.toFixed(2) : '0.00';
+    if (amtEl) amtEl.value = (baseAmount + taxAmount) ? (baseAmount + taxAmount).toFixed(2) : '';
     calcTotals();
   }
   function calcTotals() {
-    let tQ=0, tA=0;
-    document.querySelectorAll('[id^="itemQty_"]').forEach(el => { tQ += parseFloat(el.value)||0; });
-    document.querySelectorAll('[id^="itemAmt_"]').forEach(el => { tA += parseFloat(el.value)||0; });
-    document.getElementById('formQtyTotal').textContent = tQ||0;
-    document.getElementById('formAmtTotal').textContent = tA||0;
-    const rounded = Math.round(tA);
+    let tQ = 0;
+    let tA = 0;
+    document.querySelectorAll('[id^="itemQty_"]').forEach(el => { tQ += parseFloat(el.value) || 0; });
+    document.querySelectorAll('[id^="itemAmt_"]').forEach(el => { tA += parseFloat(el.value) || 0; });
+    let addChargesTotal = 0;
+    document.querySelectorAll('[data-add-charge]').forEach(el => { addChargesTotal += parseFloat(el.value) || 0; });
+    const totalAmount = tA + addChargesTotal;
+    document.getElementById('formQtyTotal').textContent = tQ || 0;
+    document.getElementById('formAmtTotal').textContent = totalAmount ? totalAmount.toFixed(2) : '0';
+    const rounded = Math.round(totalAmount);
     const chk = document.getElementById('roundOffChk');
-    document.getElementById('roundOffVal').value = tA ? (rounded-tA).toFixed(2) : '0';
-    document.getElementById('formTotalBox').textContent = tA ? (chk&&chk.checked ? rounded : tA.toFixed(2)) : '';
-    const ptEl = document.getElementById('payTotalText');  // ← NEW block starts here
+    document.getElementById('roundOffVal').value = totalAmount ? (rounded - totalAmount).toFixed(2) : '0';
+    document.getElementById('formTotalBox').textContent = totalAmount ? (chk && chk.checked ? rounded.toFixed(2) : totalAmount.toFixed(2)) : '0';
+    const ptEl = document.getElementById('payTotalText');
     if (ptEl) {
-        const payTotal = paymentRows.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
-        ptEl.textContent = 'Total payment: ' + payTotal + '/' + (tA||0);
+      const payTotal = paymentRows.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+      ptEl.textContent = 'Total payment: ' + payTotal + '/' + totalAmount;
     }
-}  // ← closing brace stays here
-  // ─── ADD ITEM MODAL ───
-  function openAddItemModal() {
-    document.querySelectorAll('.item-dd-list').forEach(d => d.classList.remove('open'));
-    document.getElementById('newItemName').value  = '';
-    document.getElementById('newItemPrice').value = '';
-    openModal('addItemModal');
-    setTimeout(() => document.getElementById('newItemName').focus(), 80);
   }
   function saveNewItem() {
     const name  = document.getElementById('newItemName').value.trim();
@@ -2394,11 +3176,11 @@ function saveAddBank() {
       .catch(() => { resetBtn(); addItemLocally({ id: 'local_' + Date.now(), name, price }); });
   }
 
- 
+
   function payRowChange(i,field,val) { paymentRows[i][field]=val; }
-  function addPaymentRow() { 
-  paymentRows.push({type:'', amount:0, ref:''}); 
-  renderPaymentCard(); 
+  function addPaymentRow() {
+  paymentRows.push({type:'', amount:0, ref:''});
+  renderPaymentCard();
 }
 
   // ─── SAVE EXPENSE ───
@@ -2430,30 +3212,84 @@ function saveAddBank() {
 
   function _doSaveExpense(cat) {
     if (!cat) return;
-    const total   = parseFloat(document.getElementById('formAmtTotal').textContent) || 0;
-    const payType = paymentRows[0]?.type || 'Cash';
-    const ref     = paymentRows[0]?.ref  || '';
-    const dateVal = document.getElementById('formDateVal').textContent;
-    const expNo   = document.getElementById('formExpNoInput').value.trim();
+    const totalAmount = parseFloat(document.getElementById('formAmtTotal').textContent) || 0;
+    const payTypeRaw  = paymentRows[0]?.type || 'Cash';
+    const ref         = paymentRows[0]?.ref  || '';
+    const dateVal     = document.getElementById('formDateVal').textContent;
+    const expNo       = document.getElementById('formExpNoInput').value.trim();
+    const partyId     = document.getElementById('expensePartyId')?.value || '';
+    const partyName   = document.getElementById('expensePartySearch')?.value || '';
+    const taxEnabled  = !!document.getElementById('expenseTaxSwitch')?.checked;
+    const firstTaxSel = document.getElementById('itemTaxRate_1');
+    const firstTaxRate = firstTaxSel ? getExpenseTaxRateById(firstTaxSel.value) : null;
+    const itemsJson = [];
+    document.querySelectorAll('[id^="itemRow_"]').forEach(tr => {
+      const rk = tr.id.replace('itemRow_', '');
+      const taxSel = document.getElementById('itemTaxRate_' + rk);
+      const taxRate = taxSel ? getExpenseTaxRateById(taxSel.value) : null;
+      itemsJson.push({
+        rk,
+        name: document.getElementById('itemName_' + rk)?.value || '',
+        qty: document.getElementById('itemQty_' + rk)?.value || '',
+        price: document.getElementById('itemPrice_' + rk)?.value || '',
+        taxRateId: taxSel?.value || '',
+        taxRateName: taxRate?.name || '',
+        taxRateValue: taxRate?.rate || 0,
+        taxAmount: parseFloat(document.getElementById('itemTaxAmt_' + rk)?.value) || 0,
+        amount: parseFloat(document.getElementById('itemAmt_' + rk)?.value) || 0,
+      });
+    });
+    const additionalCharges = {};
+    document.querySelectorAll('[data-add-charge]').forEach(input => {
+      additionalCharges[input.dataset.addCharge] = parseFloat(input.value) || 0;
+    });
+    const transportationDetails = {};
+    document.querySelectorAll('[data-transport-field]').forEach(input => {
+      transportationDetails[input.dataset.transportField] = input.value || '';
+    });
+
     const parts   = dateVal.split('/');
     const dbDate  = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateVal;
     const btn     = document.getElementById('btnSaveExpense');
     btn.disabled = true; btn.textContent = 'Saving...';
+    let bankAccountId = '';
+    let paymentType = payTypeRaw;
+    if (String(payTypeRaw).startsWith('bank:')) {
+      bankAccountId = String(payTypeRaw).split(':')[1] || '';
+      paymentType = 'Bank';
+    }
     ajax('POST', window.expenseRoutes.expenseSave, {
       expense_category_id: cat.id,
-      expense_no:   expNo,
+      expense_no: expNo,
       expense_date: dbDate,
-      total_amount: total,
-      payment_type: payType,
+      party_id: partyId,
+      party: partyName,
+      tax_enabled: taxEnabled,
+      tax_rate_id: firstTaxRate?.id || '',
+      tax_rate_name: firstTaxRate?.name || '',
+      tax_rate_value: firstTaxRate?.rate || 0,
+      tax_amount: itemsJson.reduce((s, r) => s + (parseFloat(r.taxAmount) || 0), 0),
+      items_json: itemsJson,
+      additional_charges: additionalCharges,
+      transportation_details: transportationDetails,
+      description: document.getElementById('expenseDescriptionInput')?.value || '',
+      bank_account_id: bankAccountId,
+      total_amount: totalAmount,
+      payment_type: paymentType,
       reference_no: ref,
     }).then(res => {
       btn.disabled = false; btn.textContent = 'Save';
       if (res.success) {
-        cat.amount = (parseFloat(cat.amount)||0) + total;
+        cat.amount = (parseFloat(cat.amount)||0) + totalAmount;
         cat.entries = cat.entries || [];
         cat.entries.unshift(res.expense);
         selectedCatIdx = categories.indexOf(cat);
-        showPage('splitPane');
+        if (window.expenseStartInCreate) {
+          resetForm();
+          showPage('expenseFormPage');
+        } else {
+          showPage('splitPane');
+        }
         showToast('Expense saved successfully.', 'green');
       } else {
         showToast('Save failed.', 'red');
@@ -2461,9 +3297,6 @@ function saveAddBank() {
     }).catch(() => { btn.disabled=false; btn.textContent='Save'; showToast('Save failed.', 'red'); });
   }
 
-  // ═══════════════════════════════════════════════════════
-  //  CALENDAR
-  // ═══════════════════════════════════════════════════════
   function setDateDisplay(d) {
     const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0');
     document.getElementById('formDateVal').textContent = dd+'/'+mm+'/'+d.getFullYear();
@@ -2530,6 +3363,7 @@ function saveAddBank() {
     if(!e.target.closest('.cat-dots-wrap')) { closeAllCatMenus(-1); closeAllItemMenus(-1); }
     if(!e.target.closest('.td-action-btn')) document.querySelectorAll('.td-row-menu').forEach(m=>m.classList.remove('open'));
     if(!e.target.closest('.th-filter') && !e.target.closest('.filter-popover')) document.querySelectorAll('.filter-popover').forEach(p=>p.classList.remove('open'));
+    if(!e.target.closest('.expense-party-picker')) closeExpensePartyDropdown();
   });
 
   function escHtml(str) { const d=document.createElement('div'); d.appendChild(document.createTextNode(String(str))); return d.innerHTML; }
@@ -2554,10 +3388,51 @@ function saveAddBank() {
         buildCalendar();
       }
     }
-    paymentRows = [{ type: entry.paymentType || 'Cheque', amount: entry.amount || '', ref: entry.reference_no || '' }];
+    const partyIdEl = document.getElementById('expensePartyId');
+    const partySearchEl = document.getElementById('expensePartySearch');
+    const partyBalanceEl = document.getElementById('expensePartyBalance');
+    if (partyIdEl) partyIdEl.value = entry.party_id || '';
+    if (partySearchEl) partySearchEl.value = entry.party || '';
+    if (partyBalanceEl && entry.party_id) {
+      const party = getExpensePartyById(entry.party_id);
+      const balance = parseFloat(party?.current_balance || party?.opening_balance || 0);
+      partyBalanceEl.textContent = `Balance: Rs ${formatExpenseMoney(balance)}`;
+    }
+    const taxSwitch = document.getElementById('expenseTaxSwitch');
+    if (taxSwitch) taxSwitch.checked = !!entry.taxEnabled;
+    const descEl = document.getElementById('expenseDescriptionInput');
+    const descWrap = document.getElementById('expenseDescriptionWrap');
+    if (descEl) descEl.value = entry.description || '';
+    if (descWrap) descWrap.style.display = entry.description ? 'block' : 'none';
+    document.getElementById('formItemsBody').innerHTML = '';
+    rowKey = 0;
+    if (entry.items && entry.items.length) {
+      entry.items.forEach(it => {
+        addItemRow();
+        const rk = rowKey;
+        document.getElementById('itemName_' + rk).value = it.name || '';
+        document.getElementById('itemQty_' + rk).value = it.qty || '';
+        document.getElementById('itemPrice_' + rk).value = it.price || '';
+        const taxSel = document.getElementById('itemTaxRate_' + rk);
+        if (taxSel) taxSel.value = it.taxRateId || '';
+        calcRow(rk);
+      });
+    } else {
+      addItemRow();
+    }
+    appendStaticRow();
+    paymentRows = [{
+      type: entry.bankAccountId ? `bank:${entry.bankAccountId}` : (entry.paymentType || 'Cheque'),
+      amount: entry.amount || '',
+      ref: entry.reference_no || ''
+    }];
     renderPaymentCard();
     window._editingExpenseId = expId;
     window._editingCatIdx    = catIdx;
+    updateExpenseAdditionalCharges();
+    updateExpenseTransportationDetails();
+    applyExpenseFeatureVisibility();
+    calcTotals();
   }
 
   // ─── NUMBER TO WORDS ───

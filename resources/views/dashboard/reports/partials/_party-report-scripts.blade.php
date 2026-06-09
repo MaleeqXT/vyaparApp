@@ -428,13 +428,26 @@ function initResizableTable(tableId) {
 
     if (!tbody) return;
 
+    function buildPrintMeta() {
+        const categoryText = catEl?.selectedOptions?.[0]?.textContent?.trim() || 'All Categories';
+        const itemText     = itemEl?.selectedOptions?.[0]?.textContent?.trim() || 'All Items';
+        const fromText     = fromEl?.value || '';
+        const toText       = toEl?.value || '';
+        return `
+            <div class="text-center fw-bold text-decoration-underline mb-4" style="font-size:22px;">Party By Item Report</div>
+            <div class="fw-semibold mb-3" style="font-size:16px;">Item category: ${escHtml(categoryText)}</div>
+            <div class="fw-semibold mb-3" style="font-size:16px;">Item name: ${escHtml(itemText)}</div>
+            <div class="fw-semibold mb-4" style="font-size:16px;">Duration: From ${escHtml(fromText || '01/06/2026')} to ${escHtml(toText || '30/06/2026')}</div>
+        `;
+    }
+
     function load() {
         const category = catEl?.value ?? '';
         const itemId   = itemEl?.value ?? '';
         const from     = fromEl?.value ?? '';
         const to       = toEl?.value ?? '';
         const search   = searchEl?.value ?? '';
-        setLoading('pri-tbody', 5);
+        setLoading('pri-tbody', 7);
 
         const params = new URLSearchParams({ category, item_id: itemId, from, to, search });
 
@@ -444,7 +457,7 @@ function initResizableTable(tableId) {
         .then(r => { if (!r.ok) throw new Error('Server error ' + r.status); return r.json(); })
         .then(data => {
             const rows = Array.isArray(data) ? data : (data.rows ?? data.data ?? []);
-            if (!rows.length) { setEmpty('pri-tbody', 5, 'No records found for selected filters.'); return; }
+            if (!rows.length) { setEmpty('pri-tbody', 7, 'No records found for selected filters.'); return; }
 
             let tSaleQty = 0, tSaleAmt = 0, tPurQty = 0, tPurAmt = 0;
             tbody.innerHTML = rows.map(r => {
@@ -453,14 +466,15 @@ function initResizableTable(tableId) {
                 tPurQty  += Number(r.purchase_qty ?? 0);
                 tPurAmt  += Number(r.purchase_amount ?? 0);
                 return `<tr>
-                    <td class="fw-semibold">${escHtml(r.party_name ?? 'â€”')}</td>
+                    <td class="fw-semibold">${escHtml(r.party_name ?? '—')}</td>
+                    <td>${escHtml(r.category_name ?? 'Uncategorized')}</td>
+                    <td>${escHtml(r.item_name ?? '—')}</td>
                     <td class="text-end">${fmtNum(r.sale_qty ?? 0)}</td>
                     <td class="text-end">Rs ${fmtNum(r.sale_amount ?? 0)}</td>
                     <td class="text-end">${fmtNum(r.purchase_qty ?? 0)}</td>
                     <td class="text-end">Rs ${fmtNum(r.purchase_amount ?? 0)}</td>
                 </tr>`;
             }).join('');
-
             if (totalSaleQtyEl) totalSaleQtyEl.textContent = fmtNum(tSaleQty);
             if (totalSaleAmtEl) totalSaleAmtEl.textContent = 'Rs ' + fmtNum(tSaleAmt);
             if (totalPurQtyEl) totalPurQtyEl.textContent  = fmtNum(tPurQty);
@@ -468,7 +482,7 @@ function initResizableTable(tableId) {
         })
         .catch(err => {
             showToast('Failed to load data: ' + err.message);
-            setEmpty('pri-tbody', 5, 'Error loading data.');
+            setEmpty('pri-tbody', 7, 'Error loading data.');
         });
     }
 
@@ -479,7 +493,7 @@ function initResizableTable(tableId) {
     toEl?.addEventListener('change', load);
 
     exportBtn?.addEventListener('click', () => exportTableToCSV('pri-table', 'party-items-report.csv'));
-    printBtn?.addEventListener('click',  () => printSection('tab-Party Report by Items', 'Party Report by Items'));
+    printBtn?.addEventListener('click',  () => printReport('pri-table', 'Party By Item Report', buildPrintMeta()));
 
     document.querySelectorAll('.reports-nav .nav-link').forEach(link => {
         link.addEventListener('click', () => {

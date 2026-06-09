@@ -170,7 +170,7 @@ function doExcelExport() {
 // ================================================================
 // PRINT / PREVIEW — shows modal with Open PDF / Print / Save PDF / Email PDF
 // ================================================================
-function printReport(tableId, title) {
+function printReport(tableId, title, metaHtml = '') {
     const table = document.getElementById(tableId);
     if (!table) { showToast('Nothing to print.', 'danger'); return; }
 
@@ -178,7 +178,10 @@ function printReport(tableId, title) {
     document.getElementById('print-preview-heading').textContent = title;
     document.getElementById('print-preview-date').textContent    =
         'Duration: ' + new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
-    document.getElementById('print-preview-body').innerHTML      = table.outerHTML;
+    document.getElementById('print-preview-body').innerHTML      = `
+        ${metaHtml || ''}
+        ${table.outerHTML}
+    `;
     document.getElementById('print-table-id').value             = tableId;
     document.getElementById('print-report-title').value         = title;
 

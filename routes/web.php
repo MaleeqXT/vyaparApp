@@ -252,6 +252,13 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('settings/transactions', [SettingController::class, 'transactions'])->name('settings.transactions');
     Route::post('settings/transactions', [SettingController::class, 'updateTransactions'])->name('settings.transactions.update');
     Route::get('settings/taxes', [SettingController::class, 'taxes'])->name('settings.taxes');
+    // Persist tax rates and groups
+    Route::post('settings/taxes/rates', [App\Http\Controllers\Settings\TaxController::class, 'storeRate'])->name('settings.taxes.rates.store');
+    Route::put('settings/taxes/rates/{id}', [App\Http\Controllers\Settings\TaxController::class, 'updateRate'])->name('settings.taxes.rates.update');
+    Route::delete('settings/taxes/rates/{id}', [App\Http\Controllers\Settings\TaxController::class, 'destroyRate'])->name('settings.taxes.rates.destroy');
+    Route::post('settings/taxes/groups', [App\Http\Controllers\Settings\TaxController::class, 'storeGroup'])->name('settings.taxes.groups.store');
+    Route::put('settings/taxes/groups/{id}', [App\Http\Controllers\Settings\TaxController::class, 'updateGroup'])->name('settings.taxes.groups.update');
+    Route::delete('settings/taxes/groups/{id}', [App\Http\Controllers\Settings\TaxController::class, 'destroyGroup'])->name('settings.taxes.groups.destroy');
     Route::get('settings/items', [SettingController::class, 'items'])->name('settings.items');
     Route::post('settings/items', [SettingController::class, 'updateItems'])->name('settings.items.update');
     Route::get('settings/parties', [SettingController::class, 'parties'])->name('settings.parties');
@@ -323,7 +330,6 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
 
     Route::get('/payment-out', [PurchaseExpenseController::class, 'paymentOut'])->name('payment-out');
     Route::post('/payment-out', [PurchaseExpenseController::class, 'storePaymentOut'])->name('payment-out.store');
-    Route::get('expense', [PurchaseExpenseController::class, 'expense'])->name('expense');
     Route::get('purchase-return', [PurchaseReturnController::class, 'index'])->name('purchase-return');
     Route::get('purchase-return/create', [PurchaseReturnController::class, 'create'])->name('purchase-return.create');
     Route::post('/purchase-return', [PurchaseReturnController::class, 'store'])->name('purchase-return.store');
@@ -410,6 +416,7 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     // ═══════════════════════════════════════
 
     Route::get('expense', [ExpenseCreateController::class, 'expense'])->name('expense');
+    Route::get('expense/create', [ExpenseCreateController::class, 'createExpense'])->name('expense.create');
 
     // Expense Categories
     Route::post('expense/categories', [ExpenseCreateController::class, 'storeCategory'])->name('expense.categories.store');

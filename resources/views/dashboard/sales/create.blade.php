@@ -4240,7 +4240,8 @@ textarea.meta-control,
 
 @section('modals')
 <!-- MODAL: ADD PARTY -->
- <div class="modal fade" id="addPartyModal" tabindex="-1" aria-labelledby="addPartyModalLabel" aria-hidden="true">
+
+  <div class="modal fade" id="addPartyModal" tabindex="-1" aria-labelledby="addPartyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -4461,7 +4462,7 @@ textarea.meta-control,
     </div>
 </div>
 
-</div>
+  </div>
 
 <div class="modal fade" id="partyGroupModal" tabindex="-1">
   <div class="modal-dialog modal-sm modal-dialog-centered">
