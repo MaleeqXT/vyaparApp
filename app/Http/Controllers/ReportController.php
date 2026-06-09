@@ -190,8 +190,8 @@ class ReportController extends Controller
     // ─── HELPER: parse date range ─────────────────────────────────────────────
     private function dateRange(Request $request): array
     {
-        $from = $request->input('from', '2000-01-01');
-        $to   = $request->input('to', now()->toDateString());
+        $from = $request->filled('from') ? $request->input('from') : '2000-01-01';
+        $to   = $request->filled('to') ? $request->input('to') : now()->toDateString();
         return [$from, $to];
     }
 
@@ -602,54 +602,104 @@ class ReportController extends Controller
             return response()->json(['success' => true, 'rows' => []]);
         }
 
-        $query = DB::table('sale_items as si')
+        $itemId   = $request->input('item', $request->input('item_id'));
+        $category = $request->input('category');
+        $search   = trim((string) $request->input('search', ''));
+
+        $saleRows = DB::table('sale_items as si')
             ->join('sales as s', 's.id', '=', 'si.sale_id')
             ->join('parties as p', 'p.id', '=', 's.party_id')
+            ->leftJoin('items as it', 'it.id', '=', 'si.item_id')
             ->whereBetween('s.invoice_date', [$from, $to])
             ->select(
                 'p.id as party_id',
                 'p.name as party_name',
+                'si.item_id as item_id',
+                DB::raw("COALESCE(NULLIF(si.item_name, ''), it.name, '-') as item_name"),
+                DB::raw("COALESCE(NULLIF(si.item_category, ''), 'Uncategorized') as category_name"),
                 DB::raw('SUM(si.quantity) as sale_qty'),
                 DB::raw('SUM(si.amount) as sale_amount')
             )
-            ->groupBy('p.id', 'p.name');
-
-        if ($request->filled('item'))     $query->where('si.item_id', $request->item);
-        if ($request->filled('category')) {
-            $query->join('items as it', 'it.id', '=', 'si.item_id')
-                  ->where('it.category_id', $request->category);
-        }
-
-        $saleRows = $query->get()->keyBy('party_id');
+            ->when($itemId, fn ($query) => $query->where('si.item_id', $itemId))
+            ->when($category, fn ($query) => $query->where('it.category_id', $category))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($sub) use ($search) {
+                    $like = '%' . $search . '%';
+                    $sub->where('p.name', 'like', $like)
+                        ->orWhere('si.item_name', 'like', $like)
+                        ->orWhere('si.item_category', 'like', $like)
+                        ->orWhere('it.name', 'like', $like);
+                });
+            })
+            ->groupBy('p.id', 'p.name', 'si.item_id', 'si.item_name', 'si.item_category', 'it.name')
+            ->get();
 
         $purchaseRows = collect();
         if (Schema::hasTable('purchase_items')) {
             $purchaseRows = DB::table('purchase_items as pi')
                 ->join('purchases as pu', 'pu.id', '=', 'pi.purchase_id')
                 ->join('parties as p', 'p.id', '=', 'pu.party_id')
+                ->leftJoin('items as it', 'it.id', '=', 'pi.item_id')
                 ->whereBetween('pu.bill_date', [$from, $to])
                 ->select(
                     'p.id as party_id',
                     'p.name as party_name',
+                    'pi.item_id as item_id',
+                    DB::raw("COALESCE(NULLIF(pi.item_name, ''), it.name, '-') as item_name"),
+                    DB::raw("COALESCE(NULLIF(pi.item_category, ''), 'Uncategorized') as category_name"),
                     DB::raw('SUM(pi.quantity) as purchase_qty'),
                     DB::raw('SUM(pi.amount) as purchase_amount')
                 )
-                ->groupBy('p.id', 'p.name')
-                ->get()->keyBy('party_id');
+                ->when($itemId, fn ($query) => $query->where('pi.item_id', $itemId))
+                ->when($category, fn ($query) => $query->where('it.category_id', $category))
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($sub) use ($search) {
+                        $like = '%' . $search . '%';
+                        $sub->where('p.name', 'like', $like)
+                        ->orWhere('pi.item_name', 'like', $like)
+                        ->orWhere('pi.item_category', 'like', $like)
+                        ->orWhere('it.name', 'like', $like);
+                });
+            })
+                ->groupBy('p.id', 'p.name', 'pi.item_id', 'pi.item_name', 'pi.item_category', 'it.name')
+                ->get();
         }
 
-        $partyIds = $saleRows->keys()->merge($purchaseRows->keys())->unique();
-        $rows = $partyIds->map(function ($id) use ($saleRows, $purchaseRows) {
-            $s = $saleRows->get($id);
-            $p = $purchaseRows->get($id);
+        $saleMap = $saleRows->keyBy(fn ($row) => implode('|', [
+            $row->party_id ?? 0,
+            $row->category_name ?? '',
+            $row->item_id ?? 0,
+        ]));
+
+        $purchaseMap = $purchaseRows->keyBy(fn ($row) => implode('|', [
+            $row->party_id ?? 0,
+            $row->category_name ?? '',
+            $row->item_id ?? 0,
+        ]));
+
+        $rowKeys = $saleMap->keys()->merge($purchaseMap->keys())->unique()->values();
+        $rows = $rowKeys->map(function ($key) use ($saleMap, $purchaseMap) {
+            $s = $saleMap->get($key);
+            $p = $purchaseMap->get($key);
+            $source = $s ?: $p;
+
             return [
-                'party_id'        => $id,
-                'party_name'      => $s ? $s->party_name : ($p ? $p->party_name : '-'),
+                'party_id'        => $source->party_id ?? null,
+                'party_name'      => $source->party_name ?? '-',
+                'category_name'   => $source->category_name ?? 'Uncategorized',
+                'item_name'       => $source->item_name ?? '-',
                 'sale_qty'        => $s ? (int) $s->sale_qty : 0,
                 'sale_amount'     => $this->fmt($s ? $s->sale_amount : 0),
                 'purchase_qty'    => $p ? (int) $p->purchase_qty : 0,
                 'purchase_amount' => $this->fmt($p ? $p->purchase_amount : 0),
             ];
+        })->sortBy(function ($row) {
+            return sprintf(
+                '%s|%s|%s',
+                strtolower((string) ($row['party_name'] ?? '')),
+                strtolower((string) ($row['category_name'] ?? '')),
+                strtolower((string) ($row['item_name'] ?? ''))
+            );
         })->values();
 
         return response()->json(['success' => true, 'rows' => $rows]);

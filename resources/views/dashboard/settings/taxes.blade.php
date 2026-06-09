@@ -74,29 +74,28 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body">
-                    <form action="">
+                    <form action="{{ route('settings.taxes.rates.store') }}" method="POST">
+                      @csrf
                       <div class="mb-3">
-
-                        <input type="text" class="form-control form-control-sm" id="taxName" required
+                        <input type="text" class="form-control form-control-sm" id="taxName" name="name" required
                           placeholder="Tax Name">
                         <div class="row mt-2">
                           <div class="col-8">
-                            <input type="number" class="form-control" placeholder="Rate" aria-label="First name">
+                            <input type="number" step="0.01" class="form-control" name="rate" placeholder="Rate" aria-label="Rate" required>
                           </div>
                           <div class="col-4">
-                            <select class="form-select form-select prefix-select">
+                            <select class="form-select form-select prefix-select" name="prefix">
                               <option value="other">Other</option>
-
                             </select>
                           </div>
                         </div>
                       </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                      </div>
                     </form>
 
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary">Save</button>
                   </div>
                 </div>
               </div>
@@ -106,43 +105,34 @@
 
           <table class="table table-borderless table-sm align-middle m-0" style="font-size: 14px;">
             <tbody>
+              @forelse($taxRates as $rate)
               <tr>
                 <td>
-                  <label for="tax1" class="mb-0" style="cursor: pointer;">Tax 1</label>
+                  <label class="mb-0" style="cursor: pointer;">{{ $rate->name }}</label>
                 </td>
-                <td class="text-end text-secondary">200%</td>
+                <td class="text-end text-secondary">{{ $rate->rate }}%</td>
                 <td class="text-end d-flex" style="width: 30px;">
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#addTaxRateModal">
+                  <a href="#" class="btn mb-2 d-inline-flex justify-content-center align-items-center edit-rate-btn"
+                    data-id="{{ $rate->id }}" data-name="{{ $rate->name }}" data-rate="{{ $rate->rate }}"
+                    style="width: 25px; height: 25px; padding: 0;">
                     <i class="fas fa-pencil text-secondary" style="font-size: 12px;"></i>
-                  </button>
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center ms-3"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#deleteTaxRateModal">
-                    <i class="fas fa-trash text-secondary" style="font-size: 12px;"></i>
-                  </button>
+                  </a>
 
-                  <div class="modal fade" id="deleteTaxRateModal" tabindex="-1" aria-labelledby="deleteTaxRateModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content text-start" style="width:90% !important;">
-                        <div class="modal-header">
-                          <h1 class="modal-title fs-5" id="deleteTaxRateModalLabel">Vyapar</h1>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                          Do you want to delete this tax rate?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-primary">OK</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <form action="{{ route('settings.taxes.rates.destroy', $rate->id) }}" method="POST" class="ms-3 d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn mb-2 d-inline-flex justify-content-center align-items-center"
+                      style="width: 25px; height: 25px; padding: 0;">
+                      <i class="fas fa-trash text-secondary" style="font-size: 12px;"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
+              @empty
+              <tr>
+                <td colspan="3" class="text-muted">No tax rates yet.</td>
+              </tr>
+              @endforelse
 
             </tbody>
           </table>
@@ -178,44 +168,41 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body">
-                    <form action="">
+                    <form action="{{ route('settings.taxes.groups.store') }}" method="POST">
+                      @csrf
                       <div class="mb-3">
                         <label for="taxGroupName" class="form-label text-secondary mb-1" style="font-size: 13px;">Tax
                           Group Name</label>
-                        <input type="text" class="form-control form-control-sm" id="taxGroupName" required>
+                        <input type="text" class="form-control form-control-sm" id="taxGroupName" name="name" required>
+                      </div>
+                      <div class="mt-2" style="width: 100%; height: 200px; overflow-y: auto;">
+                        <div class="text-secondary mb-2" style="font-size: 13px;">Select Taxes</div>
+                        <table class="table table-borderless table-sm align-middle m-0" style="font-size: 14px;">
+                          <tbody>
+                            @forelse($taxRates as $rate)
+                            <tr>
+                              <td>
+                                <label for="tax-{{ $rate->id }}" class="mb-0" style="cursor: pointer;">{{ $rate->name }}</label>
+                              </td>
+                              <td class="text-end text-secondary">{{ $rate->rate }}%</td>
+                              <td class="text-end" style="width: 30px;">
+                                <input class="form-check-input m-0" type="checkbox" value="{{ $rate->id }}" name="rate_ids[]" id="tax-{{ $rate->id }}"
+                                  style="cursor: pointer;">
+                              </td>
+                            </tr>
+                            @empty
+                            <tr>
+                              <td colspan="3" class="text-muted">No tax rates available.</td>
+                            </tr>
+                            @endforelse
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
                       </div>
                     </form>
-                    <div class="mt-2" style="width: 100%; height: 200px; overflow-y: auto;">
-                      <div class="text-secondary mb-2" style="font-size: 13px;">Select Taxes</div>
-                      <table class="table table-borderless table-sm align-middle m-0" style="font-size: 14px;">
-                        <tbody>
-                          <tr>
-                            <td>
-                              <label for="tax1" class="mb-0" style="cursor: pointer;">Tax 1</label>
-                            </td>
-                            <td class="text-end text-secondary">200%</td>
-                            <td class="text-end" style="width: 30px;">
-                              <input class="form-check-input m-0" type="checkbox" value="" id="tax1"
-                                style="cursor: pointer;">
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <label for="tax2" class="mb-0" style="cursor: pointer;">Tax 2</label>
-                            </td>
-                            <td class="text-end text-secondary">10%</td>
-                            <td class="text-end" style="width: 30px;">
-                              <input class="form-check-input m-0" type="checkbox" value="" id="tax2"
-                                style="cursor: pointer;">
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary">Save</button>
                   </div>
                 </div>
               </div>
@@ -225,80 +212,34 @@
 
           <table class="table table-borderless table-sm align-middle m-0" style="font-size: 14px;">
             <tbody>
+              @forelse($taxGroups as $group)
               <tr>
                 <td>
-                  <label for="tax1" class="mb-0" style="cursor: pointer;">Tax 1</label>
+                  <label class="mb-0" style="cursor: pointer;">{{ $group->name }}</label>
                 </td>
-                <td class="text-end text-secondary">200%</td>
+                <td class="text-end text-secondary">{{ $group->rates->pluck('rate')->join(', ') }}</td>
                 <td class="text-end d-flex" style="width: 30px;">
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#addTaxGroupModal">
+                  <a href="#" class="btn mb-2 d-inline-flex justify-content-center align-items-center edit-group-btn"
+                    data-id="{{ $group->id }}" data-name="{{ $group->name }}" data-rates='@json($group->rates->pluck('id'))'
+                    style="width: 25px; height: 25px; padding: 0;">
                     <i class="fas fa-pencil text-secondary" style="font-size: 12px;"></i>
-                  </button>
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center ms-3"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#deleteTaxGroupModal">
-                    <i class="fas fa-trash text-secondary" style="font-size: 12px;"></i>
-                  </button>
+                  </a>
 
-                  <div class="modal fade" id="deleteTaxGroupModal" tabindex="-1" aria-labelledby="deleteTaxGroupModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content text-start" style="width:90% !important;">
-                        <div class="modal-header">
-                          <h1 class="modal-title fs-5" id="deleteTaxGroupModalLabel">Vyapar</h1>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                          Do you want to delete this tax group?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-primary">OK</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <form action="{{ route('settings.taxes.groups.destroy', $group->id) }}" method="POST" class="ms-3 d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn mb-2 d-inline-flex justify-content-center align-items-center"
+                      style="width: 25px; height: 25px; padding: 0;">
+                      <i class="fas fa-trash text-secondary" style="font-size: 12px;"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
+              @empty
               <tr>
-                <td>
-                  <label for="tax2" class="mb-0" style="cursor: pointer;">Tax 2</label>
-                </td>
-                <td class="text-end text-secondary">10%</td>
-                <td class="text-end d-flex" style="width: 30px;">
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#addTaxGroupModal">
-                    <i class="fas fa-pencil text-secondary" style="font-size: 12px;"></i>
-                  </button>
-                  <button type="button" class="btn mb-2 d-inline-flex justify-content-center align-items-center ms-3"
-                    style="width: 25px; height: 25px; padding: 0;" data-bs-toggle="modal"
-                    data-bs-target="#deleteTaxGroupModal">
-                    <i class="fas fa-trash text-secondary" style="font-size: 12px;"></i>
-                  </button>
-
-                  <div class="modal fade" id="deleteTaxGroupModal" tabindex="-1" aria-labelledby="deleteTaxGroupModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content text-start" style="width:90% !important;">
-                        <div class="modal-header">
-                          <h1 class="modal-title fs-5" id="deleteTaxGroupModalLabel">Vyapar</h1>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                          Do you want to delete this tax group?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-primary">OK</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
+                <td colspan="3" class="text-muted">No tax groups yet.</td>
               </tr>
+              @endforelse
             </tbody>
           </table>
 
@@ -552,7 +493,66 @@
         select.addEventListener('change', updateColor);
       });
     })();
-  </script>
-</body>
+  </script>  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      @if(session('success'))
+        alert(@json(session('success')));
+      @endif
+
+      // Prefill edit rate
+      document.querySelectorAll('.edit-rate-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = btn.dataset.id;
+          const name = btn.dataset.name;
+          const rate = btn.dataset.rate;
+          const modalEl = document.getElementById('addTaxRateModal');
+          const modal = new bootstrap.Modal(modalEl);
+          modalEl.querySelector('input[name="name"]').value = name;
+          modalEl.querySelector('input[name="rate"]').value = rate;
+          let form = modalEl.querySelector('form');
+          form.action = `/dashboard/settings/taxes/rates/${id}`;
+          let methodInput = form.querySelector('input[name="_method"]');
+          if (!methodInput) {
+            methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            form.appendChild(methodInput);
+          }
+          methodInput.value = 'PUT';
+          modal.show();
+        });
+      });
+
+      // Prefill edit group
+      document.querySelectorAll('.edit-group-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = btn.dataset.id;
+          const name = btn.dataset.name;
+          const rates = JSON.parse(btn.dataset.rates || '[]');
+          const modalEl = document.getElementById('addTaxGroupModal');
+          const modal = new bootstrap.Modal(modalEl);
+          modalEl.querySelector('input[name="name"]').value = name;
+          modalEl.querySelectorAll('input[name="rate_ids[]"]').forEach(ch => ch.checked = false);
+          rates.forEach(rid => {
+            const ch = modalEl.querySelector(`input[name="rate_ids[]"][value="${rid}"]`);
+            if (ch) ch.checked = true;
+          });
+          let form = modalEl.querySelector('form');
+          form.action = `/dashboard/settings/taxes/groups/${id}`;
+          let methodInput = form.querySelector('input[name="_method"]');
+          if (!methodInput) {
+            methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            form.appendChild(methodInput);
+          }
+          methodInput.value = 'PUT';
+          modal.show();
+        });
+      });
+    });
+  </script></body>
 
 </html>

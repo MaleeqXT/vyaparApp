@@ -223,6 +223,13 @@ a:hover {
   text-align: left;
   text-decoration: none;
 }
+.sidebar-nav .nav-link > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sidebar-nav .nav-link:hover {
   background: var(--sidebar-hover);
   color: #fff;
@@ -257,6 +264,24 @@ a:hover {
 .sidebar-nav .nav-link .badge-plus:hover {
   background: var(--primary-blue);
   color: #fff;
+}
+.sidebar-nav .nav-link .menu-plus-btn {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+  opacity: .9 !important;
+  cursor: pointer !important;
+  z-index: 2 !important;
+  pointer-events: auto !important;
 }
 
 .sidebar-nav .nav-link .dropdown-arrow {
@@ -442,6 +467,16 @@ body.sidebar-compact .sidebar-nav .sidebar-submenu .nav-link {
   justify-content: flex-start;
   padding-left: 18px;
   padding-right: 18px;
+}
+body.sidebar-compact .sidebar-nav .sidebar-submenu .nav-link > span {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 body.sidebar-compact .sidebar-nav .sidebar-submenu .nav-link span {
   display: inline !important;

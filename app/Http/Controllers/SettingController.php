@@ -159,7 +159,10 @@ class SettingController extends Controller
 
     public function taxes()
     {
-        return view('dashboard.settings.taxes');
+        $userId = \Illuminate\Support\Facades\Auth::id();
+        $taxRates = \App\Models\TaxRate::where('user_id', $userId)->orderBy('name')->get();
+        $taxGroups = \App\Models\TaxGroup::with('rates')->where('user_id', $userId)->orderBy('name')->get();
+        return view('dashboard.settings.taxes', compact('taxRates', 'taxGroups'));
     }
 
     public function items()

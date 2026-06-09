@@ -1240,18 +1240,21 @@ document.addEventListener('keydown', (e) => {
 });
   // ── Handle plus button clicks in menu ──
   document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('menu-plus-btn')) {
-      e.preventDefault();
-      e.stopPropagation();
-      const url = e.target.getAttribute('data-url');
-      const modal = e.target.getAttribute('data-modal');
-      if (url) window.location.href = url;
-      if (modal) {
-        const modalElement = document.getElementById(modal);
-        if (modalElement) {
-          const bsModal = new window.bootstrap.Modal(modalElement);
-          bsModal.show();
-        }
+    const plusBtn = e.target.closest('.menu-plus-btn');
+    if (!plusBtn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const url = plusBtn.getAttribute('data-url');
+    const modal = plusBtn.getAttribute('data-modal');
+    if (url) window.location.href = url;
+    if (modal) {
+      const modalElement = document.getElementById(modal);
+      if (modalElement) {
+        const bsModal = new window.bootstrap.Modal(modalElement);
+        bsModal.show();
       }
     }
   });
