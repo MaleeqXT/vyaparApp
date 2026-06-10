@@ -8,7 +8,7 @@
                 {{-- Date range (always visible like Vyapar) --}}
                 <div style="display:flex;align-items:center;gap:8px;background:#f1f5f9;border-radius:6px;padding:4px 12px;">
                     <span style="font-size:12px;color:#6b7280;">From</span>
-                    <input type="date" id="dr-from" style="border:none;outline:none;font-size:13px;color:#374151;background:transparent;font-weight:500;" value="{{ date('Y-m-d', strtotime('first day of this month')) }}">
+                    <input type="date" id="dr-from" style="border:none;outline:none;font-size:13px;color:#374151;background:transparent;font-weight:500;" value="{{ date('Y-01-01') }}">
                     <span style="font-size:12px;color:#9ca3af;">—</span>
                     <span style="font-size:12px;color:#6b7280;">To</span>
                     <input type="date" id="dr-to" style="border:none;outline:none;font-size:13px;color:#374151;background:transparent;font-weight:500;" value="{{ date('Y-m-d') }}">
@@ -44,7 +44,7 @@
         </div>
 
         {{-- Footer Totals Bar --}}
-        <div id="dr-footer-bar" style="display:none;position:sticky;bottom:0;background:#fff;border-top:2px solid #e5e7eb;padding:12px 16px;display:flex;justify-content:space-between;margin-top:8px;">
+        <div id="dr-footer-bar" style="display:none;position:sticky;bottom:0;background:#fff;border-top:2px solid #e5e7eb;padding:12px 16px;justify-content:space-between;margin-top:8px;">
             <span style="font-size:13px;font-weight:600;color:#16a34a;">Total Sale Discount: <span id="dr-total-sale">Rs 0.00</span></span>
             <span style="font-size:13px;font-weight:600;color:#ef4444;">Total Purchase Discount: <span id="dr-total-purchase">Rs 0.00</span></span>
         </div>
