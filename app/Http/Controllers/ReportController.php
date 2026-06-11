@@ -2069,23 +2069,63 @@ class ReportController extends Controller
                 's.reference_bill_number',
                 's.invoice_date as date',
                 's.order_date',
+                's.due_date',
+                's.description',
                 'p.name as party_name',
                 's.total_amount',
                 's.grand_total',
+                's.balance',
                 's.status',
                 DB::raw("COALESCE(s.payment_type, 'Cash') as payment_type")
             )
             ->orderByDesc('s.invoice_date');
 
-        if ($request->filled('party'))  $query->where('s.party_id', $request->party);
+        if ($request->filled('party')) {
+            $party = trim((string) $request->party);
+            $query->where(function ($partyQuery) use ($party) {
+                $partyQuery->where('p.name', 'like', '%' . $party . '%')
+                    ->orWhere('s.party_id', $party);
+            });
+        }
         if ($request->filled('status')) $query->where('s.status', $request->status);
 
         $rows = $query->get();
+        $itemsBySale = collect();
+
+        if ($rows->isNotEmpty() && Schema::hasTable('sale_items')) {
+            $itemsBySale = DB::table('sale_items as si')
+                ->whereIn('si.sale_id', $rows->pluck('id'))
+                ->select(
+                    'si.sale_id',
+                    'si.item_name',
+                    'si.quantity',
+                    'si.unit_price',
+                    'si.amount',
+                    'si.discount'
+                )
+                ->orderBy('si.id')
+                ->get()
+                ->groupBy('sale_id');
+        }
+
+        $rows = $rows->map(function ($row) use ($itemsBySale) {
+            $row->items = ($itemsBySale->get($row->id) ?? collect())->map(function ($item) {
+                return [
+                    'item_name' => $item->item_name ?: 'Item',
+                    'quantity' => $this->fmt($item->quantity ?? 0),
+                    'unit_price' => $this->fmt($item->unit_price ?? 0),
+                    'discount' => $this->fmt($item->discount ?? 0),
+                    'amount' => $this->fmt($item->amount ?? 0),
+                ];
+            })->values()->toArray();
+
+            return $row;
+        });
 
         return response()->json([
             'success'      => true,
             'rows'         => $rows->toArray(),
-            'total_amount' => $this->fmt($rows->sum('total_amount')),
+            'total_amount' => $this->fmt($rows->sum('grand_total')),
             'period'       => ['from' => $from, 'to' => $to],
         ]);
     }

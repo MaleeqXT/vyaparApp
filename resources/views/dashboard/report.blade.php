@@ -386,6 +386,8 @@
     @include('dashboard.reports.tabs.item-stock-reports')
     @include('dashboard.reports.tabs.bank-statement')
     @include('dashboard.reports.tabs.discount-report')
+    @include('dashboard.reports.tabs.tax-report')
+    @include('dashboard.reports.tabs.tax-rate-report')
     @include('dashboard.reports.tabs.expense-report')
     @include('dashboard.reports.tabs.sale-order-report')
     @include('dashboard.reports.tabs.loan-statement-report')
@@ -423,4 +425,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 </html>
-

@@ -127,6 +127,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="soPrintOptionsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:6px;overflow:hidden;">
+      <div class="modal-header py-2" style="background:#dbeef8;border-bottom:1px solid #cbd5e1;">
+        <h6 class="modal-title fw-bold" style="color:#334155;">Print options</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size:11px;"></button>
+      </div>
+      <div class="modal-body py-2">
+        <label class="d-flex justify-content-between align-items-center mb-1" style="font-size:14px;color:#374151;cursor:pointer;">
+          <span>Print item details</span>
+          <input type="checkbox" id="so-print-items" style="width:14px;height:14px;">
+        </label>
+        <label class="d-flex justify-content-between align-items-center mb-1" style="font-size:14px;color:#374151;cursor:pointer;">
+          <span>Print description</span>
+          <input type="checkbox" id="so-print-description" style="width:14px;height:14px;">
+        </label>
+        <label class="d-flex justify-content-between align-items-center" style="font-size:14px;color:#374151;cursor:pointer;">
+          <span>Print PO Details</span>
+          <input type="checkbox" id="so-print-po" checked style="width:14px;height:14px;">
+        </label>
+      </div>
+      <div class="modal-footer py-2 d-flex justify-content-between">
+        <button type="button" class="btn btn-link text-dark p-0" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-link text-dark p-0 fw-semibold" onclick="confirmSaleOrderPrint()">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {{-- ============================================================
      Sale Order Item Report Tab
      ============================================================ --}}
@@ -391,9 +420,26 @@
    ============================================================ */
 let _soRawData = [];
 
+function soMoney(v) {
+    const n = parseFloat(v || 0);
+    return 'Rs ' + (isNaN(n) ? 0 : n).toLocaleString('en-PK', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function soDate(v) {
+    if (!v) return '';
+    const d = new Date(v);
+    return isNaN(d) ? v : d.toLocaleDateString('en-GB');
+}
+
+function soEsc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function loadSaleOrderReport() {
     const from  = document.getElementById('so-from-date').value;
     const to    = document.getElementById('so-to-date').value;
+    const party = document.getElementById('so-party-filter').value;
+    const status = document.getElementById('so-status-filter').value;
     const tbody = document.getElementById('so-table-body');
     const tfoot = document.getElementById('so-table-foot');
 
@@ -404,40 +450,39 @@ function loadSaleOrderReport() {
           </td>
         </tr>`;
 
-    /* Use the dedicated sale-order endpoint in ReportController */
-    fetch(`/dashboard/reports/sale-order-items?from=${from}&to=${to}`, {
+    const params = new URLSearchParams({from, to});
+    if (party) params.append('party', party);
+    if (status) params.append('status', status);
+
+    fetch(`/dashboard/reports/sale-order?${params.toString()}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
     })
     .then(r => r.json())
     .then(data => {
         if (!data.success) throw new Error('API error');
 
-        /* Group rows by bill_number to get one row per order */
-        const orderMap = {};
-        (data.rows || []).forEach(r => {
-            const key = r.bill_number || r.date;
-            if (!orderMap[key]) {
-                orderMap[key] = {
-                    bill_number  : r.bill_number,
-                    invoice_date : r.date,
-                    order_number : r.bill_number,
-                    party_name   : r.party_name,
-                    status       : r.status,
-                    total_amount : 0,
-                };
-            }
-            orderMap[key].total_amount += parseFloat(r.amount || 0);
-        });
-
-        _soRawData = Object.values(orderMap);
+        _soRawData = (data.rows || []).map(r => ({
+            id: r.id,
+            bill_number: r.bill_number,
+            reference_bill_number: r.reference_bill_number,
+            date: r.date || r.order_date,
+            order_date: r.order_date || r.date,
+            due_date: r.due_date,
+            party_name: r.party_name || 'Walk-in',
+            status: r.status || '',
+            description: r.description || '',
+            payment_type: r.payment_type || '',
+            total_amount: parseFloat(r.grand_total || r.total_amount || 0),
+            balance: parseFloat(r.balance || 0),
+            items: r.items || []
+        }));
 
         /* Summary cards */
         const totalAmt = _soRawData.reduce((s, r) => s + r.total_amount, 0);
         document.getElementById('so-total-count').textContent  = _soRawData.length;
-        document.getElementById('so-total-amount').textContent =
-            'Rs ' + totalAmt.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        document.getElementById('so-total-amount').textContent = soMoney(totalAmt);
         document.getElementById('so-open-count').textContent   =
-            _soRawData.filter(r => (r.status || '').toLowerCase() === 'open').length;
+            _soRawData.filter(r => ['open', 'pending', 'confirmed'].includes((r.status || '').toLowerCase())).length;
 
         if (tfoot) tfoot.style.display = '';
         renderSaleOrderTable();
