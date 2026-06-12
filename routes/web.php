@@ -365,6 +365,8 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('reports/sale-purchase-by-party-group', [ReportController::class, 'salePurchaseByPartyGroup']);
     Route::get('/reports/profit-loss', [ReportController::class, 'profitAndLoss']);
     Route::get('/reports/profit-loss/export', [ReportController::class, 'profitAndLossExport']);
+    Route::get('/reports/balance-sheet', [ReportController::class, 'balanceSheet']);
+    Route::get('/reports/balance-sheet/export', [ReportController::class, 'balanceSheetExport']);
     Route::get('/reports/bill-wise-profit', [ReportController::class, 'billWiseProfit']);
     Route::get('/reports/bill-wise-profit/export', [ReportController::class, 'billWiseProfitExport']);
     Route::get('/reports/bill-wise-profit/{id}/items', [ReportController::class, 'billWiseProfitItems']);

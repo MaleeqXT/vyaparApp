@@ -1308,6 +1308,291 @@ class ReportController extends Controller
     }
 
     // ============================================================
+    // 10A. BALANCE SHEET
+    // ============================================================
+    public function balanceSheet(Request $request)
+    {
+        $asOn = $request->filled('to') ? $request->input('to') : now()->toDateString();
+        $from = $request->filled('from') ? $request->input('from') : now()->startOfYear()->toDateString();
+
+        $partyBalances = $this->partyBalancesAsOn($asOn);
+        $sundryDebtors = $partyBalances->where('balance', '>', 0)->sum('balance');
+        $sundryCreditors = abs($partyBalances->where('balance', '<', 0)->sum('balance'));
+
+        $bankBalances = $this->bankBalancesAsOn($asOn);
+        $cashAccounts = $bankBalances->where('is_cash', true)->sum('balance');
+        $bankAccounts = $bankBalances->where('is_cash', false)->sum('balance');
+
+        $inputDuties = $this->sumColumnAsOn('purchases', 'tax_amount', 'bill_date', $asOn);
+        $outwardDuties = $this->sumColumnAsOn('sales', 'tax_amount', 'invoice_date', $asOn);
+        $inventoryValue = $this->inventoryValueAsOn($asOn);
+        $fixedAssets = $this->fixedAssetsValueAsOn($asOn);
+        $longTermLiabilities = $this->sumColumnAsOn('loan_accounts', 'opening_balance', 'as_of_date', $asOn);
+        $netIncome = $this->netIncomeAsOn($from, $asOn);
+
+        $currentAssets = $sundryDebtors + $inputDuties + $bankAccounts + $cashAccounts + $inventoryValue;
+        $assetsTotal = $fixedAssets + $currentAssets;
+
+        $currentLiabilities = $sundryCreditors + $outwardDuties;
+        $reservesSurplus = $netIncome;
+        $ownerEquity = $assetsTotal - $longTermLiabilities - $currentLiabilities - $reservesSurplus;
+        $capitalAccount = $ownerEquity + $reservesSurplus;
+        $equitiesLiabilitiesTotal = $capitalAccount + $longTermLiabilities + $currentLiabilities;
+        $mismatch = round($assetsTotal - $equitiesLiabilitiesTotal, 2);
+
+        return response()->json([
+            'success' => true,
+            'period' => [
+                'from' => $from,
+                'to' => $asOn,
+                'as_on_label' => Carbon::parse($asOn)->format('M d, Y'),
+            ],
+            'tree' => [
+                'equities_liabilities' => [
+                    $this->balanceNode('capital_account', 'Capital Account', $capitalAccount, [
+                        $this->balanceNode('owners_equity', "Owner's Equity", $ownerEquity),
+                        $this->balanceNode('reserves_surplus', 'Reserves & Surplus', $reservesSurplus, [
+                            $this->balanceNode('net_income', 'Net Income (Profit)', $netIncome),
+                            $this->balanceNode('retained_earnings', 'Retained Earnings', 0),
+                            $this->balanceNode('revaluation_reserve', 'Revaluation Reserve', 0),
+                        ]),
+                    ]),
+                    $this->balanceNode('long_term_liabilities', 'Long-term Liabilities', $longTermLiabilities),
+                    $this->balanceNode('current_liabilities', 'Current Liabilities', $currentLiabilities, [
+                        $this->balanceNode('sundry_creditors', 'Sundry Creditors', $sundryCreditors, $this->partyNodes($partyBalances, false)),
+                        $this->balanceNode('outward_duties_taxes', 'Outward Duties & Taxes', $outwardDuties),
+                        $this->balanceNode('other_current_liabilities', 'Other Current Liabilities', 0),
+                    ]),
+                    $this->balanceNode('other_liabilities', 'Other Liabilities', 0),
+                ],
+                'assets' => [
+                    $this->balanceNode('fixed_assets', 'Fixed Assets', $fixedAssets),
+                    $this->balanceNode('non_current_assets', 'Non Current Assets', 0),
+                    $this->balanceNode('current_assets', 'Current Assets', $currentAssets, [
+                        $this->balanceNode('sundry_debtors', 'Sundry Debtors', $sundryDebtors, $this->partyNodes($partyBalances, true)),
+                        $this->balanceNode('input_duties_taxes', 'Input Duties & Taxes', $inputDuties),
+                        $this->balanceNode('bank_accounts', 'Bank Accounts', $bankAccounts, $this->bankNodes($bankBalances, false)),
+                        $this->balanceNode('cash_accounts', 'Cash Accounts', $cashAccounts, $this->bankNodes($bankBalances, true)),
+                        $this->balanceNode('other_current_assets', 'Other Current Assets', $inventoryValue, [
+                            $this->balanceNode('inventory_stock', 'Inventory / Stock in Hand', $inventoryValue),
+                        ]),
+                    ]),
+                    $this->balanceNode('other_assets', 'Other Assets', 0),
+                ],
+            ],
+            'totals' => [
+                'assets' => $this->fmt($assetsTotal),
+                'equities_liabilities' => $this->fmt($equitiesLiabilitiesTotal),
+                'mismatch' => $this->fmt($mismatch),
+                'is_balanced' => abs($mismatch) < 0.01,
+            ],
+        ]);
+    }
+
+    public function balanceSheetExport(Request $request)
+    {
+        return $this->balanceSheet($request);
+    }
+
+    private function balanceNode(string $id, string $label, $amount, array $children = []): array
+    {
+        return [
+            'id' => $id,
+            'label' => $label,
+            'amount' => $this->fmt($amount),
+            'children' => $children,
+        ];
+    }
+
+    private function partyBalancesAsOn(string $asOn)
+    {
+        if (!Schema::hasTable('parties')) {
+            return collect();
+        }
+
+        if (Schema::hasTable('transactions')
+            && Schema::hasColumn('transactions', 'party_id')
+            && Schema::hasColumn('transactions', 'date')) {
+            $rows = DB::table('parties as p')
+                ->leftJoin('transactions as t', function ($join) use ($asOn) {
+                    $join->on('t.party_id', '=', 'p.id')
+                        ->whereDate('t.date', '<=', $asOn);
+                })
+                ->select(
+                    'p.id',
+                    'p.name',
+                    'p.opening_balance',
+                    'p.transaction_type',
+                    'p.current_balance',
+                    DB::raw('COALESCE(SUM(t.debit), 0) as debit_total'),
+                    DB::raw('COALESCE(SUM(t.credit), 0) as credit_total')
+                )
+                ->groupBy('p.id', 'p.name', 'p.opening_balance', 'p.transaction_type', 'p.current_balance')
+                ->get();
+
+            return $rows->map(function ($row) {
+                $opening = (float) ($row->opening_balance ?? 0);
+                if (strtolower((string) ($row->transaction_type ?? '')) === 'pay') {
+                    $opening *= -1;
+                }
+
+                $balance = $opening + (float) $row->debit_total - (float) $row->credit_total;
+
+                return (object) [
+                    'id' => $row->id,
+                    'name' => $row->name,
+                    'balance' => $this->fmt($balance),
+                ];
+            });
+        }
+
+        return DB::table('parties')
+            ->select('id', 'name', DB::raw('COALESCE(current_balance, opening_balance, 0) as balance'))
+            ->get()
+            ->map(fn ($row) => (object) [
+                'id' => $row->id,
+                'name' => $row->name,
+                'balance' => $this->fmt($row->balance),
+            ]);
+    }
+
+    private function partyNodes($partyBalances, bool $debtors): array
+    {
+        return $partyBalances
+            ->filter(fn ($party) => $debtors ? $party->balance > 0 : $party->balance < 0)
+            ->sortByDesc(fn ($party) => abs($party->balance))
+            ->take(25)
+            ->map(fn ($party) => $this->balanceNode(
+                'party_' . $party->id,
+                $party->name ?: 'Unnamed Party',
+                abs($party->balance)
+            ))
+            ->values()
+            ->all();
+    }
+
+    private function bankBalancesAsOn(string $asOn)
+    {
+        if (!Schema::hasTable('bank_accounts')) {
+            return collect();
+        }
+
+        $accounts = DB::table('bank_accounts')
+            ->select('id', 'display_name', 'bank_name', 'type', 'opening_balance', 'as_of_date')
+            ->get();
+
+        return $accounts->map(function ($account) use ($asOn) {
+            $opening = Carbon::parse($account->as_of_date ?? '1900-01-01')->toDateString() <= $asOn
+                ? (float) ($account->opening_balance ?? 0)
+                : 0;
+
+            $in = 0;
+            $out = 0;
+            if (Schema::hasTable('bank_transactions')) {
+                $in = DB::table('bank_transactions')
+                    ->where('to_bank_account_id', $account->id)
+                    ->whereDate('transaction_date', '<=', $asOn)
+                    ->sum('amount');
+
+                $out = DB::table('bank_transactions')
+                    ->where('from_bank_account_id', $account->id)
+                    ->whereDate('transaction_date', '<=', $asOn)
+                    ->sum('amount');
+            }
+
+            return (object) [
+                'id' => $account->id,
+                'name' => $account->display_name ?: ($account->bank_name ?: 'Bank Account'),
+                'is_cash' => strtolower((string) $account->type) === 'cash',
+                'balance' => $this->fmt($opening + $in - $out),
+            ];
+        });
+    }
+
+    private function bankNodes($bankBalances, bool $cash): array
+    {
+        return $bankBalances
+            ->where('is_cash', $cash)
+            ->filter(fn ($account) => abs($account->balance) > 0.009)
+            ->map(fn ($account) => $this->balanceNode(
+                'bank_' . $account->id,
+                $account->name,
+                $account->balance
+            ))
+            ->values()
+            ->all();
+    }
+
+    private function sumColumnAsOn(string $table, string $amountColumn, string $dateColumn, string $asOn): float
+    {
+        if (!Schema::hasTable($table) || !Schema::hasColumn($table, $amountColumn)) {
+            return 0;
+        }
+
+        $query = DB::table($table);
+        if (Schema::hasColumn($table, $dateColumn)) {
+            $query->whereDate($dateColumn, '<=', $asOn);
+        }
+
+        return $this->fmt($query->sum($amountColumn));
+    }
+
+    private function inventoryValueAsOn(string $asOn): float
+    {
+        if (!Schema::hasTable('items')) {
+            return 0;
+        }
+
+        $value = DB::table('items')
+            ->when(Schema::hasColumn('items', 'type'), function ($query) {
+                $query->whereRaw("LOWER(COALESCE(type, '')) NOT LIKE ?", ['%fixed%']);
+            })
+            ->selectRaw('SUM(COALESCE(opening_qty, 0) * COALESCE(purchase_price, 0)) as value')
+            ->value('value');
+
+        return $this->fmt($value);
+    }
+
+    private function fixedAssetsValueAsOn(string $asOn): float
+    {
+        if (!Schema::hasTable('items') || !Schema::hasColumn('items', 'type')) {
+            return 0;
+        }
+
+        $value = DB::table('items')
+            ->whereRaw("LOWER(COALESCE(type, '')) LIKE ?", ['%fixed%'])
+            ->selectRaw('SUM(COALESCE(opening_qty, 0) * COALESCE(purchase_price, 0)) as value')
+            ->value('value');
+
+        return $this->fmt($value);
+    }
+
+    private function netIncomeAsOn(string $from, string $asOn): float
+    {
+        $sales = $this->sumColumnBetween('sales', 'total_amount', 'invoice_date', $from, $asOn);
+        $purchases = $this->sumColumnBetween('purchases', 'total_amount', 'bill_date', $from, $asOn);
+        $expenses = $this->sumColumnBetween('expenses', 'total_amount', 'expense_date', $from, $asOn);
+        $saleReturns = $this->sumColumnBetween('sale_returns', 'total_amount', 'date', $from, $asOn);
+        $purchaseReturns = $this->sumColumnBetween('purchase_returns', 'total_amount', 'date', $from, $asOn);
+
+        return $this->fmt($sales - $saleReturns - $purchases + $purchaseReturns - $expenses);
+    }
+
+    private function sumColumnBetween(string $table, string $amountColumn, string $dateColumn, string $from, string $to): float
+    {
+        if (!Schema::hasTable($table) || !Schema::hasColumn($table, $amountColumn)) {
+            return 0;
+        }
+
+        $query = DB::table($table);
+        if (Schema::hasColumn($table, $dateColumn)) {
+            $query->whereBetween($dateColumn, [$from, $to]);
+        }
+
+        return $this->fmt($query->sum($amountColumn));
+    }
+
+    // ============================================================
     // 11. BILL WISE PROFIT
     // ============================================================
     public function billWiseProfit(Request $request)

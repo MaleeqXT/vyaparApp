@@ -34,6 +34,12 @@
         </a>
     </li>
     <li class="nav-item">
+        <a href="#" class="nav-link py-2 px-4 report-nav-link" data-tab="BalanceSheet"
+           onclick="showTab('BalanceSheet'); return false;">
+            <i class="fa-regular fa-file-lines me-2 text-secondary"></i> Balance Sheet
+        </a>
+    </li>
+    <li class="nav-item">
         <a href="#" class="nav-link py-2 px-4" data-target="cashFlow">
             <i class="fa-regular fa-file-lines me-2 text-secondary"></i> Cash Flow
         </a>

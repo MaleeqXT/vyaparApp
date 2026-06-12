@@ -197,6 +197,9 @@
                   class="fa-regular fa-file-lines me-2 text-secondary "></i>All Transactions</a></li>
             <li class="nav-item"><a href="#" class="nav-link py-2 px-4" data-target="ProfitAndLoss"><i
                   class="fa-regular fa-file-lines me-2 text-secondary"></i> Profit and Loss</a></li>
+            <li class="nav-item"><a href="#" class="nav-link py-2 px-4 report-nav-link" data-tab="BalanceSheet"
+                onclick="showTab('BalanceSheet'); return false;"><i
+                  class="fa-regular fa-file-lines me-2 text-secondary"></i> Balance Sheet</a></li>
             <li class="nav-item"><a href="#" class="nav-link py-2 px-4" data-target="cashFlow"><i
                   class="fa-regular fa-file-lines me-2 text-secondary"></i>Cash Flow</a></li>
             <!-- <li class="nav-item"><a href="#" class="nav-link py-2 px-4" data-target="Bill Wise Profit"><i
@@ -381,6 +384,7 @@
     @include('dashboard.reports.tabs.daybook-report')
     @include('dashboard.reports.tabs.all-transactions-report')
     @include('dashboard.reports.tabs.profit-and-loss-report')
+    @include('dashboard.reports.tabs.balance-sheet-report')
     @include('dashboard.reports.tabs.cash-flow-report')
     @include('dashboard.reports.tabs.party-reports')
     @include('dashboard.reports.tabs.item-stock-reports')
