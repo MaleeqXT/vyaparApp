@@ -475,10 +475,17 @@
                                     </div>
                                 </template>
 
-                                <button type="button" class="btn-action-light w-50 add-description">
-                                    <i class="fa-solid fa-align-left"></i>
-                                    ADD DESCRIPTION
-                                </button>
+                                <div class="description-action-group">
+                                    <button type="button" class="btn-action-light w-50 add-description">
+                                        <i class="fa-solid fa-align-left"></i>
+                                        ADD DESCRIPTION
+                                    </button>
+                                    <div class="description-pane d-none mt-2">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control description-input" rows="3" placeholder="Enter a remark or description" style="max-width: 400px;"></textarea>
+                                    </div>
+                                </div>
+
                                 <button type="button" class="btn-action-light w-50 add-image">
                                     <i class="fa-solid fa-camera"></i>
                                     ADD IMAGE
@@ -487,11 +494,6 @@
                                     <i class="fa-solid fa-file-lines"></i>
                                     ADD DOCUMENT
                                 </button>
-
-                                <div class="description-pane d-none mt-2">
-                                    <label class="form-label">Description</label>
-                                    <textarea class="form-control description-input" rows="3" placeholder="Enter a remark or description"></textarea>
-                                </div>
 
                                 <div class="image-upload-section mt-2">
                                     <div class="image-preview d-none">
