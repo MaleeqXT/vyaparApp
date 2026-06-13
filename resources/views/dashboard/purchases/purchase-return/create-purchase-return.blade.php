@@ -29,6 +29,66 @@
             outline: none;
         }
 
+        .party-selection-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        #partyInfoPanel {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .party-selection-container > div:not(#partyInfoPanel) {
+            flex: 1;
+        }
+
+        .party-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .party-details-grid > div:nth-child(3) {
+            grid-column: 1 / 3;
+        }
+
+        #partyDetailsInputs {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        #partyDetailsInputs > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #partyDetailsInputs textarea,
+        #partyDetailsInputs input {
+            background-color: #ffffff;
+        }
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .party-selection-container > div:nth-child(3) {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .party-selection-container > div:nth-child(4) {
+            grid-column: 1 / 2;
+            grid-row: 2;
+        }
+
+        .party-selection-container > div:nth-child(5) {
+            grid-column: 2 / 4;
+            grid-row: 2;
+        }
+
         .purchase-right-panel {
             width: 32%;
             padding-top: 8px;
@@ -89,6 +149,41 @@
             width: 1px;
             height: 1px;
         }
+
+        /* Party Info Panel Styling */
+        #partyInfoPanel {
+            animation: slideDown 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.12);
+        }
+
+        #partyInfoPanel h5 {
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+
+        #partyInfoPanel small {
+            line-height: 1.6;
+        }
+
+        #partyInfoPanel .btn {
+            transition: all 0.2s ease;
+        }
+
+        #partyInfoPanel .btn:hover {
+            background-color: #dcfce7 !important;
+            border-color: #15803d !important;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -122,11 +217,65 @@
                             <div class="header-left">
                              <div class="input-group">
                                 <!-- Party dropdown button -->
-<div class="party-dropdown-wrapper" style="position: relative; display: inline-block;">
+<div class="party-dropdown-wrapper" style="position: relative; display: inline-block; width: 100%;">
     <input type="text" class="form-control party-search-input w-100" placeholder="Search party..." id="partyDropdownBtn" data-bs-toggle="dropdown" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; min-height: 34px;">
-    <!-- Balance display -->
-    <div id="partyBalanceDisplay" style="color: #007bff; font-weight: 600; margin-top: 4px;">
-        <!-- JS will populate balance here -->
+
+    <!-- Party Selection Container (shown after selection) - positioned right below input -->
+    <div id="partySelectionContainer" class="d-none party-selection-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+
+        <!-- Top Row: Party Card + Billing Name & Phone -->
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <!-- Party Info Card Panel -->
+            <div id="partyInfoPanel" class="border rounded-3" style="background-color: #f0fdf4; border: 2px solid #22c55e; padding: 8px; max-width: 220px; flex-shrink: 0;">
+                <!-- Header with Name and Close Button -->
+                <div class="d-flex justify-content-between align-items-flex-start" style="margin-bottom: 4px;">
+                    <div style="flex: 1;">
+                        <h5 class="mb-0 fw-700" id="partyInfoName" style="color: #15803d; font-size: 13px; letter-spacing: -0.3px;">Party Name</h5>
+                        <div class="d-flex align-items-center gap-1">
+                            <i class="fa-solid fa-location-dot" style="color: #dc2626; font-size: 11px;"></i>
+                            <span id="partyInfoDescription" style="font-size: 11px; color: #6b7280;">Party details</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm" id="closePartyPanel" title="Close" style="background: white; border: 1px solid #dcfce7; color: #15803d; width: 20px; height: 20px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-xmark" style="font-size: 10px;"></i>
+                    </button>
+                </div>
+
+                <!-- Balance Display -->
+                <div style="border-top: 1px solid #dcfce7; padding-top: 6px;">
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="partyInfoBalance" class="fw-700" style="color: #15803d; font-size: 13px;">₹0.00</span>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 1px; font-size: 10px;">BALANCE</small>
+                </div>
+            </div>
+
+            <!-- Billing Name & Phone Inputs (Side by Side) -->
+            <div style="display: flex; gap: 12px; flex: 1.5; align-items: center; margin-left: 100px;">
+                <!-- Billing Name Input -->
+                <div style="flex: 1.5; min-width: 200px;">
+                    <input type="text" class="form-control billing-name-input" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; width: 100%;" placeholder="BILLING NAME (OPTIONAL)">
+                </div>
+
+                <!-- Phone Number Input -->
+                <div style="flex: 1.5; min-width: 200px;">
+                    <input type="text" class="form-control party-phone-input" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; width: 100%;" placeholder="PHONE NO.">
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Addresses (Full Width) -->
+        <div class="party-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-left: 16px;">
+            <!-- Billing Address Input -->
+            <div>
+                <textarea class="form-control billing-address-input" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; resize: vertical;" rows="3" placeholder="Enter billing address"></textarea>
+            </div>
+
+            <!-- Shipping Address Input -->
+            <div>
+                <textarea class="form-control shipping-address-input" style="font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; resize: vertical;" rows="3" placeholder="Enter shipping address"></textarea>
+            </div>
+        </div>
     </div>
 
     <!-- Dropdown menu (existing) -->
@@ -139,8 +288,10 @@
     <li>
         <a class="dropdown-item d-flex justify-content-between party-option" href="#"
            data-id="{{ $party->id }}"
+           data-name="{{ $party->name }}"
            data-phone="{{ $party->phone }}"
            data-billing="{{ addslashes($party->billing_address ?? '') }}"
+           data-shipping="{{ addslashes($party->shipping_address ?? '') }}"
            data-opening="{{ $party->current_balance ?? $party->opening_balance ?? 0 }}"
            data-type="{{ $party->transaction_type }}">
             <span>{{ $party->name }}</span>
@@ -168,9 +319,6 @@
 </div>
 <input type="hidden" class="party-id" name="party_id">
 
-                                </div>
-                                <div class="purchase-party-phone">
-                                    <input type="text" class="phone-input" placeholder="Phone Number">
                                 </div>
 
                             </div>

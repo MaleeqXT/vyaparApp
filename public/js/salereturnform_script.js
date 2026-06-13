@@ -21,6 +21,31 @@ function initializeForm(context) {
     let selectedDocuments = [];
     const imageObjectUrls = new Set();
 
+    // Party dropdown display functions
+    const setPartyDropdownDisplay = (value = '') => {
+        const $partyField = $ctx.find('#partyDropdownBtn').first();
+        const displayValue = value || 'Select Party';
+        if (!$partyField.length) {
+            return;
+        }
+        if ($partyField.is('input, textarea, select')) {
+            $partyField.val(displayValue);
+            return;
+        }
+        $partyField.text(displayValue);
+    };
+
+    const getPartyDropdownDisplay = () => {
+        const $partyField = $ctx.find('#partyDropdownBtn').first();
+        if (!$partyField.length) {
+            return '';
+        }
+        const rawValue = $partyField.is('input, textarea, select')
+            ? ($partyField.val() || '')
+            : ($partyField.text() || '');
+        return rawValue.trim();
+    };
+
     function revokeImageUrls() {
         imageObjectUrls.forEach(url => URL.revokeObjectURL(url));
         imageObjectUrls.clear();
@@ -170,7 +195,16 @@ function initializeForm(context) {
             if (party) {
                 $ctx.find('#partyDropdownBtn').text(party.name || 'Select Party');
                 $ctx.find('.phone-input').val(party.phone || saleReturn.phone || '');
+                $ctx.find('.party-phone-input').val(party.phone || saleReturn.phone || '');
                 $ctx.find('.billing-address').val(party.billing_address || saleReturn.billing_address || '');
+                $ctx.find('.billing-address-input').val(party.billing_address || saleReturn.billing_address || '');
+                $ctx.find('.shipping-address-input').val(party.shipping_address || saleReturn.shipping_address || '');
+
+                // Show party selection container if party is loaded
+                if (saleReturn.party_id) {
+                    $ctx.find('#partySelectionContainer').removeClass('d-none');
+                    $ctx.find('#partyDropdownBtn').addClass('d-none');
+                }
             } else {
                 $ctx.find('#partyDropdownBtn').text('Select Party');
             }
@@ -186,8 +220,11 @@ function initializeForm(context) {
         }
 
         $ctx.find('.phone-input').val(saleReturn.phone || '');
+        $ctx.find('.party-phone-input').val(saleReturn.phone || '');
         $ctx.find('.billing-address').val(saleReturn.billing_address || '');
+        $ctx.find('.billing-address-input').val(saleReturn.billing_address || '');
         $ctx.find('.shipping-address').val(saleReturn.shipping_address || '');
+        $ctx.find('.shipping-address-input').val(saleReturn.shipping_address || '');
         $ctx.find('.source-sale-id').val(saleReturn.source_sale_id || '');
         $ctx.find('.bill-number').val(saleReturn.bill_number || '');
         $ctx.find('.reference-bill-number').val(saleReturn.reference_bill_number || '');
@@ -472,9 +509,9 @@ function initializeForm(context) {
             source_sale_id: isDuplicateSaleReturnMode ? null : ($ctx.find('.source-sale-id').val() || null),
             party_id: $ctx.find('.party-id').val() || $ctx.find('.party-select').val() || null,
             party_name: ($ctx.find('#partyDropdownBtn').text() || '').trim() === 'Select Party' ? '' : ($ctx.find('#partyDropdownBtn').text() || '').trim(),
-            phone: $ctx.find('.phone-input').val() || '',
-            billing_address: $ctx.find('.billing-address').val() || '',
-            shipping_address: $ctx.find('.shipping-address').val() || '',
+            phone: $ctx.find('.party-phone-input').val() || $ctx.find('.phone-input').val() || '',
+            billing_address: $ctx.find('.billing-address-input').val() || $ctx.find('.billing-address').val() || '',
+            shipping_address: $ctx.find('.shipping-address-input').val() || $ctx.find('.shipping-address').val() || '',
             bill_number: $ctx.find('.bill-number').val() || '',
             reference_bill_number: $ctx.find('.reference-bill-number').val() || '',
             bill_date: $ctx.find('.order-date').val() || '',
@@ -511,73 +548,147 @@ function initializeForm(context) {
 
         if (party) {
             $ctx.find('.phone-input').val(party.phone || '');
+            $ctx.find('.party-phone-input').val(party.phone || '');
             $ctx.find('.billing-address').val(party.billing_address || '');
+            $ctx.find('.billing-address-input').val(party.billing_address || '');
             $ctx.find('.shipping-address').val(party.shipping_address || '');
+            $ctx.find('.shipping-address-input').val(party.shipping_address || '');
         } else {
             $ctx.find('.phone-input').val('');
+            $ctx.find('.party-phone-input').val('');
             $ctx.find('.billing-address').val('');
+            $ctx.find('.billing-address-input').val('');
             $ctx.find('.shipping-address').val('');
+            $ctx.find('.shipping-address-input').val('');
         }
     });
 
-    $ctx.on('click', '.party-option', function(e) {
-    e.preventDefault();
-    const $option = $(this);
-    const partyId = $option.data('id') || '';
-    const partyName = $.trim($option.data('name') || $option.find('.party-option-name').text() || '');
+    $ctx.on('mousedown click', '.party-option', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-    // Find full party from window.parties
-   const selectedParty = (window.parties || []).find(p => String(p.id) === String(partyId)) || {};
+        const $option = $(this);
+        const partyId = $option.data('id') || '';
+        const partyName = $.trim($option.data('name') || $option.text() || '');
 
-const partyRecord = {
-    name:             $option.data('name')         || selectedParty.name             || partyName,
-    phone:            $option.data('phone')        || selectedParty.phone            || "",
-    phone_number_2:   $option.data('phoneNumber2') || selectedParty.phone_number_2   || "",
-    ptcl_number:      $option.data('ptcl')         || selectedParty.ptcl_number      || "",
-    email:            $option.data('email')        || selectedParty.email            || "",
-    city:             $option.data('city')         || selectedParty.city             || "",
-    party_group:      $option.data('partyGroup')   || selectedParty.party_group      || "",
-    address:          $option.data('address')      || selectedParty.address          || "",
-    billing_address:  $option.data('billing')      || selectedParty.billing_address  || "",
-    shipping_address: $option.data('shipping')     || selectedParty.shipping_address || "",
-    due_days:         $option.data('dueDays')      || selectedParty.due_days         || "",
-};
-    $ctx.find('.party-id').val(partyId);
-    setPartyDropdownDisplay(partyName || 'Select Party');
+        // Find full party from window.parties
+        const selectedParty = (window.parties || []).find(p => String(p.id) === String(partyId)) || {};
 
-    // Fill phone field
-    $ctx.find('.phone-input').val(partyRecord.phone);
+        const partyRecord = {
+            name:             $option.data('name')         || selectedParty.name             || partyName,
+            phone:            $option.data('phone')        || selectedParty.phone            || "",
+            billing_address:  $option.data('billing')      || selectedParty.billing_address  || "",
+            shipping_address: $option.data('shipping')     || selectedParty.shipping_address || "",
+            opening_balance:  $option.data('opening')      || selectedParty.current_balance  || selectedParty.opening_balance || 0,
+            transaction_type: $option.data('type')         || selectedParty.transaction_type || "",
+            party_group:      selectedParty.party_group    || "",
+            address:          selectedParty.address         || "",
+        };
 
-    // Build FULL party details content
-    let billingContent = "";
-    if (partyRecord.name)           billingContent += "Name:  " + partyRecord.name          + "\n";
-    if (partyRecord.phone)          billingContent += "Mob:   " + partyRecord.phone          + "\n";
-    if (partyRecord.phone_number_2) billingContent += "WUP:   " + partyRecord.phone_number_2 + "\n";
-    if (partyRecord.ptcl_number)    billingContent += "TEL:   " + partyRecord.ptcl_number    + "\n";
-    if (partyRecord.email)          billingContent += "Email: " + partyRecord.email          + "\n";
-    if (partyRecord.city)           billingContent += "City:  " + partyRecord.city           + "\n";
-    if (partyRecord.party_group)    billingContent += "Group: " + partyRecord.party_group    + "\n";
-    const billingAddr = partyRecord.billing_address || partyRecord.address || "";
-    if (billingAddr) billingContent += "\nAddress:\n" + billingAddr;
+        // Set hidden party ID
+        $ctx.find('.party-id').val(partyId);
 
-    $ctx.find('.billing-address').val(billingContent.trim());
-    $ctx.find('.shipping-address').val(partyRecord.shipping_address || "");
-    $ctx.find('.party-details').removeClass('d-none');
+        // Set party dropdown display - party name inside input
+        setPartyDropdownDisplay(partyName || 'Select Party');
 
-    const dropdownToggle = document.getElementById('partyDropdownBtn');
-    if (dropdownToggle) {
-        const dropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
-        if (dropdown) dropdown.hide();
-    }
-});
+        // Fill phone field (old field for backward compatibility)
+        $ctx.find('.phone-input').val(partyRecord.phone);
+
+        // === Update Party Info Panel ===
+        const $partyPanel = $ctx.find('#partyInfoPanel');
+        if ($partyPanel.length) {
+            // Set party name and description
+            $ctx.find('#partyInfoName').text(partyRecord.name || 'Party');
+            $ctx.find('#partyInfoDescription').text(partyRecord.party_group ? 'Group: ' + partyRecord.party_group : 'Party selected');
+
+            // Set balance with proper formatting
+            const balance = Number(partyRecord.opening_balance || 0).toFixed(2);
+            const balanceElement = $ctx.find('#partyInfoBalance');
+
+            // Set color based on transaction type
+            if (partyRecord.transaction_type === 'pay') {
+                balanceElement.html('<i class="fa-solid fa-arrow-up me-1" style="color: #dc2626;"></i>₹' + balance);
+                balanceElement.css('color', '#dc2626');
+            } else if (partyRecord.transaction_type === 'receive') {
+                balanceElement.html('<i class="fa-solid fa-arrow-down me-1" style="color: #16a34a;"></i>₹' + balance);
+                balanceElement.css('color', '#16a34a');
+            } else {
+                balanceElement.text('₹' + balance);
+                balanceElement.css('color', '#15803d');
+            }
+        }
+
+        // === Show Separate Address & Phone Input Fields (only after selection) ===
+        const $selectionContainer = $ctx.find('#partySelectionContainer');
+        if ($selectionContainer.length) {
+            // Set billing address
+            $ctx.find('.billing-address-input').val(partyRecord.billing_address || partyRecord.address || '');
+
+            // Set phone number
+            $ctx.find('.party-phone-input').val(partyRecord.phone || '');
+
+            // Set shipping address
+            $ctx.find('.shipping-address-input').val(partyRecord.shipping_address || '');
+
+            // Show the entire container (display them now)
+            $selectionContainer.removeClass('d-none');
+
+            // Hide the search input
+            $ctx.find('#partyDropdownBtn').addClass('d-none');
+        }
+
+        // Close dropdown
+        const dropdownToggle = $ctx.find('#partyDropdownBtn').get(0);
+        if (dropdownToggle) {
+            try {
+                const dropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
+                if (dropdown) dropdown.hide();
+            } catch(err) {
+                console.error('Error closing dropdown:', err);
+            }
+        }
+    });
+    // Close party info panel
+    $ctx.on('click', '#closePartyPanel', function(e) {
+        e.preventDefault();
+        $ctx.find('#partySelectionContainer').addClass('d-none');
+        $ctx.find('#partyDropdownBtn').removeClass('d-none');
+        $ctx.find('.party-id').val('');
+        $ctx.find('#partyDropdownBtn').val('');
+        $ctx.find('.phone-input').val('');
+        $ctx.find('.party-phone-input').val('');
+        $ctx.find('.billing-address').val('');
+        $ctx.find('.billing-address-input').val('');
+        $ctx.find('.shipping-address').val('');
+        $ctx.find('.shipping-address-input').val('');
+        $ctx.find('.billing-name-input').val('');
+    });
 
     // Prevent dropdown from closing when clicking on search input
     $ctx.on('click', '.party-search-input', function(e) {
         e.stopPropagation();
     });
 
+    // Party search/filter functionality
+    $ctx.on('keyup', '.party-search-input', function(e) {
+        e.stopPropagation();
+        const searchText = $(this).val().toLowerCase();
+        const $options = $ctx.find('#partyDropdownMenu .party-option');
+
+        $options.each(function() {
+            const partyName = $(this).data('name') || $(this).text();
+            const $li = $(this).closest('li');
+
+            if (partyName.toLowerCase().includes(searchText)) {
+                $li.removeClass('d-none');
+            } else {
+                $li.addClass('d-none');
+            }
+        });
+    });
+
     // Prevent dropdown from closing when typing in search
-    $ctx.on('keydown keyup', '.party-search-input', function(e) {
+    $ctx.on('keydown', '.party-search-input', function(e) {
         e.stopPropagation();
     });
 
